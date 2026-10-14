@@ -1,0 +1,43 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Environments
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE & Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Dataset downloads & zip archives
+ml_training/cache/
+*.zip
+*.tar
+*.tar.gz
+
+# Dataset images and annotations
+ml_training/datasets/
+datasets/
+
+# Test inference outputs and crops
+ml_training/inference_outputs/
+
+# Training and evaluation run artifacts / logs
+ml_training/runs/
+runs/
+
+# Base pretrained downloaded weights (can be re-downloaded via Ultralytics)
+ml_training/yolo11n.pt
+ml_training/weights/yolo26n.pt
+yolo*.pt
+!backend/vision/weights/best.pt
+!ml_training/weights/best.pt
