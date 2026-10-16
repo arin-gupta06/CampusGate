@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, Sparkles, ChevronDown, Shield, Wifi, WifiOff, User } from 'lucide-react';
+import { Search, Bell, Sparkles, ChevronDown, Shield, Wifi, WifiOff, User, Sun, Moon } from 'lucide-react';
 
 export default function Header({
   onSearch,
   onTriggerSimulation,
   wsStatus,
   userRole,
-  setUserRole
+  setUserRole,
+  theme,
+  toggleTheme
 }) {
   const [currentTime, setCurrentTime] = useState('');
   const [searchValue, setSearchValue] = useState('');
@@ -117,6 +119,29 @@ export default function Header({
         alignItems: 'center',
         gap: '16px'
       }}>
+        {/* White & Black Theme Toggle Button */}
+        <button
+          onClick={toggleTheme}
+          title={`Switch to ${theme === 'light' ? 'Black (Dark Mode)' : 'White (Light Mode)'}`}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            backgroundColor: 'var(--bg-card)',
+            color: 'var(--text-main)',
+            border: '1px solid var(--border-medium)',
+            padding: '8px 14px',
+            borderRadius: '8px',
+            fontSize: '12px',
+            fontWeight: 600,
+            cursor: 'pointer',
+            boxShadow: 'var(--shadow-card)'
+          }}
+        >
+          {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+          <span>{theme === 'light' ? 'Black Theme' : 'White Theme'}</span>
+        </button>
+
         {/* Simulate Live Event Button */}
         <button
           onClick={onTriggerSimulation}
@@ -125,9 +150,9 @@ export default function Header({
             display: 'flex',
             alignItems: 'center',
             gap: '8px',
-            backgroundColor: 'rgba(59, 130, 246, 0.15)',
-            color: '#60a5fa',
-            border: '1px solid rgba(59, 130, 246, 0.35)',
+            backgroundColor: 'var(--bg-card-subtle)',
+            color: 'var(--text-main)',
+            border: '1px solid var(--border-subtle)',
             padding: '8px 14px',
             borderRadius: '8px',
             fontSize: '12px',

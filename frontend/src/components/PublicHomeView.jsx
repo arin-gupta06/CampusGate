@@ -29,13 +29,17 @@ import {
   Activity,
   Zap,
   Gauge,
-  Compass
+  Compass,
+  Sun,
+  Moon
 } from 'lucide-react';
 
 export default function PublicHomeView({
   onNavigateToSettings,
   onNavigateToProfile,
-  onSwitchToAdmin
+  onSwitchToAdmin,
+  theme,
+  toggleTheme
 }) {
   // Navigation tabs: 'home', 'about', 'gate-status', 'how-it-works', 'guidelines', 'developers', 'contact'
   const [activeNav, setActiveNav] = useState('home');
@@ -181,6 +185,32 @@ export default function PublicHomeView({
 
         {/* Right Action Buttons - Public Self-Service Only (NO Control Room Access) */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
+          {/* Theme Toggle Button */}
+          {toggleTheme && (
+            <button
+              onClick={toggleTheme}
+              title={`Switch to ${theme === 'light' ? 'Black (Dark Mode)' : 'White (Light Mode)'}`}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '7px',
+                backgroundColor: 'var(--bg-card)',
+                color: 'var(--text-main)',
+                border: '1px solid var(--border-medium)',
+                borderRadius: '9px',
+                padding: '8px 14px',
+                fontSize: '12.5px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                boxShadow: 'var(--shadow-card)'
+              }}
+            >
+              {theme === 'light' ? <Moon size={14} /> : <Sun size={14} />}
+              <span>{theme === 'light' ? 'Black' : 'White'}</span>
+            </button>
+          )}
+
           <button
             onClick={onNavigateToSettings}
             style={{

@@ -62,7 +62,9 @@ class StreamIngestionWorker:
         self.is_running = True
         logger.info(f"Starting stream worker for [{self.camera_id}] from: {self.stream_source}")
 
-        cap = cv2.VideoCapture(self.stream_source)
+        # Convert numeric string (e.g. "0") or int to device index for laptop webcam testing
+        source = int(self.stream_source) if str(self.stream_source).strip().isdigit() else self.stream_source
+        cap = cv2.VideoCapture(source)
         if not cap.isOpened():
             logger.error(f"Failed to open video source: {self.stream_source}")
             return

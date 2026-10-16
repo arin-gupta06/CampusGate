@@ -34,11 +34,11 @@ export default function DashboardView({
       }}>
         {/* Card 1: Total Vehicles */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
           alignItems: 'center',
           gap: '16px'
@@ -47,23 +47,23 @@ export default function DashboardView({
             width: '46px',
             height: '46px',
             borderRadius: '12px',
-            backgroundColor: 'rgba(59, 130, 246, 0.15)',
-            border: '1px solid rgba(59, 130, 246, 0.3)',
+            backgroundColor: 'var(--bg-card-subtle)',
+            border: '1px solid var(--border-medium)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#3b82f6'
+            color: 'var(--text-main)'
           }}>
             <Car size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#f8fafc', lineHeight: 1 }}>
+            <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>
               {stats?.totalToday || 124}
             </div>
-            <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px', fontWeight: 500 }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: 500 }}>
               Total Vehicles Today
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#38bdf8', marginTop: '4px', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--text-main)', marginTop: '4px', fontWeight: 600 }}>
               <TrendingUp size={13} />
               <span>↑ 12%</span>
             </div>
@@ -72,11 +72,11 @@ export default function DashboardView({
 
         {/* Card 2: Verified Vehicles */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
           alignItems: 'center',
           gap: '16px'
@@ -85,23 +85,23 @@ export default function DashboardView({
             width: '46px',
             height: '46px',
             borderRadius: '12px',
-            backgroundColor: 'rgba(16, 185, 129, 0.15)',
-            border: '1px solid rgba(16, 185, 129, 0.3)',
+            backgroundColor: 'var(--color-emerald-bg)',
+            border: '1px solid var(--color-emerald-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#10b981'
+            color: 'var(--color-emerald)'
           }}>
             <CheckCircle2 size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#f8fafc', lineHeight: 1 }}>
+            <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>
               {stats?.verifiedToday || 98}
             </div>
-            <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px', fontWeight: 500 }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: 500 }}>
               Verified Vehicles
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#10b981', marginTop: '4px', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--color-emerald)', marginTop: '4px', fontWeight: 600 }}>
               <TrendingUp size={13} />
               <span>↑ 8%</span>
             </div>
@@ -110,11 +110,11 @@ export default function DashboardView({
 
         {/* Card 3: Unknown Vehicles */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
           alignItems: 'center',
           gap: '16px'
@@ -123,23 +123,23 @@ export default function DashboardView({
             width: '46px',
             height: '46px',
             borderRadius: '12px',
-            backgroundColor: 'rgba(245, 158, 11, 0.15)',
-            border: '1px solid rgba(245, 158, 11, 0.3)',
+            backgroundColor: 'var(--color-amber-bg)',
+            border: '1px solid var(--color-amber-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#f59e0b'
+            color: 'var(--color-amber)'
           }}>
             <AlertTriangle size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#f8fafc', lineHeight: 1 }}>
+            <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>
               {stats?.unknownToday || 12}
             </div>
-            <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px', fontWeight: 500 }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: 500 }}>
               Unknown Vehicles
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#f59e0b', marginTop: '4px', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--color-amber)', marginTop: '4px', fontWeight: 600 }}>
               <TrendingUp size={13} />
               <span>↑ 3%</span>
             </div>
@@ -148,11 +148,11 @@ export default function DashboardView({
 
         {/* Card 4: Active Alerts */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          boxShadow: '0 4px 20px rgba(0,0,0,0.3)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
           alignItems: 'center',
           gap: '16px'
@@ -161,23 +161,23 @@ export default function DashboardView({
             width: '46px',
             height: '46px',
             borderRadius: '12px',
-            backgroundColor: 'rgba(239, 68, 68, 0.15)',
-            border: '1px solid rgba(239, 68, 68, 0.3)',
+            backgroundColor: 'var(--color-crimson-bg)',
+            border: '1px solid var(--color-crimson-border)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#ef4444'
+            color: 'var(--color-crimson)'
           }}>
             <Bell size={24} />
           </div>
           <div>
-            <div style={{ fontSize: '26px', fontWeight: 800, color: '#f8fafc', lineHeight: 1 }}>
+            <div style={{ fontSize: '26px', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1 }}>
               {stats?.activeAlerts || 5}
             </div>
-            <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px', fontWeight: 500 }}>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px', fontWeight: 500 }}>
               Active Alerts
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#ef4444', marginTop: '4px', fontWeight: 600 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: 'var(--color-crimson)', marginTop: '4px', fontWeight: 600 }}>
               <TrendingDown size={13} />
               <span>↓ 2%</span>
             </div>
@@ -193,10 +193,10 @@ export default function DashboardView({
       }}>
         {/* Left: Live Camera Feeds Grid or Empty State */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '16px',
           padding: '22px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)'
         }}>
           <div style={{
             display: 'flex',
@@ -508,10 +508,10 @@ export default function DashboardView({
 
         {/* Right: Recent Entries Live Feed */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '16px',
           padding: '22px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column'
         }}>
@@ -521,20 +521,20 @@ export default function DashboardView({
             justifyContent: 'space-between',
             marginBottom: '16px'
           }}>
-            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+            <h3 style={{ fontSize: '17px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
               Recent Entries
             </h3>
             <button
               onClick={() => onNavigateTab('events')}
               style={{
                 background: 'none',
-                color: '#38bdf8',
+                color: 'var(--text-main)',
                 fontSize: '13px',
-                fontWeight: 600,
+                fontWeight: 700,
                 cursor: 'pointer'
               }}
             >
-              View All
+              View All →
             </button>
           </div>
 
@@ -556,10 +556,10 @@ export default function DashboardView({
                   key={entry.id}
                   onClick={() => onSelectEntry(entry)}
                   style={{
-                    backgroundColor: '#131d33',
+                    backgroundColor: 'var(--bg-card-subtle)',
                     borderRadius: '10px',
                     padding: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    border: '1px solid var(--border-subtle)',
                     display: 'flex',
                     alignItems: 'center',
                     gap: '12px',
@@ -567,13 +567,13 @@ export default function DashboardView({
                     transition: 'all 0.18s ease'
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#182542';
-                    e.currentTarget.style.borderColor = 'rgba(59, 130, 246, 0.4)';
+                    e.currentTarget.style.backgroundColor = 'var(--bg-card-hover)';
+                    e.currentTarget.style.borderColor = 'var(--border-medium)';
                     e.currentTarget.style.transform = 'translateX(2px)';
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#131d33';
-                    e.currentTarget.style.borderColor = 'rgba(255, 255, 255, 0.06)';
+                    e.currentTarget.style.backgroundColor = 'var(--bg-card-subtle)';
+                    e.currentTarget.style.borderColor = 'var(--border-subtle)';
                     e.currentTarget.style.transform = 'translateX(0)';
                   }}
                 >

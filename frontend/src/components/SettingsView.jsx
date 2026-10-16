@@ -6,18 +6,16 @@ import {
   ExternalLink,
   Copy,
   Check,
-  Search,
-  Save,
-  Trash2,
-  AlertTriangle,
-  RefreshCw,
   PlusCircle,
   Edit3,
   ArrowLeft,
   ShieldCheck,
   User,
   Car,
-  CheckCircle2
+  CheckCircle2,
+  Scan,
+  Sparkles,
+  Zap
 } from 'lucide-react';
 
 export default function SettingsView({
@@ -25,13 +23,13 @@ export default function SettingsView({
   onAddVehicle,
   onUpdateVehicle,
   onDeleteVehicle,
-  initialView = 'overview' // 'overview' or 'form'
+  initialView = 'overview' // 'overview' (QR only) or 'form'
 }) {
   const [currentView, setCurrentView] = useState(initialView);
   const [copied, setCopied] = useState(false);
   const [successToast, setSuccessToast] = useState('');
 
-  // Active Path in Form: 'NEW_REGISTRATION' vs 'UPDATE_DELETE' (Mutually Exclusive)
+  // Active Path in Form: 'NEW_REGISTRATION' vs 'UPDATE_DELETE'
   const [activePath, setActivePath] = useState('NEW_REGISTRATION');
 
   // QR Code URL pointing to application environment form
@@ -108,8 +106,7 @@ export default function SettingsView({
       });
     }
 
-    setSuccessToast(`Vehicle ${newPlate.toUpperCase()} registered into college database!`);
-    // Clear new registration form
+    setSuccessToast(`Vehicle ${newPlate.toUpperCase()} successfully registered in campus database!`);
     setNewName('');
     setNewRollNo('');
     setNewEmail('');
@@ -138,18 +135,18 @@ export default function SettingsView({
       });
     }
 
-    setSuccessToast(`Record for ${selectedPlate} updated in college database!`);
+    setSuccessToast(`Record for ${selectedPlate} updated in campus database!`);
     setTimeout(() => setSuccessToast(''), 4000);
   };
 
   // Submit Path 2: Delete Existing Vehicle
   const handleDeleteExistingVehicle = () => {
     if (!selectedPlate) return;
-    if (window.confirm(`Permanently revoke and delete vehicle ${selectedPlate} from the college database?`)) {
+    if (window.confirm(`Permanently revoke and delete vehicle ${selectedPlate} from the campus database?`)) {
       if (onDeleteVehicle) {
         onDeleteVehicle(selectedPlate);
       }
-      setSuccessToast(`Vehicle ${selectedPlate} deleted from college database.`);
+      setSuccessToast(`Vehicle ${selectedPlate} deleted from campus database.`);
       const remaining = vehicles.filter(v => v.plate_number !== selectedPlate);
       if (remaining.length > 0) {
         handleSelectPlate(remaining[0].plate_number);
@@ -163,7 +160,7 @@ export default function SettingsView({
 
   // ============================================================
   // VIEW 1: THE DEDICATED APPLICATION FORM VIEW
-  // (Sidebar and Navbar remain intact; no background clutter seen)
+  // (Launched by scanning the QR code or clicking "Open Portal Form")
   // ============================================================
   if (currentView === 'form') {
     return (
@@ -171,16 +168,16 @@ export default function SettingsView({
         display: 'flex',
         flexDirection: 'column',
         gap: '20px',
-        maxWidth: '860px',
+        maxWidth: '820px',
         margin: '0 auto'
       }}>
-        {/* Top Header & Back Navigation */}
+        {/* Top Header & Back Navigation to QR */}
         <div style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           paddingBottom: '14px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)'
+          borderBottom: '1px solid var(--border-subtle)'
         }}>
           <button
             onClick={() => setCurrentView('overview')}
@@ -188,30 +185,30 @@ export default function SettingsView({
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              backgroundColor: '#1e293b',
-              color: '#38bdf8',
-              border: '1px solid rgba(56, 189, 248, 0.3)',
+              backgroundColor: 'var(--bg-card)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '8px',
               padding: '8px 14px',
               fontSize: '12px',
-              fontWeight: 600,
+              fontWeight: 700,
               cursor: 'pointer'
             }}
           >
             <ArrowLeft size={15} />
-            <span>Back to Settings & QR Overview</span>
+            <span>Back to QR Code Hub</span>
           </button>
 
-          <span style={{ fontSize: '12px', color: '#64748b' }}>
-            College Vehicle Access Management System
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>
+            Campus Gate Security Management System
           </span>
         </div>
 
         {/* Success Alert Banner */}
         {successToast && (
           <div style={{
-            backgroundColor: 'rgba(16, 185, 129, 0.15)',
-            border: '1px solid #10b981',
+            backgroundColor: 'rgba(16, 185, 129, 0.12)',
+            border: '1px solid rgba(16, 185, 129, 0.3)',
             color: '#10b981',
             borderRadius: '10px',
             padding: '12px 18px',
@@ -228,35 +225,34 @@ export default function SettingsView({
 
         {/* Form Main Card */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '18px',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid var(--border-subtle)',
           padding: '28px',
-          boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
+          boxShadow: 'var(--shadow-elevated)'
         }}>
-          {/* Two-Path Mode Switcher (Mutually Exclusive: Only one enabled at a time!) */}
+          {/* Two-Path Mode Switcher (Mutually Exclusive) */}
           <div style={{ marginBottom: '24px' }}>
             <div style={{
               fontSize: '12px',
-              color: '#94a3b8',
+              color: 'var(--text-muted)',
               fontWeight: 700,
               textTransform: 'uppercase',
               letterSpacing: '0.6px',
               marginBottom: '10px'
             }}>
-              Select Operation Mode (Mutually Exclusive)
+              Select Operation Mode
             </div>
 
             <div style={{
               display: 'grid',
               gridTemplateColumns: '1fr 1fr',
               gap: '10px',
-              backgroundColor: '#070b14',
+              backgroundColor: 'var(--bg-surface)',
               padding: '6px',
               borderRadius: '12px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid var(--border-subtle)'
             }}>
-              {/* Path A Button */}
               <button
                 type="button"
                 onClick={() => setActivePath('NEW_REGISTRATION')}
@@ -269,9 +265,8 @@ export default function SettingsView({
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: 700,
-                  backgroundColor: activePath === 'NEW_REGISTRATION' ? '#2563eb' : 'transparent',
-                  color: activePath === 'NEW_REGISTRATION' ? '#ffffff' : '#64748b',
-                  boxShadow: activePath === 'NEW_REGISTRATION' ? '0 4px 14px rgba(37, 99, 235, 0.4)' : 'none',
+                  backgroundColor: activePath === 'NEW_REGISTRATION' ? 'var(--accent-primary)' : 'transparent',
+                  color: activePath === 'NEW_REGISTRATION' ? 'var(--accent-primary-text)' : 'var(--text-secondary)',
                   cursor: 'pointer'
                 }}
               >
@@ -279,7 +274,6 @@ export default function SettingsView({
                 <span>1. New Vehicle Registration</span>
               </button>
 
-              {/* Path B Button */}
               <button
                 type="button"
                 onClick={() => setActivePath('UPDATE_DELETE')}
@@ -292,9 +286,8 @@ export default function SettingsView({
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: 700,
-                  backgroundColor: activePath === 'UPDATE_DELETE' ? '#334155' : 'transparent',
-                  color: activePath === 'UPDATE_DELETE' ? '#38bdf8' : '#64748b',
-                  boxShadow: activePath === 'UPDATE_DELETE' ? '0 4px 14px rgba(0, 0, 0, 0.4)' : 'none',
+                  backgroundColor: activePath === 'UPDATE_DELETE' ? 'var(--accent-primary)' : 'transparent',
+                  color: activePath === 'UPDATE_DELETE' ? 'var(--accent-primary-text)' : 'var(--text-secondary)',
                   cursor: 'pointer'
                 }}
               >
@@ -304,32 +297,30 @@ export default function SettingsView({
             </div>
           </div>
 
-          {/* ======================================================== */}
-          {/* PATH A: NEW VEHICLE REGISTRATION (Enabled when Path A active) */}
-          {/* ======================================================== */}
+          {/* PATH A: NEW VEHICLE REGISTRATION */}
           {activePath === 'NEW_REGISTRATION' && (
             <form onSubmit={handleRegisterNewVehicle} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{
-                backgroundColor: 'rgba(37, 99, 235, 0.08)',
-                border: '1px solid rgba(37, 99, 235, 0.25)',
+                backgroundColor: 'var(--bg-card-subtle)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '10px',
                 padding: '10px 14px',
                 fontSize: '12px',
-                color: '#93c5fd'
+                color: 'var(--text-secondary)'
               }}>
-                ℹ️ <strong>New Vehicle Registration Enabled:</strong> Enter student/faculty credentials and vehicle specifications to issue a new automated gate entry pass into the college database.
+                ℹ️ <strong>New Vehicle Registration:</strong> Enter student/faculty credentials and vehicle specifications to issue a new automated gate entry pass.
               </div>
 
               {/* Section 1: User Details */}
               <div>
-                <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <User size={16} color="#3b82f6" />
+                <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <User size={16} />
                   <span>Applicant / User Details</span>
                 </h4>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                       Full Name *
                     </label>
                     <input
@@ -341,19 +332,20 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '13px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)',
+                        outline: 'none'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
-                      Student Roll No. / Employee ID
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                      Roll No. / Employee ID
                     </label>
                     <input
                       type="text"
@@ -363,19 +355,20 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '13px',
                         fontFamily: 'var(--font-mono)',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)',
+                        outline: 'none'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                       College Email Address
                     </label>
                     <input
@@ -386,19 +379,20 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '13px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)',
+                        outline: 'none'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
-                      Phone / Mobile Number
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                      Phone Number
                     </label>
                     <input
                       type="text"
@@ -408,18 +402,19 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '13px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)',
+                        outline: 'none'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                       Branch / Department
                     </label>
                     <input
@@ -429,18 +424,19 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '13px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)',
+                        outline: 'none'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                       User Category
                     </label>
                     <select
@@ -449,12 +445,12 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '13px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)'
                       }}
                     >
                       <option value="Student">Student</option>
@@ -467,15 +463,15 @@ export default function SettingsView({
               </div>
 
               {/* Section 2: Vehicle Details */}
-              <div style={{ paddingTop: '10px', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
-                <h4 style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Car size={16} color="#10b981" />
+              <div style={{ paddingTop: '10px', borderTop: '1px solid var(--border-subtle)' }}>
+                <h4 style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <Car size={16} />
                   <span>Vehicle Specifications</span>
                 </h4>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                       License Plate Number (HSRP) *
                     </label>
                     <input
@@ -487,21 +483,22 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(59, 130, 246, 0.4)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '14px',
                         fontFamily: 'var(--font-mono)',
                         fontWeight: 700,
-                        color: '#38bdf8',
-                        textTransform: 'uppercase'
+                        color: 'var(--text-main)',
+                        textTransform: 'uppercase',
+                        outline: 'none'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                       Vehicle Classification
                     </label>
                     <select
@@ -510,12 +507,12 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '13px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)'
                       }}
                     >
                       <option value="Car">Car / Sedan / SUV</option>
@@ -526,7 +523,7 @@ export default function SettingsView({
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                       Vehicle Make & Model
                     </label>
                     <input
@@ -537,18 +534,19 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '13px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)',
+                        outline: 'none'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                       Vehicle Color
                     </label>
                     <input
@@ -559,12 +557,13 @@ export default function SettingsView({
                       style={{
                         width: '100%',
                         height: '40px',
-                        backgroundColor: '#111827',
-                        border: '1px solid rgba(255, 255, 255, 0.1)',
+                        backgroundColor: 'var(--bg-surface)',
+                        border: '1px solid var(--border-subtle)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '13px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)',
+                        outline: 'none'
                       }}
                     />
                   </div>
@@ -577,8 +576,8 @@ export default function SettingsView({
                   type="submit"
                   style={{
                     width: '100%',
-                    backgroundColor: '#2563eb',
-                    color: '#fff',
+                    backgroundColor: 'var(--accent-primary)',
+                    color: 'var(--accent-primary-text)',
                     padding: '13px',
                     borderRadius: '10px',
                     fontSize: '14px',
@@ -587,37 +586,35 @@ export default function SettingsView({
                     alignItems: 'center',
                     justifyContent: 'center',
                     gap: '8px',
-                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
+                    boxShadow: 'var(--shadow-card)',
                     cursor: 'pointer'
                   }}
                 >
                   <PlusCircle size={18} />
-                  <span>Register Vehicle in College Database</span>
+                  <span>Register Vehicle in Campus Database</span>
                 </button>
               </div>
             </form>
           )}
 
-          {/* ======================================================== */}
-          {/* PATH B: UPDATE & DELETION (Enabled when Path B active)   */}
-          {/* ======================================================== */}
+          {/* PATH B: UPDATE & DELETION */}
           {activePath === 'UPDATE_DELETE' && (
             <form onSubmit={handleUpdateExistingVehicle} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
               <div style={{
-                backgroundColor: 'rgba(245, 158, 11, 0.08)',
-                border: '1px solid rgba(245, 158, 11, 0.25)',
+                backgroundColor: 'var(--bg-card-subtle)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '10px',
                 padding: '10px 14px',
                 fontSize: '12px',
-                color: '#fde68a'
+                color: 'var(--text-secondary)'
               }}>
-                ✏️ <strong>Update & Deletion Path Enabled:</strong> Lookup any existing registered vehicle to update owner contact, pass validity, or revoke/delete vehicle records from the college database.
+                ✏️ <strong>Update & Deletion Path:</strong> Lookup any existing registered vehicle to update owner contact, pass validity, or revoke/delete vehicle records.
               </div>
 
-              {/* Step 1: Select Registered Vehicle from College DB */}
+              {/* Step 1: Select Registered Vehicle from DB */}
               <div>
-                <label style={{ fontSize: '12px', color: '#f8fafc', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
-                  1. Select Registered Vehicle Plate from College Database
+                <label style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: 700, display: 'block', marginBottom: '6px' }}>
+                  1. Select Registered Vehicle Plate
                 </label>
                 <select
                   value={selectedPlate}
@@ -625,13 +622,13 @@ export default function SettingsView({
                   style={{
                     width: '100%',
                     height: '42px',
-                    backgroundColor: '#111827',
-                    border: '1px solid #38bdf8',
+                    backgroundColor: 'var(--bg-surface)',
+                    border: '1px solid var(--border-medium)',
                     borderRadius: '8px',
                     padding: '0 12px',
                     fontSize: '14px',
                     fontFamily: 'var(--font-mono)',
-                    color: '#38bdf8',
+                    color: 'var(--text-main)',
                     fontWeight: 700
                   }}
                 >
@@ -646,7 +643,7 @@ export default function SettingsView({
               {/* Step 2: Editable User and Vehicle Fields */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px' }}>
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                     Owner Full Name
                   </label>
                   <input
@@ -656,18 +653,18 @@ export default function SettingsView({
                     style={{
                       width: '100%',
                       height: '40px',
-                      backgroundColor: '#111827',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       padding: '0 12px',
                       fontSize: '13px',
-                      color: '#f8fafc'
+                      color: 'var(--text-main)'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                     Roll No / Designation / Note
                   </label>
                   <input
@@ -677,18 +674,18 @@ export default function SettingsView({
                     style={{
                       width: '100%',
                       height: '40px',
-                      backgroundColor: '#111827',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       padding: '0 12px',
                       fontSize: '13px',
-                      color: '#f8fafc'
+                      color: 'var(--text-main)'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                     Branch / Department
                   </label>
                   <input
@@ -698,18 +695,18 @@ export default function SettingsView({
                     style={{
                       width: '100%',
                       height: '40px',
-                      backgroundColor: '#111827',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       padding: '0 12px',
                       fontSize: '13px',
-                      color: '#f8fafc'
+                      color: 'var(--text-main)'
                     }}
                   />
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                     Vehicle Type
                   </label>
                   <select
@@ -718,23 +715,23 @@ export default function SettingsView({
                     style={{
                       width: '100%',
                       height: '40px',
-                      backgroundColor: '#111827',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       padding: '0 12px',
                       fontSize: '13px',
-                      color: '#f8fafc'
+                      color: 'var(--text-main)'
                     }}
                   >
                     <option value="Car">Car / Sedan / SUV</option>
                     <option value="Bike">Two-Wheeler / Bike</option>
-                    <option value="Bus">Campus Bus / Van</option>
+                    <option value="Bus">Campus Bus / Shuttle</option>
                     <option value="Commercial">Commercial / Delivery</option>
                   </select>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                     Gate Pass Authorization Status
                   </label>
                   <select
@@ -743,8 +740,8 @@ export default function SettingsView({
                     style={{
                       width: '100%',
                       height: '40px',
-                      backgroundColor: '#111827',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       padding: '0 12px',
                       fontSize: '13px',
@@ -759,7 +756,7 @@ export default function SettingsView({
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
+                  <label style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600, display: 'block', marginBottom: '5px' }}>
                     Pass Expiry Validity Date
                   </label>
                   <input
@@ -769,13 +766,13 @@ export default function SettingsView({
                     style={{
                       width: '100%',
                       height: '40px',
-                      backgroundColor: '#111827',
-                      border: '1px solid rgba(255, 255, 255, 0.1)',
+                      backgroundColor: 'var(--bg-surface)',
+                      border: '1px solid var(--border-subtle)',
                       borderRadius: '8px',
                       padding: '0 12px',
                       fontSize: '13px',
                       fontFamily: 'var(--font-mono)',
-                      color: '#f8fafc'
+                      color: 'var(--text-main)'
                     }}
                   />
                 </div>
@@ -787,8 +784,8 @@ export default function SettingsView({
                   type="submit"
                   style={{
                     flex: 1.5,
-                    backgroundColor: '#10b981',
-                    color: '#000',
+                    backgroundColor: 'var(--accent-primary)',
+                    color: 'var(--accent-primary-text)',
                     padding: '13px',
                     borderRadius: '10px',
                     fontSize: '13px',
@@ -800,7 +797,7 @@ export default function SettingsView({
                     cursor: 'pointer'
                   }}
                 >
-                  <Save size={16} />
+                  <Edit3 size={16} />
                   <span>Save & Update Existing Record</span>
                 </button>
 
@@ -809,9 +806,9 @@ export default function SettingsView({
                   onClick={handleDeleteExistingVehicle}
                   style={{
                     flex: 1,
-                    backgroundColor: 'rgba(239, 68, 68, 0.15)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.12)',
                     color: '#ef4444',
-                    border: '1px solid rgba(239, 68, 68, 0.4)',
+                    border: '1px solid rgba(239, 68, 68, 0.3)',
                     padding: '13px',
                     borderRadius: '10px',
                     fontSize: '13px',
@@ -835,24 +832,32 @@ export default function SettingsView({
   }
 
   // ============================================================
-  // VIEW 2: THE SETTINGS SPLIT VIEW (QR CODE + QUICK ACTIONS)
+  // VIEW 2: THE SETTINGS QR-ONLY HUB (CLEAN, NO REDUNDANT FORM)
+  // (Both Admin, Guard, and Public users see only the QR Hub here)
   // ============================================================
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+    <div style={{
+      display: 'flex',
+      flexDirection: 'column',
+      gap: '24px',
+      maxWidth: '740px',
+      margin: '0 auto',
+      width: '100%'
+    }}>
       {/* Title */}
-      <div>
-        <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
-          Settings & Vehicle Pass Administration
+      <div style={{ textAlign: 'center' }}>
+        <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
+          Vehicle Pass QR Registration & Access Hub
         </h2>
-        <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
-          Self-service mobile QR registration and direct vehicle database CRUD console
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '6px' }}>
+          Scan the official campus QR code to register a vehicle pass, update ownership, or review automated gate clearance
         </p>
       </div>
 
       {successToast && (
         <div style={{
-          backgroundColor: 'rgba(16, 185, 129, 0.15)',
-          border: '1px solid #10b981',
+          backgroundColor: 'rgba(16, 185, 129, 0.12)',
+          border: '1px solid rgba(16, 185, 129, 0.3)',
           color: '#10b981',
           borderRadius: '10px',
           padding: '12px 18px',
@@ -867,370 +872,215 @@ export default function SettingsView({
         </div>
       )}
 
-      {/* Split View Container */}
+      {/* Main QR Code Center Card (Redundant Form Removed Completely) */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1.25fr',
-        gap: '24px'
+        backgroundColor: 'var(--bg-card)',
+        borderRadius: '20px',
+        padding: '36px 32px',
+        border: '1px solid var(--border-subtle)',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        textAlign: 'center',
+        boxShadow: 'var(--shadow-elevated)'
       }}>
-        {/* LEFT PANEL: Custom QR Code Registration Hub */}
         <div style={{
-          backgroundColor: '#0f172a',
-          borderRadius: '16px',
-          padding: '26px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
-          display: 'flex',
-          flexDirection: 'column',
+          display: 'inline-flex',
           alignItems: 'center',
-          textAlign: 'center'
+          gap: '8px',
+          backgroundColor: 'var(--bg-card-subtle)',
+          border: '1px solid var(--border-subtle)',
+          padding: '4px 12px',
+          borderRadius: '99px',
+          fontSize: '11px',
+          fontWeight: 700,
+          color: 'var(--text-main)',
+          marginBottom: '16px'
         }}>
-          <div style={{
+          <Smartphone size={14} />
+          <span>Mobile Self-Service Pass Hub</span>
+        </div>
+
+        <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', margin: '0 0 8px' }}>
+          Scan to Access Registration & Pass Updates
+        </h3>
+        <p style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '480px', marginBottom: '24px', lineHeight: 1.5 }}>
+          Point any smartphone camera at this official QR code to open the self-service portal for new vehicle pass applications, ownership transfers, and status updates.
+        </p>
+
+        {/* High-Resolution QR Code Container */}
+        <div style={{
+          backgroundColor: '#ffffff',
+          padding: '20px',
+          borderRadius: '20px',
+          boxShadow: '0 12px 35px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.08)',
+          marginBottom: '20px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center'
+        }}>
+          <QRCodeSVG
+            value={portalUrl}
+            size={220}
+            level="H"
+            includeMargin={false}
+          />
+        </div>
+
+        <div style={{
+          backgroundColor: 'var(--bg-card-subtle)',
+          padding: '6px 14px',
+          borderRadius: '8px',
+          fontSize: '11px',
+          color: 'var(--text-main)',
+          fontFamily: 'var(--font-mono)',
+          fontWeight: 700,
+          marginBottom: '24px',
+          border: '1px solid var(--border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px'
+        }}>
+          <Scan size={14} />
+          <span>POINT SMARTPHONE CAMERA TO SCAN</span>
+        </div>
+
+        {/* Direct Action Button to Launch the Mobile Form */}
+        <button
+          onClick={() => setCurrentView('form')}
+          style={{
+            width: '100%',
+            maxWidth: '440px',
+            backgroundColor: 'var(--accent-primary)',
+            color: 'var(--accent-primary-text)',
+            padding: '13px 20px',
+            borderRadius: '12px',
+            fontSize: '13px',
+            fontWeight: 800,
             display: 'flex',
             alignItems: 'center',
+            justifyContent: 'center',
             gap: '8px',
-            marginBottom: '4px'
-          }}>
-            <Smartphone size={20} color="#3b82f6" />
-            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
-              Mobile Self-Service QR Access
-            </h3>
-          </div>
-          <p style={{ fontSize: '12px', color: '#94a3b8', maxWidth: '380px', marginBottom: '20px', lineHeight: 1.5 }}>
-            Scan this QR code with any phone camera to launch the custom registration & update form right in the application.
-          </p>
+            boxShadow: 'var(--shadow-card)',
+            marginBottom: '14px',
+            cursor: 'pointer'
+          }}
+        >
+          <ExternalLink size={16} />
+          <span>Open Application & Update Portal Directly</span>
+        </button>
 
-          {/* QR Code Container */}
-          <div style={{
-            backgroundColor: '#ffffff',
-            padding: '16px',
-            borderRadius: '16px',
-            boxShadow: '0 10px 30px rgba(0, 0, 0, 0.4), 0 0 20px rgba(59, 130, 246, 0.25)',
-            marginBottom: '20px'
-          }}>
-            <QRCodeSVG
-              value={portalUrl}
-              size={180}
-              level="H"
-              includeMargin={false}
-            />
-          </div>
-
-          <div style={{
-            backgroundColor: '#0a0f1d',
-            padding: '4px 10px',
-            borderRadius: '6px',
-            fontSize: '11px',
-            color: '#10b981',
-            fontFamily: 'var(--font-mono)',
-            fontWeight: 600,
-            marginBottom: '16px',
-            border: '1px solid rgba(16, 185, 129, 0.3)'
-          }}>
-            SCAN WITH PHONE CAMERA
-          </div>
-
-          {/* Direct Launch Button into the Application Form */}
-          <button
-            onClick={() => setCurrentView('form')}
+        {/* Shareable Link Input with One-Click Copy */}
+        <div style={{
+          width: '100%',
+          maxWidth: '440px',
+          display: 'flex',
+          alignItems: 'center',
+          backgroundColor: 'var(--bg-surface)',
+          borderRadius: '10px',
+          border: '1px solid var(--border-subtle)',
+          padding: '5px 10px'
+        }}>
+          <input
+            type="text"
+            readOnly
+            value={portalUrl}
             style={{
-              width: '100%',
-              backgroundColor: '#2563eb',
-              color: '#fff',
-              padding: '12px',
-              borderRadius: '10px',
-              fontSize: '13px',
-              fontWeight: 700,
+              flex: 1,
+              background: 'none',
+              border: 'none',
+              fontSize: '11px',
+              color: 'var(--text-secondary)',
+              fontFamily: 'var(--font-mono)',
+              outline: 'none'
+            }}
+          />
+          <button
+            onClick={handleCopyLink}
+            style={{
+              background: 'var(--bg-card-subtle)',
+              border: '1px solid var(--border-subtle)',
+              color: copied ? '#10b981' : 'var(--text-main)',
+              borderRadius: '6px',
+              padding: '5px 10px',
               display: 'flex',
               alignItems: 'center',
-              justifyContent: 'center',
-              gap: '8px',
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)',
-              marginBottom: '12px',
+              gap: '4px',
+              fontSize: '11px',
+              fontWeight: 700,
               cursor: 'pointer'
             }}
           >
-            <ExternalLink size={16} />
-            <span>Open Application Registration Form</span>
+            {copied ? <Check size={13} /> : <Copy size={13} />}
+            <span>{copied ? 'Copied' : 'Copy Link'}</span>
           </button>
+        </div>
+      </div>
 
-          {/* Shareable Link Input with Copy */}
-          <div style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            backgroundColor: '#111827',
-            borderRadius: '8px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
-            padding: '4px 8px'
-          }}>
-            <input
-              type="text"
-              readOnly
-              value={portalUrl}
-              style={{
-                flex: 1,
-                background: 'none',
-                border: 'none',
-                fontSize: '11px',
-                color: '#94a3b8',
-                fontFamily: 'var(--font-mono)'
-              }}
-            />
-            <button
-              onClick={handleCopyLink}
-              style={{
-                background: 'none',
-                color: copied ? '#10b981' : '#38bdf8',
-                padding: '4px 8px',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '4px',
-                fontSize: '11px',
-                fontWeight: 600,
-                cursor: 'pointer'
-              }}
-            >
-              {copied ? <Check size={13} /> : <Copy size={13} />}
-              <span>{copied ? 'Copied' : 'Copy'}</span>
-            </button>
+      {/* 3 Step Workflow Information Cards */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(3, 1fr)',
+        gap: '14px'
+      }}>
+        <div style={{
+          backgroundColor: 'var(--bg-card)',
+          borderRadius: '14px',
+          border: '1px solid var(--border-subtle)',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            Step 1
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
+            Instant Camera Scan
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+            Scan with any native iOS or Android camera app to launch the verified campus portal without installing any app.
           </div>
         </div>
 
-        {/* RIGHT PANEL: Quick CRUD Overview Console */}
         <div style={{
-          backgroundColor: '#0f172a',
-          borderRadius: '16px',
-          padding: '26px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          backgroundColor: 'var(--bg-card)',
+          borderRadius: '14px',
+          border: '1px solid var(--border-subtle)',
+          padding: '16px',
           display: 'flex',
-          flexDirection: 'column'
+          flexDirection: 'column',
+          gap: '6px'
         }}>
-          <div style={{ marginBottom: '16px' }}>
-            <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
-              Quick Vehicle Update & Deletion Console
-            </h3>
-            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-              Lookup existing records to modify authorization or remove vehicle passes
-            </p>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            Step 2
           </div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
+            Register or Update Pass
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+            Submit new vehicle details or lookup existing passes to update driver affiliation and renew validity dates.
+          </div>
+        </div>
 
-          <form onSubmit={handleUpdateExistingVehicle} style={{ display: 'flex', flexDirection: 'column', gap: '14px', flex: 1 }}>
-            <div>
-              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                Select Vehicle Registration Number
-              </label>
-              <select
-                value={selectedPlate}
-                onChange={(e) => handleSelectPlate(e.target.value)}
-                style={{
-                  width: '100%',
-                  height: '40px',
-                  backgroundColor: '#111827',
-                  border: '1px solid rgba(59, 130, 246, 0.4)',
-                  borderRadius: '8px',
-                  padding: '0 12px',
-                  fontSize: '13px',
-                  fontFamily: 'var(--font-mono)',
-                  color: '#f8fafc',
-                  fontWeight: 700
-                }}
-              >
-                {vehicles.map(v => (
-                  <option key={v.plate_number} value={v.plate_number}>
-                    {v.plate_number} — {v.owner_name} ({v.status})
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                  Owner Full Name
-                </label>
-                <input
-                  type="text"
-                  value={editOwner}
-                  onChange={(e) => setEditOwner(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    backgroundColor: '#111827',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0 12px',
-                    fontSize: '13px',
-                    color: '#f8fafc'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                  Associated Roll No / Designation
-                </label>
-                <input
-                  type="text"
-                  value={editRollNo}
-                  onChange={(e) => setEditRollNo(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    backgroundColor: '#111827',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0 12px',
-                    fontSize: '13px',
-                    color: '#f8fafc'
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                  Branch / Department
-                </label>
-                <input
-                  type="text"
-                  value={editDepartment}
-                  onChange={(e) => setEditDepartment(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    backgroundColor: '#111827',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0 12px',
-                    fontSize: '13px',
-                    color: '#f8fafc'
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                  Vehicle Type
-                </label>
-                <select
-                  value={editType}
-                  onChange={(e) => setEditType(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    backgroundColor: '#111827',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0 10px',
-                    fontSize: '13px',
-                    color: '#f8fafc'
-                  }}
-                >
-                  <option value="Car">Car / SUV</option>
-                  <option value="Bike">Bike / Two-Wheeler</option>
-                  <option value="Bus">Campus Bus / Shuttle</option>
-                  <option value="Commercial">Commercial / Delivery</option>
-                </select>
-              </div>
-            </div>
-
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
-              <div>
-                <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                  Pass Authorization Status
-                </label>
-                <select
-                  value={editStatus}
-                  onChange={(e) => setEditStatus(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    backgroundColor: '#111827',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0 10px',
-                    fontSize: '13px',
-                    color: editStatus === 'Active' ? '#10b981' : editStatus === 'Blacklisted' ? '#ef4444' : '#f59e0b',
-                    fontWeight: 600
-                  }}
-                >
-                  <option value="Active">🟢 Active (Gate Access Granted)</option>
-                  <option value="Inactive">🟡 Inactive / Review Needed</option>
-                  <option value="Blacklisted">🔴 Blacklisted (Gate Intercept)</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-                  Pass Expiry Date
-                </label>
-                <input
-                  type="text"
-                  value={editValidTill}
-                  onChange={(e) => setEditValidTill(e.target.value)}
-                  style={{
-                    width: '100%',
-                    height: '38px',
-                    backgroundColor: '#111827',
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    borderRadius: '8px',
-                    padding: '0 12px',
-                    fontSize: '13px',
-                    fontFamily: 'var(--font-mono)',
-                    color: '#f8fafc'
-                  }}
-                />
-              </div>
-            </div>
-
-            {/* Bottom Actions */}
-            <div style={{ marginTop: 'auto', paddingTop: '16px', display: 'flex', gap: '12px' }}>
-              <button
-                type="submit"
-                style={{
-                  flex: 1.5,
-                  backgroundColor: '#10b981',
-                  color: '#000',
-                  padding: '11px',
-                  borderRadius: '10px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                <Save size={16} />
-                <span>Save & Update Database</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleDeleteExistingVehicle}
-                style={{
-                  flex: 1,
-                  backgroundColor: 'rgba(239, 68, 68, 0.15)',
-                  color: '#ef4444',
-                  border: '1px solid rgba(239, 68, 68, 0.35)',
-                  padding: '11px',
-                  borderRadius: '10px',
-                  fontSize: '13px',
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '6px',
-                  cursor: 'pointer'
-                }}
-              >
-                <Trash2 size={16} />
-                <span>Delete Vehicle</span>
-              </button>
-            </div>
-          </form>
+        <div style={{
+          backgroundColor: 'var(--bg-card)',
+          borderRadius: '14px',
+          border: '1px solid var(--border-subtle)',
+          padding: '16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '6px'
+        }}>
+          <div style={{ fontSize: '11px', fontWeight: 800, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+            Step 3
+          </div>
+          <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
+            Instant Gate Clearance
+          </div>
+          <div style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.4 }}>
+            Database synchronization is instant. Registered plates are recognized immediately at Gate 1 and Gate 2 ANPR cameras.
+          </div>
         </div>
       </div>
     </div>

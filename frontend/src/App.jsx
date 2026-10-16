@@ -6,7 +6,6 @@ import LiveMonitoringView from './components/LiveMonitoringView';
 import VehiclesView from './components/VehiclesView';
 import EventsView from './components/EventsView';
 import AnalyticsView from './components/AnalyticsView';
-import UsersView from './components/UsersView';
 import SettingsView from './components/SettingsView';
 import GuardStationView from './components/GuardStationView';
 import PublicHomeView from './components/PublicHomeView';
@@ -35,6 +34,20 @@ export default function App() {
   const [isAddCameraModalOpen, setIsAddCameraModalOpen] = useState(false);
   const [wsStatus, setWsStatus] = useState('DISCONNECTED');
   const [toastMessage, setToastMessage] = useState(null);
+
+  // Theme state (White & Black dual-mode, defaulting to 'light' / clean White)
+  const [theme, setTheme] = useState(() => {
+    return localStorage.getItem('campusgate_theme') || 'light';
+  });
+
+  useEffect(() => {
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('campusgate_theme', theme);
+  }, [theme]);
+
+  const toggleTheme = () => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  };
 
   // Core Datasets
   const [stats, setStats] = useState({
@@ -224,13 +237,14 @@ export default function App() {
   // If user role is 'public', render the Public Portal Views
   if (userRole === 'public') {
     return (
-      <div style={{ minHeight: '100vh', backgroundColor: '#080c14', color: '#f1f5f9' }}>
+      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-base)', color: 'var(--text-main)' }}>
         {publicPage === 'home' && (
           <PublicHomeView
+            theme={theme}
+            toggleTheme={toggleTheme}
             onNavigateToSettings={() => {
-              setUserRole('admin');
-              setActiveTab('settings');
-              setSettingsInitialView('form');
+              setPublicPage('settings');
+              setSettingsInitialView('overview');
             }}
             onNavigateToProfile={() => setPublicPage('profile')}
             onSwitchToAdmin={() => {
@@ -254,7 +268,7 @@ export default function App() {
               onClick={() => setPublicPage('home')}
               style={{
                 backgroundColor: 'transparent',
-                color: '#38bdf8',
+                color: 'var(--accent-primary)',
                 fontSize: '13px',
                 fontWeight: 600,
                 marginBottom: '16px',
@@ -265,9 +279,10 @@ export default function App() {
             </button>
             <SettingsView
               vehicles={registeredVehicles}
+              onAddVehicle={handleAddVehicle}
               onUpdateVehicle={handleUpdateVehicle}
               onDeleteVehicle={handleDeleteVehicle}
-              onOpenPublicForm={() => alert('You are already viewing the self-service settings portal.')}
+              initialView={settingsInitialView}
             />
           </div>
         )}
@@ -277,7 +292,7 @@ export default function App() {
 
   // Admin and Guard Interface
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: '#080c14' }}>
+    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-base)', color: 'var(--text-main)' }}>
       {/* Left Sidebar with role-based navigation */}
       <Sidebar
         activeTab={activeTab}
@@ -287,6 +302,8 @@ export default function App() {
         appMode={appMode}
         setAppMode={setAppMode}
         stats={stats}
+        theme={theme}
+        toggleTheme={toggleTheme}
       />
 
       {/* Main Content Area */}
@@ -298,6 +315,8 @@ export default function App() {
           wsStatus={wsStatus}
           userRole={userRole}
           setUserRole={setUserRole}
+          theme={theme}
+          toggleTheme={toggleTheme}
         />
 
         {/* Dynamic View Router */}
@@ -341,14 +360,16 @@ export default function App() {
               )}
 
 
-              {activeTab === 'vehicles' && (
+              {(activeTab === 'vehicles' || activeTab === 'users') && (
                 <VehiclesView
                   vehicles={registeredVehicles}
                   onAddVehicle={handleAddVehicle}
+                  onUpdateVehicle={handleUpdateVehicle}
+                  onDeleteVehicle={handleDeleteVehicle}
                   onSelectVehicle={(v) => {
                     setSelectedVehicle({
                       ...v,
-                      entry_status: 'AUTHORIZED',
+                      entry_status: v.status === 'Blacklisted' ? 'BLACKLISTED' : (v.status === 'Inactive' ? 'REVIEW_NEEDED' : 'AUTHORIZED'),
                       image_url: '/assets/ChatGPT Image Sep 27, 2026, 11_19_50 AM.png',
                       first_seen_at: new Date().toISOString(),
                       camera_name: 'Gate 1 - Main Entry',
@@ -364,7 +385,62 @@ export default function App() {
               {activeTab === 'events' && (
                 <EventsView
                   events={securityEvents}
+                  vehicles={registeredVehicles}
                   onResolveEvent={handleResolveEvent}
+                  onAddVehicle={handleAddVehicle}
+                  onUpdateVehicle={handleUpdateVehicle}
+                  onTransferOwnership={(plateNumber, transferData) => {
+                    // Update vehicle in registered vehicles list or register if unlisted
+                    const existing = registeredVehicles.find(v => v.plate_number === plateNumber);
+                    if (existing) {
+                      handleUpdateVehicle({
+                        ...existing,
+                        owner_name: transferData.newOwnerName,
+                        associated_person: `${transferData.newOwnerName} (${transferData.role || 'Student'})`,
+                        department: transferData.department,
+                        valid_till: transferData.validTill || '31 Dec 2027',
+                        status: 'Active',
+                        previous_owners: [
+                          ...(existing.previous_owners || []),
+                          {
+                            owner_name: existing.owner_name,
+                            role: existing.associated_person,
+                            transferred_at: new Date().toLocaleDateString()
+                          }
+                        ]
+                      });
+                    } else {
+                      handleAddVehicle({
+                        id: Date.now(),
+                        plate_number: plateNumber,
+                        owner_name: transferData.newOwnerName,
+                        associated_person: `${transferData.newOwnerName} (${transferData.role || 'Student'})`,
+                        department: transferData.department,
+                        vehicle_type: transferData.vehicleType || 'Car',
+                        valid_till: transferData.validTill || '31 Dec 2027',
+                        status: 'Active',
+                        passes_issued: 1
+                      });
+                    }
+                    // Automatically resolve the event
+                    handleResolveEvent(transferData.eventId, 'ALLOW');
+                    showToast(`Vehicle ${plateNumber} transferred to ${transferData.newOwnerName} and authorized!`, 'success');
+                  }}
+                  onIssueVisitorPass={(plateNumber, visitorData) => {
+                    handleAddVehicle({
+                      id: Date.now(),
+                      plate_number: plateNumber,
+                      owner_name: visitorData.driverName,
+                      associated_person: `Visitor (Host: ${visitorData.hostPerson})`,
+                      department: `Visitor Pass - ${visitorData.purpose}`,
+                      vehicle_type: visitorData.vehicleType || 'Car',
+                      valid_till: 'Today (Temporary Clearance)',
+                      status: 'Active',
+                      passes_issued: 1
+                    });
+                    handleResolveEvent(visitorData.eventId, 'ALLOW');
+                    showToast(`1-Day Visitor Pass generated for ${plateNumber} (Host: ${visitorData.hostPerson})!`, 'success');
+                  }}
                 />
               )}
 
@@ -372,9 +448,6 @@ export default function App() {
                 <AnalyticsView />
               )}
 
-              {activeTab === 'users' && userRole === 'admin' && (
-                <UsersView />
-              )}
 
               {activeTab === 'settings' && (
                 <SettingsView

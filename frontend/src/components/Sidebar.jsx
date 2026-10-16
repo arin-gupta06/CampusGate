@@ -21,23 +21,24 @@ export default function Sidebar({
   setUserRole,
   appMode,
   setAppMode,
-  stats
+  stats,
+  theme,
+  toggleTheme
 }) {
   // Define available menu items per role
   // Requirement 7: Guard accesses ONLY Settings, Events & Alerts, Vehicles
   const allAdminItems = [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'live', label: 'Live Monitoring & Topology', icon: Video, badge: 'CCTV' },
-    { id: 'vehicles', label: 'Vehicles', icon: Car, count: stats?.totalRegistered || 256 },
-    { id: 'events', label: 'Events & Alerts', icon: AlertTriangle, alertCount: stats?.activeAlerts || 5 },
+    { id: 'vehicles', label: 'Vehicles & Users Roster', icon: Users, count: stats?.totalRegistered || 256 },
+    { id: 'events', label: 'Relay & Transit Logs', icon: AlertTriangle, alertCount: stats?.activeAlerts || 5 },
     { id: 'analytics', label: 'Data Analytics', icon: BarChart3 },
-    { id: 'users', label: 'Users Roster', icon: Users },
     { id: 'settings', label: 'Settings & QR Code', icon: Settings },
   ];
 
   const guardItems = [
-    { id: 'vehicles', label: 'Vehicles', icon: Car, count: stats?.totalRegistered || 256 },
-    { id: 'events', label: 'Events & Alerts', icon: AlertTriangle, alertCount: stats?.activeAlerts || 5 },
+    { id: 'vehicles', label: 'Vehicles & Users Roster', icon: Users, count: stats?.totalRegistered || 256 },
+    { id: 'events', label: 'Relay & Transit Logs', icon: AlertTriangle, alertCount: stats?.activeAlerts || 5 },
     { id: 'settings', label: 'Settings & QR Code', icon: Settings },
   ];
 
@@ -46,8 +47,8 @@ export default function Sidebar({
   return (
     <aside style={{
       width: '260px',
-      backgroundColor: '#0a0f1d',
-      borderRight: '1px solid rgba(255, 255, 255, 0.08)',
+      backgroundColor: 'var(--bg-surface)',
+      borderRight: '1px solid var(--border-subtle)',
       display: 'flex',
       flexDirection: 'column',
       height: '100vh',
@@ -62,26 +63,26 @@ export default function Sidebar({
         display: 'flex',
         alignItems: 'center',
         gap: '12px',
-        borderBottom: '1px solid rgba(255, 255, 255, 0.06)'
+        borderBottom: '1px solid var(--border-subtle)'
       }}>
         <div style={{
           width: '38px',
           height: '38px',
           borderRadius: '10px',
-          background: 'linear-gradient(135deg, #2563eb, #1d4ed8)',
-          boxShadow: '0 0 16px rgba(37, 99, 235, 0.5)',
+          background: 'var(--accent-primary)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#fff'
+          color: 'var(--accent-primary-text)'
         }}>
           <ShieldCheck size={22} strokeWidth={2.4} />
         </div>
         <div>
           <h1 style={{
             fontSize: '18px',
-            fontWeight: 700,
-            color: '#f8fafc',
+            fontWeight: 800,
+            color: 'var(--text-main)',
             letterSpacing: '0.4px',
             margin: 0
           }}>
@@ -89,7 +90,7 @@ export default function Sidebar({
           </h1>
           <span style={{
             fontSize: '11px',
-            color: '#64748b',
+            color: 'var(--text-muted)',
             letterSpacing: '0.5px',
             textTransform: 'uppercase',
             fontWeight: 600
@@ -102,10 +103,10 @@ export default function Sidebar({
       {/* Role Switcher Pill */}
       <div style={{ padding: '12px 14px 4px' }}>
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card-subtle)',
           padding: '4px',
           borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.06)',
+          border: '1px solid var(--border-subtle)',
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           gap: '4px'
@@ -116,12 +117,12 @@ export default function Sidebar({
               setActiveTab('dashboard');
             }}
             style={{
-              padding: '5px',
+              padding: '6px 4px',
               borderRadius: '6px',
               fontSize: '11px',
-              fontWeight: 600,
-              backgroundColor: userRole === 'admin' ? '#2563eb' : 'transparent',
-              color: userRole === 'admin' ? '#fff' : '#64748b'
+              fontWeight: 700,
+              backgroundColor: userRole === 'admin' ? 'var(--accent-primary)' : 'transparent',
+              color: userRole === 'admin' ? 'var(--accent-primary-text)' : 'var(--text-secondary)'
             }}
           >
             Admin
@@ -133,12 +134,12 @@ export default function Sidebar({
               setActiveTab('vehicles');
             }}
             style={{
-              padding: '5px',
+              padding: '6px 4px',
               borderRadius: '6px',
               fontSize: '11px',
-              fontWeight: 600,
-              backgroundColor: userRole === 'guard' ? '#10b981' : 'transparent',
-              color: userRole === 'guard' ? '#000' : '#64748b'
+              fontWeight: 700,
+              backgroundColor: userRole === 'guard' ? 'var(--accent-primary)' : 'transparent',
+              color: userRole === 'guard' ? 'var(--accent-primary-text)' : 'var(--text-secondary)'
             }}
           >
             Guard
@@ -147,12 +148,12 @@ export default function Sidebar({
           <button
             onClick={() => setUserRole('public')}
             style={{
-              padding: '5px',
+              padding: '6px 4px',
               borderRadius: '6px',
               fontSize: '11px',
-              fontWeight: 600,
-              backgroundColor: userRole === 'public' ? '#38bdf8' : 'transparent',
-              color: userRole === 'public' ? '#000' : '#64748b'
+              fontWeight: 700,
+              backgroundColor: userRole === 'public' ? 'var(--accent-primary)' : 'transparent',
+              color: userRole === 'public' ? 'var(--accent-primary-text)' : 'var(--text-secondary)'
             }}
           >
             Public
@@ -183,17 +184,17 @@ export default function Sidebar({
                 gap: '12px',
                 padding: '10px 14px',
                 borderRadius: '10px',
-                backgroundColor: isActive ? 'rgba(59, 130, 246, 0.15)' : 'transparent',
-                color: isActive ? '#60a5fa' : '#94a3b8',
-                border: isActive ? '1px solid rgba(59, 130, 246, 0.35)' : '1px solid transparent',
-                fontWeight: isActive ? 600 : 500,
+                backgroundColor: isActive ? 'var(--bg-card-hover)' : 'transparent',
+                color: isActive ? 'var(--text-main)' : 'var(--text-secondary)',
+                border: isActive ? '1px solid var(--border-medium)' : '1px solid transparent',
+                fontWeight: isActive ? 700 : 500,
                 fontSize: '13px',
                 textAlign: 'left',
                 transition: 'all 0.15s ease'
               }}
             >
               <Icon size={18} strokeWidth={isActive ? 2.2 : 1.8} style={{
-                color: isActive ? '#3b82f6' : '#64748b'
+                color: isActive ? 'var(--text-main)' : 'var(--text-muted)'
               }} />
               <span style={{ flex: 1 }}>{item.label}</span>
 
@@ -201,11 +202,11 @@ export default function Sidebar({
                 <span style={{
                   padding: '2px 7px',
                   borderRadius: '12px',
-                  backgroundColor: 'rgba(239, 68, 68, 0.2)',
-                  color: '#ef4444',
+                  backgroundColor: 'var(--color-crimson-bg)',
+                  color: 'var(--color-crimson)',
                   fontSize: '11px',
                   fontWeight: 700,
-                  border: '1px solid rgba(239, 68, 68, 0.3)'
+                  border: '1px solid var(--color-crimson-border)'
                 }}>
                   {item.alertCount}
                 </span>
@@ -214,8 +215,9 @@ export default function Sidebar({
               {item.badge ? (
                 <span style={{
                   fontSize: '10px',
-                  color: '#38bdf8',
-                  backgroundColor: 'rgba(56, 189, 248, 0.15)',
+                  color: 'var(--text-main)',
+                  backgroundColor: 'var(--bg-card-subtle)',
+                  border: '1px solid var(--border-subtle)',
                   padding: '1px 6px',
                   borderRadius: '4px',
                   fontWeight: 700
@@ -227,7 +229,7 @@ export default function Sidebar({
               {item.count && !item.alertCount ? (
                 <span style={{
                   fontSize: '11px',
-                  color: '#64748b',
+                  color: 'var(--text-muted)',
                   fontWeight: 600
                 }}>
                   {item.count}
@@ -241,13 +243,13 @@ export default function Sidebar({
       {/* Guard Station Mobile View Quick Toggle */}
       <div style={{
         padding: '16px',
-        borderTop: '1px solid rgba(255, 255, 255, 0.06)',
-        backgroundColor: '#0c1222'
+        borderTop: '1px solid var(--border-subtle)',
+        backgroundColor: 'var(--bg-surface)'
       }}>
         <div style={{
           fontSize: '11px',
-          fontWeight: 600,
-          color: '#64748b',
+          fontWeight: 700,
+          color: 'var(--text-muted)',
           textTransform: 'uppercase',
           letterSpacing: '0.6px',
           marginBottom: '10px'
@@ -259,10 +261,10 @@ export default function Sidebar({
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           gap: '6px',
-          backgroundColor: '#070b14',
+          backgroundColor: 'var(--bg-card-subtle)',
           padding: '4px',
           borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.06)'
+          border: '1px solid var(--border-subtle)'
         }}>
           <button
             onClick={() => setAppMode('desktop')}
@@ -274,9 +276,9 @@ export default function Sidebar({
               padding: '6px 8px',
               borderRadius: '6px',
               fontSize: '12px',
-              fontWeight: 600,
-              backgroundColor: appMode === 'desktop' ? '#1e293b' : 'transparent',
-              color: appMode === 'desktop' ? '#38bdf8' : '#64748b'
+              fontWeight: 700,
+              backgroundColor: appMode === 'desktop' ? 'var(--accent-primary)' : 'transparent',
+              color: appMode === 'desktop' ? 'var(--accent-primary-text)' : 'var(--text-secondary)'
             }}
           >
             <Monitor size={14} />
@@ -292,9 +294,9 @@ export default function Sidebar({
               padding: '6px 8px',
               borderRadius: '6px',
               fontSize: '12px',
-              fontWeight: 600,
-              backgroundColor: appMode === 'guard' ? '#1e293b' : 'transparent',
-              color: appMode === 'guard' ? '#10b981' : '#64748b'
+              fontWeight: 700,
+              backgroundColor: appMode === 'guard' ? 'var(--accent-primary)' : 'transparent',
+              color: appMode === 'guard' ? 'var(--accent-primary-text)' : 'var(--text-secondary)'
             }}
           >
             <Smartphone size={14} />

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   Video,
   Map,
@@ -27,7 +27,59 @@ export default function LiveMonitoringView({
   onSelectVehicle
 }) {
   const [subView, setSubView] = useState('ALL'); // 'ALL', 'CAMERAS', 'TOPOLOGY'
-  const hasCameras = cameras && cameras.length > 0;
+  const [isWebcamActive, setIsWebcamActive] = useState(false);
+  const [webcamError, setWebcamError] = useState(null);
+  const videoRef = useRef(null);
+  const streamRef = useRef(null);
+
+  const startWebcam = async () => {
+    try {
+      setWebcamError(null);
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { width: { ideal: 1280 }, height: { ideal: 720 } }
+      });
+      streamRef.current = stream;
+      setIsWebcamActive(true);
+    } catch (err) {
+      console.error("Camera access error:", err);
+      if (err.name === 'NotReadableError' || err.message?.includes('Device in use')) {
+        setWebcamError("Camera is currently in use by another application (e.g., test_webcam.py running in your terminal). Please stop it by pressing 'q' in that window, then click Test Laptop Cam again.");
+      } else if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setWebcamError("Camera permission was denied in your browser. Please click the camera/lock icon in your browser address bar to allow camera access.");
+      } else {
+        setWebcamError(err.message || "Failed to access laptop webcam. Please ensure camera permission is granted in browser.");
+      }
+    }
+  };
+
+  const stopWebcam = () => {
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current = null;
+    }
+    if (videoRef.current) {
+      videoRef.current.srcObject = null;
+    }
+    setIsWebcamActive(false);
+  };
+
+  // Connect stream to video element whenever active
+  useEffect(() => {
+    if (isWebcamActive && videoRef.current && streamRef.current) {
+      videoRef.current.srcObject = streamRef.current;
+    }
+  }, [isWebcamActive]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, []);
+
+  const hasCameras = (cameras && cameras.length > 0) || isWebcamActive;
 
   const [simulatedHandoff, setSimulatedHandoff] = useState([
     {
@@ -120,6 +172,27 @@ export default function LiveMonitoringView({
           </div>
 
           <button
+            onClick={isWebcamActive ? stopWebcam : startWebcam}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              backgroundColor: isWebcamActive ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+              color: isWebcamActive ? '#f87171' : '#34d399',
+              border: `1px solid ${isWebcamActive ? 'rgba(239, 68, 68, 0.35)' : 'rgba(16, 185, 129, 0.35)'}`,
+              padding: '8px 14px',
+              borderRadius: '8px',
+              fontSize: '12px',
+              fontWeight: 600,
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+          >
+            <Camera size={15} />
+            <span>{isWebcamActive ? 'Stop Laptop Cam' : 'Test Laptop Cam'}</span>
+          </button>
+
+          <button
             onClick={onAddCameraClick}
             style={{
               display: 'flex',
@@ -140,6 +213,32 @@ export default function LiveMonitoringView({
         </div>
       </div>
 
+      {/* Webcam Error Banner if permission denied */}
+      {webcamError && (
+        <div style={{
+          backgroundColor: 'rgba(239, 68, 68, 0.12)',
+          border: '1px solid rgba(239, 68, 68, 0.3)',
+          borderRadius: '10px',
+          padding: '12px 16px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          color: '#fca5a5',
+          fontSize: '13px'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <AlertTriangle size={18} color="#ef4444" />
+            <span><strong>Webcam Error:</strong> {webcamError}</span>
+          </div>
+          <button
+            onClick={() => setWebcamError(null)}
+            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' }}
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
+
       {/* Part 1: Live Camera Streams Matrix or Empty State */}
       {(subView === 'ALL' || subView === 'CAMERAS') && (
         <div style={{
@@ -157,12 +256,12 @@ export default function LiveMonitoringView({
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Video size={18} color="#3b82f6" />
               <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
-                Active RTSP Surveillance Feeds ({cameras.length})
+                Active Surveillance Feeds ({cameras.length + (isWebcamActive ? 1 : 0)})
               </h3>
             </div>
             {hasCameras ? (
               <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
-                ● All Feeds Healthy (Bitrate: 4.2 Mbps Avg)
+                ● {isWebcamActive ? 'Laptop Sensor & Feeds Healthy' : 'All Feeds Healthy (Bitrate: 4.2 Mbps Avg)'}
               </span>
             ) : (
               <span style={{ fontSize: '12px', color: '#f59e0b', fontWeight: 600 }}>
@@ -171,7 +270,7 @@ export default function LiveMonitoringView({
             )}
           </div>
 
-          {/* If NO cameras are configured, display the required clean empty state */}
+          {/* If NO cameras are configured and webcam is not active, display the required clean empty state */}
           {!hasCameras ? (
             <div style={{
               backgroundColor: '#070b14',
@@ -210,10 +309,29 @@ export default function LiveMonitoringView({
                 margin: '0 auto 24px',
                 lineHeight: 1.5
               }}>
-                There are currently no active RTSP surveillance camera feeds or camera nodes configured in the system. Add your campus gate entry, corridor, or parking cameras to start automated plate detection and cross-camera tracking.
+                There are currently no active RTSP surveillance camera feeds configured. You can instantly test ANPR scanning with your <strong>laptop camera</strong> or add campus gate cameras.
               </p>
 
               <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', justifyContent: 'center' }}>
+                <button
+                  onClick={startWebcam}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px',
+                    backgroundColor: '#059669',
+                    color: '#fff',
+                    borderRadius: '10px',
+                    padding: '11px 20px',
+                    fontSize: '13px',
+                    fontWeight: 600,
+                    boxShadow: '0 4px 14px rgba(5, 150, 105, 0.4)'
+                  }}
+                >
+                  <Camera size={16} />
+                  <span>Test With Laptop Webcam</span>
+                </button>
+
                 <button
                   onClick={onAddCameraClick}
                   style={{
@@ -262,6 +380,222 @@ export default function LiveMonitoringView({
               gridTemplateColumns: 'repeat(2, 1fr)',
               gap: '16px'
             }}>
+              {/* Laptop Webcam Card (when active) */}
+              {isWebcamActive && (
+                <div
+                  style={{
+                    backgroundColor: '#070b14',
+                    borderRadius: '12px',
+                    border: '2px solid rgba(16, 185, 129, 0.6)',
+                    overflow: 'hidden',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    boxShadow: '0 0 24px rgba(16, 185, 129, 0.18)'
+                  }}
+                >
+                  {/* Camera Top Info Bar */}
+                  <div style={{
+                    padding: '10px 14px',
+                    backgroundColor: '#0b1120',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between'
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      <span style={{
+                        width: '8px',
+                        height: '8px',
+                        borderRadius: '50%',
+                        backgroundColor: '#ef4444',
+                        boxShadow: '0 0 8px #ef4444'
+                      }} />
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+                        Laptop Built-in Webcam
+                      </span>
+                      <span style={{
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                        color: '#34d399',
+                        fontSize: '10px',
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(16, 185, 129, 0.4)'
+                      }}>
+                        LOCAL SENSOR TEST
+                      </span>
+                    </div>
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                      <span style={{ fontSize: '11px', color: '#10b981', fontFamily: 'monospace', fontWeight: 600 }}>
+                        30 FPS • 720p HD
+                      </span>
+                      <button
+                        onClick={stopWebcam}
+                        style={{
+                          backgroundColor: 'rgba(239, 68, 68, 0.2)',
+                          color: '#ef4444',
+                          border: 'none',
+                          borderRadius: '4px',
+                          padding: '3px 8px',
+                          fontSize: '11px',
+                          cursor: 'pointer',
+                          fontWeight: 600
+                        }}
+                        title="Disconnect Laptop Cam"
+                      >
+                        Stop
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* CCTV Viewport for Laptop Webcam */}
+                  <div style={{
+                    position: 'relative',
+                    width: '100%',
+                    aspectRatio: '16/9',
+                    backgroundColor: '#050811',
+                    overflow: 'hidden'
+                  }}>
+                    <video
+                      ref={videoRef}
+                      autoPlay
+                      playsInline
+                      muted
+                      style={{
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        transform: 'scaleX(-1)'
+                      }}
+                    />
+
+                    {/* LIVE BADGE */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '10px',
+                      right: '10px',
+                      backgroundColor: 'rgba(239, 68, 68, 0.9)',
+                      padding: '3px 8px',
+                      borderRadius: '4px',
+                      color: '#fff',
+                      fontSize: '9px',
+                      fontWeight: 800,
+                      letterSpacing: '0.4px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '5px',
+                      zIndex: 3
+                    }}>
+                      <span style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: '#fff' }} />
+                      LIVE WEBCAM
+                    </div>
+
+                    {/* ANPR Scan Target Box */}
+                    <div style={{
+                      position: 'absolute',
+                      top: '18%',
+                      left: '20%',
+                      right: '20%',
+                      bottom: '26%',
+                      border: '2px dashed rgba(56, 189, 248, 0.7)',
+                      borderRadius: '8px',
+                      pointerEvents: 'none',
+                      display: 'flex',
+                      alignItems: 'flex-start',
+                      justifyContent: 'space-between',
+                      padding: '6px',
+                      zIndex: 2
+                    }}>
+                      <span style={{
+                        backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                        color: '#38bdf8',
+                        fontSize: '9px',
+                        fontFamily: 'monospace',
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        border: '1px solid rgba(56, 189, 248, 0.3)'
+                      }}>
+                        ANPR SCAN TARGET
+                      </span>
+                      <span style={{
+                        backgroundColor: 'rgba(15, 23, 42, 0.85)',
+                        color: '#10b981',
+                        fontSize: '9px',
+                        fontFamily: 'monospace',
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: '4px'
+                      }}>
+                        HOLD NUMBER PLATE HERE
+                      </span>
+                    </div>
+
+                    {/* Virtual Entry Tripwire Line */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '16%',
+                      left: '5%',
+                      right: '5%',
+                      height: '2px',
+                      backgroundColor: '#10b981',
+                      boxShadow: '0 0 10px #10b981',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      pointerEvents: 'none',
+                      zIndex: 3
+                    }}>
+                      <span style={{
+                        backgroundColor: '#064e3b',
+                        color: '#6ee7b7',
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: '3px'
+                      }}>
+                        VIRTUAL GATE SENSOR
+                      </span>
+                      <span style={{
+                        backgroundColor: '#064e3b',
+                        color: '#6ee7b7',
+                        fontSize: '9px',
+                        fontWeight: 700,
+                        padding: '2px 6px',
+                        borderRadius: '3px'
+                      }}>
+                        CROSSING ARMED
+                      </span>
+                    </div>
+
+                    {/* Camera Footer Tag */}
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '6px',
+                      left: '10px',
+                      right: '10px',
+                      display: 'flex',
+                      justifyContent: 'space-between',
+                      alignItems: 'center',
+                      pointerEvents: 'none',
+                      zIndex: 3
+                    }}>
+                      <span style={{
+                        backgroundColor: 'rgba(0,0,0,0.7)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '10px',
+                        color: '#94a3b8',
+                        fontFamily: 'monospace'
+                      }}>
+                        STREAM: LOCAL_MEDIA_TRACK_0
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {cameras.map((cam, idx) => (
                 <div
                   key={cam.id || idx}

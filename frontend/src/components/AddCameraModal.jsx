@@ -51,11 +51,11 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
       <div style={{
         width: '520px',
         maxWidth: '95vw',
-        backgroundColor: '#0f172a',
+        backgroundColor: 'var(--bg-card)',
         borderRadius: '16px',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
+        border: '1px solid var(--border-subtle)',
         padding: '24px',
-        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.8)',
+        boxShadow: 'var(--shadow-elevated)',
         display: 'flex',
         flexDirection: 'column',
         gap: '16px'
@@ -271,8 +271,9 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
               onClick={onClose}
               style={{
                 flex: 1,
-                backgroundColor: '#1e293b',
-                color: '#94a3b8',
+                backgroundColor: 'var(--bg-card-subtle)',
+                color: 'var(--text-secondary)',
+                border: '1px solid var(--border-subtle)',
                 padding: '10px',
                 borderRadius: '8px',
                 fontSize: '13px',
@@ -285,12 +286,12 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
               type="submit"
               style={{
                 flex: 1,
-                backgroundColor: '#2563eb',
-                color: '#fff',
+                backgroundColor: 'var(--accent-primary)',
+                color: 'var(--accent-primary-text)',
                 padding: '10px',
                 borderRadius: '8px',
                 fontSize: '13px',
-                fontWeight: 600
+                fontWeight: 700
               }}
             >
               Save Camera Node

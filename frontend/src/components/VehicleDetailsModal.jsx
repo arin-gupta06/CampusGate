@@ -47,10 +47,10 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
         width: '1080px',
         maxWidth: '96vw',
         maxHeight: '92vh',
-        backgroundColor: '#0a0f1d',
+        backgroundColor: 'var(--bg-card)',
         borderRadius: '18px',
-        border: '1px solid rgba(255, 255, 255, 0.12)',
-        boxShadow: '0 25px 60px rgba(0, 0, 0, 0.7)',
+        border: '1px solid var(--border-subtle)',
+        boxShadow: 'var(--shadow-elevated)',
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden'
@@ -58,11 +58,11 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
         {/* Top Header */}
         <div style={{
           padding: '16px 24px',
-          borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+          borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          backgroundColor: '#0c1324'
+          backgroundColor: 'var(--bg-surface)'
         }}>
           <button
             onClick={onClose}
@@ -206,10 +206,10 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
           {/* Right: Vehicle Details & Specification Card */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             <div style={{
-              backgroundColor: '#0f172a',
+              backgroundColor: 'var(--bg-card-subtle)',
               borderRadius: '14px',
               padding: '20px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid var(--border-subtle)'
             }}>
               {/* Status Header */}
               <div style={{
@@ -324,12 +324,12 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
                   }}
                   style={{
                     flex: 1,
-                    backgroundColor: '#2563eb',
-                    color: '#fff',
+                    backgroundColor: 'var(--accent-primary)',
+                    color: 'var(--accent-primary-text)',
                     borderRadius: '8px',
                     padding: '10px 14px',
                     fontSize: '13px',
-                    fontWeight: 600,
+                    fontWeight: 700,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -344,10 +344,10 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
 
             {/* Movement Timeline Card */}
             <div style={{
-              backgroundColor: '#0f172a',
+              backgroundColor: 'var(--bg-card-subtle)',
               borderRadius: '14px',
               padding: '18px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid var(--border-subtle)'
             }}>
               <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc', marginBottom: '14px' }}>
                 Reconciled Movement History

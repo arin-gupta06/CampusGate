@@ -491,7 +491,7 @@ export async function getEntries(limit = 20) {
           associated_person: 'Campus Member',
           image_url: idx % 2 === 0 ? '/assets/ChatGPT Image Sep 27, 2026, 11_19_50 AM.png' : '/assets/ChatGPT Image Sep 27, 2026, 11_17_25 AM.png',
           timeline: [
-            { time: new Date(e.first_seen_at).toLocaleTimeString(), location: 'Entry Gate', action: e.entry_status, status: e.entry_status.toLowerCase() }
+            { time: new Date(e.first_seen_at).toLocaleTimeString(), location: 'Entry Gate', action: e.entry_status || 'AUTHORIZED', status: (e.entry_status || 'authorized').toLowerCase() }
           ]
         }));
       }
@@ -510,12 +510,12 @@ export async function getAuthorizedVehicles() {
       if (Array.isArray(data) && data.length > 0) {
         return data.map(v => ({
           id: v.id,
-          plate_number: v.plate_number,
-          owner_name: v.owner_name,
-          associated_person: `${v.owner_name} (${v.role})`,
+          plate_number: v.registration_number || v.plate_number || 'UNKNOWN',
+          owner_name: v.owner_name || 'Campus Member',
+          associated_person: `${v.owner_name || 'Member'} (${v.owner_role || v.role || 'Member'})`,
           vehicle_type: v.vehicle_type || 'Car',
           status: v.is_active ? 'Active' : 'Inactive',
-          valid_till: '31 Dec 2026',
+          valid_till: v.valid_until ? new Date(v.valid_until).toLocaleDateString() : '31 Dec 2026',
           department: v.department || 'Campus',
           passes_issued: 1
         }));
