@@ -44,5 +44,6 @@ runs/
 ml_training/yolo11n.pt
 ml_training/weights/yolo26n.pt
 yolo*.pt
+backend/vision/weights/char_detector.pt
 !backend/vision/weights/best.pt
 !ml_training/weights/best.pt
