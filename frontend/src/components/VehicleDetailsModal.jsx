@@ -71,7 +71,7 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
               alignItems: 'center',
               gap: '8px',
               backgroundColor: 'transparent',
-              color: '#94a3b8',
+              color: 'var(--text-secondary)',
               fontSize: '13px',
               fontWeight: 600
             }}
@@ -81,15 +81,15 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
           </button>
 
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', color: '#64748b' }}>Vehicle ID:</span>
-            <span style={{ fontSize: '13px', color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>{vehicle.id}</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-muted)' }}>Vehicle ID:</span>
+            <span style={{ fontSize: '13px', color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>{vehicle.id}</span>
           </div>
 
           <button
             onClick={onClose}
             style={{
               background: 'none',
-              color: '#94a3b8',
+              color: 'var(--text-secondary)',
               padding: '6px',
               borderRadius: '6px',
               display: 'flex',
@@ -117,7 +117,7 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
               borderRadius: '14px',
               overflow: 'hidden',
               backgroundColor: '#000',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              border: '1px solid var(--border-subtle)',
               aspectRatio: '4/3'
             }}>
               <img
@@ -169,7 +169,7 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
                 borderRadius: '6px',
                 fontSize: '11px',
                 fontFamily: 'var(--font-mono)',
-                color: '#fff'
+                color: 'var(--accent-primary-text)'
               }}>
                 Captured: {new Date(vehicle.first_seen_at).toLocaleTimeString()}
               </div>
@@ -177,23 +177,23 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
 
             {/* Captured Multi-Camera Snapshots Row */}
             <div>
-              <div style={{ fontSize: '13px', fontWeight: 600, color: '#94a3b8', marginBottom: '10px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-secondary)', marginBottom: '10px' }}>
                 Captured CCTV Snapshots
               </div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px' }}>
                 {snapshots.map((snap, i) => (
                   <div key={i} style={{
-                    backgroundColor: '#111827',
+                    backgroundColor: 'var(--bg-input)',
                     borderRadius: '8px',
                     overflow: 'hidden',
-                    border: '1px solid rgba(255, 255, 255, 0.08)'
+                    border: '1px solid var(--border-subtle)'
                   }}>
                     <img src={snap.image} alt={snap.camera} style={{ width: '100%', height: '70px', objectFit: 'cover' }} />
                     <div style={{ padding: '6px 8px', fontSize: '11px' }}>
-                      <div style={{ color: '#f1f5f9', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                      <div style={{ color: 'var(--text-main)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {snap.camera}
                       </div>
-                      <div style={{ color: '#64748b', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>
+                      <div style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)', fontSize: '10px' }}>
                         {snap.time}
                       </div>
                     </div>
@@ -254,7 +254,7 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
 
                 <span style={{
                   fontSize: '12px',
-                  color: '#94a3b8',
+                  color: 'var(--text-secondary)',
                   display: 'flex',
                   alignItems: 'center',
                   gap: '6px'
@@ -269,7 +269,7 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
                 fontSize: '28px',
                 fontFamily: 'var(--font-mono)',
                 fontWeight: 800,
-                color: '#f8fafc',
+                color: 'var(--text-main)',
                 letterSpacing: '2px',
                 marginBottom: '18px'
               }}>
@@ -284,31 +284,31 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
                 fontSize: '13px'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span style={{ color: '#64748b' }}>Owner Name</span>
-                  <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{vehicle.owner_name}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Owner Name</span>
+                  <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{vehicle.owner_name}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span style={{ color: '#64748b' }}>Associated With</span>
-                  <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{vehicle.associated_person}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Associated With</span>
+                  <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{vehicle.associated_person}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span style={{ color: '#64748b' }}>Make / Model</span>
-                  <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{vehicle.make_model}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Make / Model</span>
+                  <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{vehicle.make_model}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span style={{ color: '#64748b' }}>Color</span>
-                  <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{vehicle.color}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Color</span>
+                  <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{vehicle.color}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span style={{ color: '#64748b' }}>Entry Time</span>
-                  <span style={{ color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>10:42:15 AM</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Entry Time</span>
+                  <span style={{ color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>10:42:15 AM</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.05)', paddingBottom: '8px' }}>
-                  <span style={{ color: '#64748b' }}>Gate</span>
-                  <span style={{ color: '#e2e8f0' }}>{vehicle.camera_name || 'Gate 1 - Main Entry'}</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Gate</span>
+                  <span style={{ color: 'var(--text-main)' }}>{vehicle.camera_name || 'Gate 1 - Main Entry'}</span>
                 </div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', paddingTop: '4px' }}>
-                  <span style={{ color: '#64748b' }}>Status</span>
+                  <span style={{ color: 'var(--text-muted)' }}>Status</span>
                   <span style={{ color: isVerified ? '#10b981' : '#ef4444', fontWeight: 700 }}>
                     {isVerified ? 'Authorized' : 'Review Needed'}
                   </span>
@@ -349,7 +349,7 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
               padding: '18px',
               border: '1px solid var(--border-subtle)'
             }}>
-              <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc', marginBottom: '14px' }}>
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '14px' }}>
                 Reconciled Movement History
               </div>
 
@@ -366,10 +366,10 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
                     }} />
                     <div style={{ flex: 1 }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px' }}>
-                        <span style={{ color: '#f8fafc', fontWeight: 600 }}>{step.location}</span>
-                        <span style={{ color: '#64748b', fontFamily: 'var(--font-mono)' }}>{step.time}</span>
+                        <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{step.location}</span>
+                        <span style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>{step.time}</span>
                       </div>
-                      <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                         {step.action}
                       </div>
                     </div>

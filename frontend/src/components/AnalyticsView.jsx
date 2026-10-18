@@ -36,14 +36,14 @@ export default function AnalyticsView() {
     if (active && payload && payload.length) {
       return (
         <div style={{
-          backgroundColor: '#0f172a',
-          border: '1px solid rgba(255, 255, 255, 0.12)',
+          backgroundColor: 'var(--bg-card)',
+          border: '1px solid var(--border-subtle)',
           borderRadius: '8px',
           padding: '10px 14px',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.6)',
+          boxShadow: 'var(--shadow-elevated)',
           fontSize: '12px'
         }}>
-          <p style={{ color: '#f8fafc', fontWeight: 700, marginBottom: '6px' }}>{label}</p>
+          <p style={{ color: 'var(--text-main)', fontWeight: 700, marginBottom: '6px' }}>{label}</p>
           {payload.map((entry, index) => (
             <p key={index} style={{ color: entry.color, margin: '2px 0', display: 'flex', justifyContent: 'space-between', gap: '14px' }}>
               <span>{entry.name}:</span>
@@ -65,10 +65,10 @@ export default function AnalyticsView() {
         justifyContent: 'space-between'
       }}>
         <div>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             Data Analytics & Traffic Insights
           </h2>
-          <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
             Quantitative vehicle flow telemetry, peak hour metrics, and cross-camera corridor audit
           </p>
         </div>
@@ -76,10 +76,10 @@ export default function AnalyticsView() {
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
           <div style={{
             display: 'flex',
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             padding: '3px',
             borderRadius: '8px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid var(--border-subtle)'
           }}>
             {['TODAY', 'LAST 7 DAYS', 'MONTHLY'].map(range => (
               <button
@@ -90,8 +90,8 @@ export default function AnalyticsView() {
                   borderRadius: '6px',
                   fontSize: '11px',
                   fontWeight: 600,
-                  backgroundColor: timeRange === range ? '#1e293b' : 'transparent',
-                  color: timeRange === range ? '#38bdf8' : '#94a3b8'
+                  backgroundColor: timeRange === range ? 'var(--bg-card-subtle)' : 'transparent',
+                  color: timeRange === range ? 'var(--accent-primary)' : 'var(--text-muted)'
                 }}
               >
                 {range}
@@ -105,8 +105,8 @@ export default function AnalyticsView() {
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              backgroundColor: '#2563eb',
-              color: '#fff',
+              backgroundColor: 'var(--accent-primary)',
+              color: 'var(--accent-primary-text)',
               padding: '8px 14px',
               borderRadius: '8px',
               fontSize: '12px',
@@ -126,34 +126,36 @@ export default function AnalyticsView() {
         gap: '16px'
       }}>
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>Peak Ingress Hour</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Peak Ingress Hour</span>
             <Activity size={18} color="#3b82f6" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
             09:00 AM
           </div>
-          <div style={{ fontSize: '11px', color: '#38bdf8', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--accent-primary)', marginTop: '4px' }}>
             142 vehicles/hour (Morning rush)
           </div>
         </div>
 
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>Total Flow Movements</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Total Flow Movements</span>
             <TrendingUp size={18} color="#10b981" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
             1,284
           </div>
           <div style={{ fontSize: '11px', color: '#10b981', marginTop: '4px' }}>
@@ -162,34 +164,36 @@ export default function AnalyticsView() {
         </div>
 
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>Authorization Pass Rate</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Authorization Pass Rate</span>
             <ShieldCheck size={18} color="#10b981" />
           </div>
           <div style={{ fontSize: '24px', fontWeight: 800, color: '#10b981', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
             94.6%
           </div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '4px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '4px' }}>
             5.4% flagged for manual check
           </div>
         </div>
 
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600 }}>Avg Corridor Transit</span>
+            <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>Avg Corridor Transit</span>
             <Clock size={18} color="#f59e0b" />
           </div>
-          <div style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', marginTop: '8px', fontFamily: 'var(--font-mono)' }}>
             48.2s
           </div>
           <div style={{ fontSize: '11px', color: '#f59e0b', marginTop: '4px' }}>
@@ -206,17 +210,18 @@ export default function AnalyticsView() {
       }}>
         {/* Hourly Volume Area Chart */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '16px',
           padding: '22px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
             <div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                 Hourly Vehicle Ingress & Egress Dynamics
               </h3>
-              <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                 Vehicle volume crossing gate detection boundaries
               </p>
             </div>
@@ -235,9 +240,9 @@ export default function AnalyticsView() {
                     <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="hour" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                <XAxis dataKey="hour" stroke="var(--text-muted)" fontSize={11} />
+                <YAxis stroke="var(--text-muted)" fontSize={11} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend iconType="circle" wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                 <Area type="monotone" dataKey="ingress" name="Ingress (Entering)" stroke="#3b82f6" strokeWidth={2.5} fillOpacity={1} fill="url(#colorIngress)" />
@@ -249,17 +254,18 @@ export default function AnalyticsView() {
 
         {/* Vehicle Category Distribution Donut */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '16px',
           padding: '22px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
           flexDirection: 'column'
         }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             Vehicle Categories
           </h3>
-          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', marginBottom: '10px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', marginBottom: '10px' }}>
             Fleet composition breakdown
           </p>
 
@@ -289,9 +295,9 @@ export default function AnalyticsView() {
               <div key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '12px' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: cat.color }} />
-                  <span style={{ color: '#cbd5e1' }}>{cat.name}</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{cat.name}</span>
                 </div>
-                <span style={{ color: '#f8fafc', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{cat.value}</span>
+                <span style={{ color: 'var(--text-main)', fontWeight: 700, fontFamily: 'var(--font-mono)' }}>{cat.value}</span>
               </div>
             ))}
           </div>
@@ -305,24 +311,25 @@ export default function AnalyticsView() {
         gap: '20px'
       }}>
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '16px',
           padding: '22px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)'
         }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             Corridor Travel-Time Benchmark (Audit Engine)
           </h3>
-          <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', marginBottom: '16px' }}>
+          <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', marginBottom: '16px' }}>
             Expected travel duration vs actual detected handoff latency (flagging loitering or speeding)
           </p>
 
           <div style={{ width: '100%', height: 260 }}>
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={MOCK_TRANSIT_DURATION} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.05)" />
-                <XAxis dataKey="corridor" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} label={{ value: 'Seconds', angle: -90, position: 'insideLeft', fill: '#64748b', fontSize: 10 }} />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border-subtle)" />
+                <XAxis dataKey="corridor" stroke="var(--text-muted)" fontSize={11} />
+                <YAxis stroke="var(--text-muted)" fontSize={11} label={{ value: 'Seconds', angle: -90, position: 'insideLeft', fill: 'var(--text-muted)', fontSize: 10 }} />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend wrapperStyle={{ fontSize: '12px', paddingTop: '10px' }} />
                 <Bar dataKey="expectedSec" name="Expected Travel (sec)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
@@ -334,39 +341,40 @@ export default function AnalyticsView() {
 
         {/* Gate Traffic Split */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '16px',
           padding: '22px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border-subtle)',
+          boxShadow: 'var(--shadow-card)',
           display: 'flex',
           flexDirection: 'column',
           justifyContent: 'space-between'
         }}>
           <div>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
               Gate Utilization Comparison
             </h3>
-            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', marginBottom: '18px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', marginBottom: '18px' }}>
               Load balance between ingress gates
             </p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                  <span style={{ color: '#f8fafc', fontWeight: 600 }}>Gate 1 - Main Entry</span>
-                  <span style={{ color: '#38bdf8', fontWeight: 700 }}>68% (873 vehicles)</span>
+                  <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>Gate 1 - Main Entry</span>
+                  <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>68% (873 vehicles)</span>
                 </div>
-                <div style={{ width: '100%', height: '8px', backgroundColor: '#1e293b', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-card-subtle)', borderRadius: '4px', overflow: 'hidden' }}>
                   <div style={{ width: '68%', height: '100%', backgroundColor: '#3b82f6', borderRadius: '4px' }} />
                 </div>
               </div>
 
               <div>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', marginBottom: '6px' }}>
-                  <span style={{ color: '#f8fafc', fontWeight: 600 }}>Gate 2 - Side Entry</span>
+                  <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>Gate 2 - Side Entry</span>
                   <span style={{ color: '#10b981', fontWeight: 700 }}>32% (411 vehicles)</span>
                 </div>
-                <div style={{ width: '100%', height: '8px', backgroundColor: '#1e293b', borderRadius: '4px', overflow: 'hidden' }}>
+                <div style={{ width: '100%', height: '8px', backgroundColor: 'var(--bg-card-subtle)', borderRadius: '4px', overflow: 'hidden' }}>
                   <div style={{ width: '32%', height: '100%', backgroundColor: '#10b981', borderRadius: '4px' }} />
                 </div>
               </div>
@@ -374,12 +382,12 @@ export default function AnalyticsView() {
           </div>
 
           <div style={{
-            backgroundColor: '#131d33',
+            backgroundColor: 'var(--bg-card-subtle)',
             borderRadius: '10px',
             padding: '12px',
-            border: '1px solid rgba(255,255,255,0.06)',
+            border: '1px solid var(--border-subtle)',
             fontSize: '11px',
-            color: '#94a3b8'
+            color: 'var(--text-secondary)'
           }}>
             💡 <strong>AI Recommendation:</strong> Peak load at Gate 1 between 08:30–09:30 AM. Recommend diverting 20% of two-wheeler staff ingress to Gate 2.
           </div>

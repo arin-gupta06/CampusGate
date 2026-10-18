@@ -205,7 +205,7 @@ export default function DashboardView({
             marginBottom: '18px'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                 Live Camera Feeds
               </h3>
               {hasCameras && (
@@ -228,7 +228,7 @@ export default function DashboardView({
                   onClick={() => onNavigateTab('live')}
                   style={{
                     background: 'none',
-                    color: '#38bdf8',
+                    color: 'var(--accent-primary)',
                     fontSize: '13px',
                     fontWeight: 600,
                     display: 'flex',
@@ -247,9 +247,9 @@ export default function DashboardView({
           {/* Conditional Rendering: Empty State vs Video Matrix */}
           {!hasCameras ? (
             <div style={{
-              backgroundColor: '#070b14',
+              backgroundColor: 'var(--bg-card-subtle)',
               borderRadius: '14px',
-              border: '2px dashed rgba(255, 255, 255, 0.1)',
+              border: '2px dashed var(--border-medium)',
               padding: '48px 24px',
               textAlign: 'center',
               display: 'flex',
@@ -262,23 +262,23 @@ export default function DashboardView({
                 width: '56px',
                 height: '56px',
                 borderRadius: '50%',
-                backgroundColor: 'rgba(59, 130, 246, 0.12)',
-                border: '1px solid rgba(59, 130, 246, 0.25)',
+                backgroundColor: 'var(--bg-card-subtle)',
+                border: '1px solid var(--border-medium)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#3b82f6',
+                color: 'var(--text-main)',
                 marginBottom: '16px'
               }}>
                 <Camera size={26} />
               </div>
 
-              <h4 style={{ fontSize: '17px', fontWeight: 700, color: '#f8fafc', margin: '0 0 6px' }}>
+              <h4 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 6px' }}>
                 No camera feed configured
               </h4>
               <p style={{
                 fontSize: '13px',
-                color: '#94a3b8',
+                color: 'var(--text-secondary)',
                 maxWidth: '400px',
                 margin: '0 auto 22px',
                 lineHeight: 1.5
@@ -293,13 +293,13 @@ export default function DashboardView({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    backgroundColor: '#2563eb',
-                    color: '#fff',
+                    backgroundColor: 'var(--accent-primary)',
+                    color: 'var(--accent-primary-text)',
                     borderRadius: '10px',
                     padding: '10px 20px',
                     fontSize: '13px',
                     fontWeight: 600,
-                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+                    boxShadow: 'var(--shadow-elevated)'
                   }}
                 >
                   <Plus size={16} />
@@ -313,9 +313,9 @@ export default function DashboardView({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '6px',
-                      backgroundColor: '#1e293b',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      backgroundColor: 'var(--bg-card-subtle)',
+                      color: 'var(--accent-primary)',
+                      border: '1px solid var(--border-medium)',
                       borderRadius: '10px',
                       padding: '10px 16px',
                       fontSize: '12px',
@@ -339,10 +339,10 @@ export default function DashboardView({
                 <div
                   key={cam.id || idx}
                   style={{
-                    backgroundColor: '#070b14',
+                    backgroundColor: 'var(--bg-card-subtle)',
                     borderRadius: '12px',
                     overflow: 'hidden',
-                    border: '1px solid rgba(255, 255, 255, 0.07)',
+                    border: '1px solid var(--border-subtle)',
                     position: 'relative',
                     aspectRatio: '16/10',
                     display: 'flex',
@@ -367,8 +367,8 @@ export default function DashboardView({
                       borderRadius: '6px',
                       fontSize: '11px',
                       fontWeight: 600,
-                      color: '#f8fafc',
-                      border: '1px solid rgba(255, 255, 255, 0.1)'
+                      color: 'var(--text-main)',
+                      border: '1px solid var(--border-subtle)'
                     }}>
                       {cam.name}
                     </div>
@@ -400,7 +400,7 @@ export default function DashboardView({
                     position: 'relative',
                     width: '100%',
                     height: '100%',
-                    backgroundColor: '#050811',
+                    backgroundColor: 'var(--bg-base)',
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
@@ -438,7 +438,7 @@ export default function DashboardView({
                       }}>
                         <div style={{ width: '4px', height: '4px', backgroundColor: '#38bdf8', borderRadius: '50%' }} />
                       </div>
-                      <span style={{ fontSize: '10px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                         AI VISION READY
                       </span>
                     </div>
@@ -583,8 +583,8 @@ export default function DashboardView({
                     borderRadius: '6px',
                     overflow: 'hidden',
                     flexShrink: 0,
-                    border: '1px solid rgba(255, 255, 255, 0.1)',
-                    backgroundColor: '#0a0f1d'
+                    border: '1px solid var(--border-subtle)',
+                    backgroundColor: 'var(--bg-card-subtle)'
                   }}>
                     <img
                       src={entry.image_url}
@@ -602,7 +602,7 @@ export default function DashboardView({
                     }}>
                       <span className="plate-number" style={{
                         fontSize: '13px',
-                        color: '#f8fafc',
+                        color: 'var(--text-main)',
                         letterSpacing: '1px'
                       }}>
                         {entry.plate_number}
@@ -652,7 +652,7 @@ export default function DashboardView({
                       alignItems: 'center',
                       justifyContent: 'space-between',
                       fontSize: '11px',
-                      color: '#94a3b8'
+                      color: 'var(--text-secondary)'
                     }}>
                       <span>{entry.camera_name || 'Gate 1'}</span>
                       <span style={{ fontFamily: 'var(--font-mono)' }}>

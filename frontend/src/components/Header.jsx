@@ -46,8 +46,8 @@ export default function Header({
   return (
     <header style={{
       height: '74px',
-      backgroundColor: '#0a0f1d',
-      borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+      backgroundColor: 'var(--bg-surface)',
+      borderBottom: '1px solid var(--border-subtle)',
       padding: '0 28px',
       display: 'flex',
       alignItems: 'center',
@@ -61,7 +61,7 @@ export default function Header({
         <h2 style={{
           fontSize: '18px',
           fontWeight: 700,
-          color: '#f8fafc',
+          color: 'var(--text-main)',
           letterSpacing: '-0.2px',
           margin: 0
         }}>
@@ -69,7 +69,7 @@ export default function Header({
         </h2>
         <p style={{
           fontSize: '12px',
-          color: '#64748b',
+          color: 'var(--text-muted)',
           marginTop: '2px',
           fontWeight: 500
         }}>
@@ -87,7 +87,7 @@ export default function Header({
           left: '14px',
           top: '50%',
           transform: 'translateY(-50%)',
-          color: '#64748b'
+          color: 'var(--text-muted)'
         }} />
         <input
           type="text"
@@ -100,16 +100,16 @@ export default function Header({
           style={{
             width: '100%',
             height: '40px',
-            backgroundColor: '#111827',
-            border: '1px solid rgba(255, 255, 255, 0.09)',
+            backgroundColor: 'var(--bg-input)',
+            border: '1px solid var(--border-subtle)',
             borderRadius: '10px',
             padding: '0 16px 0 40px',
             fontSize: '13px',
-            color: '#f1f5f9',
+            color: 'var(--text-main)',
             transition: 'border-color 0.2s',
           }}
-          onFocus={(e) => e.target.style.borderColor = '#3b82f6'}
-          onBlur={(e) => e.target.style.borderColor = 'rgba(255, 255, 255, 0.09)'}
+          onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
+          onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
         />
       </form>
 
@@ -169,10 +169,10 @@ export default function Header({
           display: 'flex',
           alignItems: 'center',
           gap: '10px',
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           padding: '6px 14px',
           borderRadius: '8px',
-          border: '1px solid rgba(255, 255, 255, 0.06)'
+          border: '1px solid var(--border-subtle)'
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <span style={{
@@ -193,14 +193,14 @@ export default function Header({
           </div>
 
           <span style={{
-            color: 'rgba(255, 255, 255, 0.2)',
+            color: 'var(--border-medium)',
             fontSize: '12px'
           }}>|</span>
 
           <span style={{
             fontSize: '12px',
             fontFamily: 'var(--font-mono)',
-            color: '#94a3b8',
+            color: 'var(--text-secondary)',
             fontWeight: 500
           }}>
             {currentTime}
@@ -233,22 +233,22 @@ export default function Header({
               width: '36px',
               height: '36px',
               borderRadius: '50%',
-              backgroundColor: '#1e293b',
-              border: `2px solid ${userRole === 'admin' ? '#3b82f6' : userRole === 'guard' ? '#10b981' : '#38bdf8'}`,
+              backgroundColor: 'var(--bg-card-subtle)',
+              border: `2px solid ${userRole === 'admin' ? '#3b82f6' : userRole === 'guard' ? '#10b981' : 'var(--accent-primary)'}`,
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontSize: '12px',
               fontWeight: 700,
-              color: '#f8fafc'
+              color: 'var(--text-main)'
             }}>
               {userRole === 'guard' ? 'GD' : 'AG'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: '#e2e8f0', textTransform: 'capitalize' }}>
+              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', textTransform: 'capitalize' }}>
                 {userRole}
               </span>
-              <ChevronDown size={14} color="#94a3b8" />
+              <ChevronDown size={14} color="var(--text-muted)" />
             </div>
           </div>
 
@@ -258,11 +258,11 @@ export default function Header({
               top: '46px',
               right: 0,
               width: '180px',
-              backgroundColor: '#0f172a',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '10px',
               padding: '6px',
-              boxShadow: '0 10px 25px rgba(0,0,0,0.6)',
+              boxShadow: 'var(--shadow-elevated)',
               zIndex: 100,
               display: 'flex',
               flexDirection: 'column',
@@ -276,8 +276,8 @@ export default function Header({
                 style={{
                   padding: '8px 12px',
                   borderRadius: '6px',
-                  backgroundColor: userRole === 'admin' ? '#1e293b' : 'transparent',
-                  color: userRole === 'admin' ? '#60a5fa' : '#cbd5e1',
+                  backgroundColor: userRole === 'admin' ? 'var(--bg-card-subtle)' : 'transparent',
+                  color: userRole === 'admin' ? 'var(--accent-primary)' : 'var(--text-secondary)',
                   textAlign: 'left',
                   fontSize: '12px',
                   fontWeight: 600
@@ -293,8 +293,8 @@ export default function Header({
                 style={{
                   padding: '8px 12px',
                   borderRadius: '6px',
-                  backgroundColor: userRole === 'guard' ? '#1e293b' : 'transparent',
-                  color: userRole === 'guard' ? '#10b981' : '#cbd5e1',
+                  backgroundColor: userRole === 'guard' ? 'var(--bg-card-subtle)' : 'transparent',
+                  color: userRole === 'guard' ? '#10b981' : 'var(--text-secondary)',
                   textAlign: 'left',
                   fontSize: '12px',
                   fontWeight: 600
@@ -310,8 +310,8 @@ export default function Header({
                 style={{
                   padding: '8px 12px',
                   borderRadius: '6px',
-                  backgroundColor: userRole === 'public' ? '#1e293b' : 'transparent',
-                  color: userRole === 'public' ? '#38bdf8' : '#cbd5e1',
+                  backgroundColor: userRole === 'public' ? 'var(--bg-card-subtle)' : 'transparent',
+                  color: userRole === 'public' ? 'var(--accent-primary)' : 'var(--text-secondary)',
                   textAlign: 'left',
                   fontSize: '12px',
                   fontWeight: 600

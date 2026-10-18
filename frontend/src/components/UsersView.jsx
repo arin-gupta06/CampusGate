@@ -39,17 +39,17 @@ export default function UsersView() {
         justifyContent: 'space-between'
       }}>
         <div>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             User Management & Vehicle Pass Roster
           </h2>
-          <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
             Comprehensive directory of students with registered vehicles, faculty, guards, and system administrators
           </p>
         </div>
 
         <button style={{
-          backgroundColor: '#2563eb',
-          color: '#fff',
+          backgroundColor: 'var(--accent-primary)',
+          color: 'var(--accent-primary-text)',
           borderRadius: '10px',
           padding: '10px 18px',
           fontSize: '13px',
@@ -57,7 +57,7 @@ export default function UsersView() {
           display: 'flex',
           alignItems: 'center',
           gap: '8px',
-          boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+          boxShadow: 'var(--shadow-elevated)'
         }}>
           <Plus size={16} />
           <span>Add New User</span>
@@ -74,10 +74,10 @@ export default function UsersView() {
         <div style={{
           display: 'flex',
           gap: '6px',
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           padding: '4px',
           borderRadius: '10px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)'
         }}>
           <button
             onClick={() => setFilter('ALL')}
@@ -153,7 +153,7 @@ export default function UsersView() {
             left: '12px',
             top: '50%',
             transform: 'translateY(-50%)',
-            color: '#64748b'
+            color: 'var(--text-muted)'
           }} />
           <input
             type="text"
@@ -163,12 +163,12 @@ export default function UsersView() {
             style={{
               width: '100%',
               height: '38px',
-              backgroundColor: '#0f172a',
-              border: '1px solid rgba(255, 255, 255, 0.08)',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '8px',
               padding: '0 12px 0 36px',
               fontSize: '12px',
-              color: '#f8fafc'
+              color: 'var(--text-main)'
             }}
           />
         </div>
@@ -176,24 +176,24 @@ export default function UsersView() {
 
       {/* Users Data Table */}
       <div style={{
-        backgroundColor: '#0f172a',
+        backgroundColor: 'var(--bg-card)',
         borderRadius: '14px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        border: '1px solid var(--border-subtle)',
         overflow: 'hidden'
       }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
           <thead>
             <tr style={{
-              borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
-              backgroundColor: '#0c1220'
+              borderBottom: '1px solid var(--border-subtle)',
+              backgroundColor: 'var(--bg-card-subtle)'
             }}>
-              <th style={{ padding: '14px 18px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Member Profile</th>
-              <th style={{ padding: '14px 18px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Role & ID</th>
-              <th style={{ padding: '14px 18px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Branch / Department</th>
-              <th style={{ padding: '14px 18px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Linked Vehicle(s)</th>
-              <th style={{ padding: '14px 18px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Pass Status</th>
-              <th style={{ padding: '14px 18px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600 }}>Valid Till</th>
-              <th style={{ padding: '14px 18px', fontSize: '11px', color: '#64748b', textTransform: 'uppercase', fontWeight: 600, textAlign: 'right' }}>Actions</th>
+              <th style={{ padding: '14px 18px', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Member Profile</th>
+              <th style={{ padding: '14px 18px', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Role & ID</th>
+              <th style={{ padding: '14px 18px', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Branch / Department</th>
+              <th style={{ padding: '14px 18px', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Linked Vehicle(s)</th>
+              <th style={{ padding: '14px 18px', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Pass Status</th>
+              <th style={{ padding: '14px 18px', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600 }}>Valid Till</th>
+              <th style={{ padding: '14px 18px', fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 600, textAlign: 'right' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
@@ -214,20 +214,20 @@ export default function UsersView() {
                       width: '38px',
                       height: '38px',
                       borderRadius: '50%',
-                      backgroundColor: '#1e293b',
+                      backgroundColor: 'var(--bg-card-subtle)',
                       border: '1px solid rgba(255,255,255,0.12)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       fontSize: '13px',
                       fontWeight: 700,
-                      color: '#f8fafc'
+                      color: 'var(--text-main)'
                     }}>
                       {u.initials}
                     </div>
                     <div>
-                      <div style={{ color: '#f8fafc', fontWeight: 700 }}>{u.name}</div>
-                      <div style={{ color: '#64748b', fontSize: '11px' }}>{u.email}</div>
+                      <div style={{ color: 'var(--text-main)', fontWeight: 700 }}>{u.name}</div>
+                      <div style={{ color: 'var(--text-muted)', fontSize: '11px' }}>{u.email}</div>
                     </div>
                   </div>
                 </td>
@@ -245,13 +245,13 @@ export default function UsersView() {
                     }}>
                       {u.role}
                     </span>
-                    <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
                       {u.rollNumber}
                     </span>
                   </div>
                 </td>
 
-                <td style={{ padding: '14px 18px', color: '#cbd5e1' }}>
+                <td style={{ padding: '14px 18px', color: 'var(--text-secondary)' }}>
                   {u.department}
                 </td>
 
@@ -259,18 +259,18 @@ export default function UsersView() {
                   {u.vehicles && u.vehicles.length > 0 ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
                       <span className="plate-number" style={{
-                        color: '#38bdf8',
+                        color: 'var(--accent-primary)',
                         fontWeight: 700,
                         fontSize: '12px'
                       }}>
                         {u.vehicles.join(', ')}
                       </span>
-                      <span style={{ color: '#64748b', fontSize: '11px' }}>
+                      <span style={{ color: 'var(--text-muted)', fontSize: '11px' }}>
                         {u.vehicleType}
                       </span>
                     </div>
                   ) : (
-                    <span style={{ color: '#64748b', fontSize: '12px' }}>None (Personnel)</span>
+                    <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>None (Personnel)</span>
                   )}
                 </td>
 
@@ -287,7 +287,7 @@ export default function UsersView() {
                   </span>
                 </td>
 
-                <td style={{ padding: '14px 18px', color: '#64748b', fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
+                <td style={{ padding: '14px 18px', color: 'var(--text-muted)', fontSize: '12px', fontFamily: 'var(--font-mono)' }}>
                   {u.validTill}
                 </td>
 
@@ -296,7 +296,7 @@ export default function UsersView() {
                     onClick={() => setSelectedUser(u)}
                     style={{
                       background: 'none',
-                      color: '#38bdf8',
+                      color: 'var(--accent-primary)',
                       fontSize: '12px',
                       fontWeight: 600,
                       display: 'inline-flex',
@@ -332,9 +332,9 @@ export default function UsersView() {
         }}>
           <div style={{
             width: '460px',
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
-            border: '1px solid rgba(255, 255, 255, 0.12)',
+            border: '1px solid var(--border-subtle)',
             padding: '24px',
             boxShadow: '0 20px 50px rgba(0,0,0,0.8)'
           }}>
@@ -343,22 +343,22 @@ export default function UsersView() {
                 width: '48px',
                 height: '48px',
                 borderRadius: '50%',
-                backgroundColor: '#1e293b',
+                backgroundColor: 'var(--bg-card-subtle)',
                 border: '2px solid #3b82f6',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '16px',
                 fontWeight: 700,
-                color: '#fff'
+                color: 'var(--accent-primary-text)'
               }}>
                 {selectedUser.initials}
               </div>
               <div>
-                <h3 style={{ fontSize: '18px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+                <h3 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                   {selectedUser.name}
                 </h3>
-                <span style={{ fontSize: '12px', color: '#38bdf8', fontWeight: 600 }}>
+                <span style={{ fontSize: '12px', color: 'var(--accent-primary)', fontWeight: 600 }}>
                   {selectedUser.role} • {selectedUser.department}
                 </span>
               </div>
@@ -366,29 +366,29 @@ export default function UsersView() {
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '13px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
-                <span style={{ color: '#64748b' }}>Roll / Employee ID:</span>
-                <span style={{ color: '#f8fafc', fontFamily: 'var(--font-mono)' }}>{selectedUser.rollNumber}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Roll / Employee ID:</span>
+                <span style={{ color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>{selectedUser.rollNumber}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
-                <span style={{ color: '#64748b' }}>Email:</span>
-                <span style={{ color: '#f8fafc' }}>{selectedUser.email}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Email:</span>
+                <span style={{ color: 'var(--text-main)' }}>{selectedUser.email}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
-                <span style={{ color: '#64748b' }}>Phone:</span>
-                <span style={{ color: '#f8fafc' }}>{selectedUser.phone}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Phone:</span>
+                <span style={{ color: 'var(--text-main)' }}>{selectedUser.phone}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
-                <span style={{ color: '#64748b' }}>Registered Plate(s):</span>
+                <span style={{ color: 'var(--text-muted)' }}>Registered Plate(s):</span>
                 <span style={{ color: '#10b981', fontFamily: 'var(--font-mono)', fontWeight: 700 }}>
                   {selectedUser.vehicles?.join(', ') || 'N/A'}
                 </span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between', borderBottom: '1px solid rgba(255,255,255,0.06)', paddingBottom: '6px' }}>
-                <span style={{ color: '#64748b' }}>Vehicle Model:</span>
-                <span style={{ color: '#f8fafc' }}>{selectedUser.vehicleType}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Vehicle Model:</span>
+                <span style={{ color: 'var(--text-main)' }}>{selectedUser.vehicleType}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Gate Pass Status:</span>
+                <span style={{ color: 'var(--text-muted)' }}>Gate Pass Status:</span>
                 <span style={{ color: '#10b981', fontWeight: 700 }}>{selectedUser.passStatus}</span>
               </div>
             </div>
@@ -397,8 +397,8 @@ export default function UsersView() {
               onClick={() => setSelectedUser(null)}
               style={{
                 width: '100%',
-                backgroundColor: '#1e293b',
-                color: '#f8fafc',
+                backgroundColor: 'var(--bg-card-subtle)',
+                color: 'var(--text-main)',
                 padding: '10px',
                 borderRadius: '8px',
                 fontSize: '13px',

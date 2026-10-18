@@ -94,9 +94,9 @@ export default function PublicHomeView({
         alignItems: 'center',
         justifyContent: 'space-between',
         padding: '14px 26px',
-        backgroundColor: '#0c1322',
+        backgroundColor: 'var(--bg-card-subtle)',
         borderRadius: '18px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        border: '1px solid var(--border-subtle)',
         boxShadow: '0 10px 32px rgba(0, 0, 0, 0.45)',
         position: 'sticky',
         top: '16px',
@@ -123,16 +123,16 @@ export default function PublicHomeView({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: '#fff',
+            color: 'var(--accent-primary-text)',
             boxShadow: '0 0 16px rgba(37, 99, 235, 0.5)'
           }}>
             <ShieldCheck size={23} />
           </div>
           <div>
-            <h1 style={{ fontSize: '18px', fontWeight: 800, color: '#f8fafc', margin: 0, letterSpacing: '0.2px' }}>
+            <h1 style={{ fontSize: '18px', fontWeight: 800, color: 'var(--text-main)', margin: 0, letterSpacing: '0.2px' }}>
               CampusGuard
             </h1>
-            <span style={{ fontSize: '10.5px', color: '#64748b', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>
+            <span style={{ fontSize: '10.5px', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' }}>
               Official Campus Vehicle Portal
             </span>
           </div>
@@ -143,10 +143,10 @@ export default function PublicHomeView({
           display: 'flex',
           alignItems: 'center',
           gap: '6px',
-          backgroundColor: '#070b14',
+          backgroundColor: 'var(--bg-card-subtle)',
           padding: '5px 8px',
           borderRadius: '12px',
-          border: '1px solid rgba(255, 255, 255, 0.06)',
+          border: '1px solid var(--border-subtle)',
           whiteSpace: 'nowrap',
           overflowX: 'auto'
         }}>
@@ -218,7 +218,7 @@ export default function PublicHomeView({
               alignItems: 'center',
               gap: '7px',
               backgroundColor: 'rgba(59, 130, 246, 0.12)',
-              color: '#38bdf8',
+              color: 'var(--accent-primary)',
               border: '1px solid rgba(59, 130, 246, 0.3)',
               borderRadius: '9px',
               padding: '8px 15px',
@@ -239,9 +239,9 @@ export default function PublicHomeView({
               display: 'flex',
               alignItems: 'center',
               gap: '7px',
-              backgroundColor: '#131d33',
-              color: '#f8fafc',
-              border: '1px solid rgba(255, 255, 255, 0.12)',
+              backgroundColor: 'var(--bg-card-subtle)',
+              color: 'var(--text-main)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '9px',
               padding: '8px 15px',
               fontSize: '12.5px',
@@ -264,9 +264,9 @@ export default function PublicHomeView({
         <>
           {/* Hero Section */}
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '24px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            border: '1px solid var(--border-subtle)',
             padding: '48px 40px',
             display: 'grid',
             gridTemplateColumns: '1.4fr 1fr',
@@ -307,7 +307,7 @@ export default function PublicHomeView({
               <h2 style={{
                 fontSize: '36px',
                 fontWeight: 800,
-                color: '#f8fafc',
+                color: 'var(--text-main)',
                 lineHeight: 1.2,
                 letterSpacing: '-0.5px',
                 margin: '0 0 16px'
@@ -317,7 +317,7 @@ export default function PublicHomeView({
 
               <p style={{
                 fontSize: '15px',
-                color: '#94a3b8',
+                color: 'var(--text-secondary)',
                 lineHeight: 1.6,
                 marginBottom: '32px'
               }}>
@@ -328,8 +328,8 @@ export default function PublicHomeView({
                 <button
                   onClick={onNavigateToSettings}
                   style={{
-                    backgroundColor: '#2563eb',
-                    color: '#fff',
+                    backgroundColor: 'var(--accent-primary)',
+                    color: 'var(--accent-primary-text)',
                     padding: '13px 22px',
                     borderRadius: '12px',
                     fontSize: '13.5px',
@@ -349,8 +349,8 @@ export default function PublicHomeView({
                 <button
                   onClick={() => setActiveNav('gate-status')}
                   style={{
-                    backgroundColor: '#1e293b',
-                    color: '#f8fafc',
+                    backgroundColor: 'var(--bg-card-subtle)',
+                    color: 'var(--text-main)',
                     padding: '13px 22px',
                     borderRadius: '12px',
                     fontSize: '13.5px',
@@ -358,7 +358,7 @@ export default function PublicHomeView({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '10px',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    border: '1px solid var(--border-subtle)',
                     cursor: 'pointer'
                   }}
                 >
@@ -370,16 +370,16 @@ export default function PublicHomeView({
 
             {/* Visual Preview Card */}
             <div style={{
-              backgroundColor: '#070b14',
+              backgroundColor: 'var(--bg-card-subtle)',
               borderRadius: '16px',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              border: '1px solid var(--border-subtle)',
               overflow: 'hidden',
               boxShadow: '0 20px 40px rgba(0,0,0,0.6)'
             }}>
               <div style={{
                 position: 'relative',
                 aspectRatio: '16/10',
-                backgroundColor: '#050811',
+                backgroundColor: 'var(--bg-base)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center'
@@ -414,7 +414,7 @@ export default function PublicHomeView({
                   }}>
                     <CheckCircle size={28} color="#10b981" />
                   </div>
-                  <span style={{ fontSize: '15px', fontWeight: 800, color: '#f8fafc', fontFamily: 'var(--font-mono)' }}>
+                  <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                     MP07AB1234
                   </span>
                   <span style={{ fontSize: '10px', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.15)', padding: '2px 8px', borderRadius: '99px', fontWeight: 700 }}>
@@ -424,11 +424,11 @@ export default function PublicHomeView({
               </div>
 
               <div style={{ padding: '16px', fontSize: '12px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', color: '#f8fafc', fontWeight: 700 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', color: 'var(--text-main)', fontWeight: 700 }}>
                   <span>Gate 1 Entrance Detection</span>
                   <span style={{ color: '#10b981' }}>Clearance &lt; 350ms</span>
                 </div>
-                <div style={{ color: '#64748b', marginTop: '4px' }}>
+                <div style={{ color: 'var(--text-muted)', marginTop: '4px' }}>
                   YOLOv8 Plate Quality Gating + EasyOCR Sanitization
                 </div>
               </div>
@@ -442,10 +442,10 @@ export default function PublicHomeView({
             gap: '20px'
           }}>
             <div style={{
-              backgroundColor: '#0f172a',
+              backgroundColor: 'var(--bg-card)',
               borderRadius: '16px',
               padding: '24px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid var(--border-subtle)'
             }}>
               <div style={{
                 width: '40px',
@@ -460,19 +460,19 @@ export default function PublicHomeView({
               }}>
                 <CheckCircle size={22} />
               </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: '0 0 8px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 8px' }}>
                 Instant Contactless Entry
               </h3>
-              <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                 Registered students and faculty experience automated barrier lift without stopping for manual RFID cards or paper passes.
               </p>
             </div>
 
             <div style={{
-              backgroundColor: '#0f172a',
+              backgroundColor: 'var(--bg-card)',
               borderRadius: '16px',
               padding: '24px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid var(--border-subtle)'
             }}>
               <div style={{
                 width: '40px',
@@ -487,19 +487,19 @@ export default function PublicHomeView({
               }}>
                 <Layers size={22} />
               </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: '0 0 8px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 8px' }}>
                 Multi-Camera Corridor Handoff
               </h3>
-              <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                 If a plate is temporarily unreadable at Gate 1, downstream cameras on the Campus Road reconcile the vehicle through geometric topology.
               </p>
             </div>
 
             <div style={{
-              backgroundColor: '#0f172a',
+              backgroundColor: 'var(--bg-card)',
               borderRadius: '16px',
               padding: '24px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid var(--border-subtle)'
             }}>
               <div style={{
                 width: '40px',
@@ -514,10 +514,10 @@ export default function PublicHomeView({
               }}>
                 <QrCode size={22} />
               </div>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: '0 0 8px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 8px' }}>
                 Instant QR Registration
               </h3>
-              <p style={{ fontSize: '13px', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                 Scan the on-gate QR code with any smartphone camera to register a new vehicle or update student contact details in seconds.
               </p>
             </div>
@@ -531,21 +531,21 @@ export default function PublicHomeView({
       {activeNav === 'about' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '20px',
             padding: '36px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid var(--border-subtle)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '12px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(59, 130, 246, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#60a5fa' }}>
                 <Info size={18} />
               </div>
-              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                 About the Campus Gate Vision AI System
               </h2>
             </div>
             
-            <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.7, marginBottom: '24px' }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7, marginBottom: '24px' }}>
               CampusGuard was conceived to solve the critical campus security and congestion challenges faced at college entry gates. During peak arrival windows (08:30–09:30 AM), manual guard inspections and RFID swipe cards cause severe bottlenecks, vehicle queues, and pass-sharing vulnerabilities.
             </p>
 
@@ -556,21 +556,21 @@ export default function PublicHomeView({
               marginTop: '16px'
             }}>
               <div style={{
-                backgroundColor: '#11192e',
+                backgroundColor: 'var(--bg-card-subtle)',
                 borderRadius: '14px',
                 padding: '24px',
                 border: '1px solid rgba(59, 130, 246, 0.2)'
               }}>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#38bdf8', margin: '0 0 10px' }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--accent-primary)', margin: '0 0 10px' }}>
                   The Core Principle
                 </h3>
-                <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   <strong>"An unreadable plate is not evidence that a vehicle is unauthorized."</strong> Real-world entry gates face glare, dirt, odd angles, or tailgating. Rather than rejecting vehicles or stalling traffic, CampusGuard leverages multi-camera topology to reconcile vehicle evidence downstream.
                 </p>
               </div>
 
               <div style={{
-                backgroundColor: '#11192e',
+                backgroundColor: 'var(--bg-card-subtle)',
                 borderRadius: '14px',
                 padding: '24px',
                 border: '1px solid rgba(16, 185, 129, 0.2)'
@@ -578,7 +578,7 @@ export default function PublicHomeView({
                 <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#10b981', margin: '0 0 10px' }}>
                   High-Assurance Auditing
                 </h3>
-                <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   Every vehicle observation stores vehicle crops, plate crops, detection timestamps, directional track sessions, and line-crossing coordinates in a persistent PostgreSQL audit log for transparent campus security.
                 </p>
               </div>
@@ -586,25 +586,25 @@ export default function PublicHomeView({
 
             {/* Additional Security Objectives */}
             <div style={{ marginTop: '28px' }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', marginBottom: '14px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '14px' }}>
                 Key Technical & Operational Objectives
               </h3>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '14px' }}>
-                <div style={{ backgroundColor: '#0a0f1d', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                  <div style={{ fontSize: '13px', fontWeight: 700, color: '#38bdf8', marginBottom: '4px' }}>Sub-350ms Clearance</div>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--accent-primary)', marginBottom: '4px' }}>Sub-350ms Clearance</div>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
                     Real-time barrier trigger before the driver reaches a complete stop, eliminating idling exhaust and morning queues.
                   </p>
                 </div>
-                <div style={{ backgroundColor: '#0a0f1d', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#10b981', marginBottom: '4px' }}>Zero Pass-Sharing</div>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
                     Tying access permissions directly to vehicle license plate numbers and physical attributes rather than loanable physical RFID cards.
                   </p>
                 </div>
-                <div style={{ backgroundColor: '#0a0f1d', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '16px', borderRadius: '10px', border: '1px solid rgba(255,255,255,0.06)' }}>
                   <div style={{ fontSize: '13px', fontWeight: 700, color: '#f59e0b', marginBottom: '4px' }}>Automated Audit Log</div>
-                  <p style={{ fontSize: '12px', color: '#94a3b8', margin: 0, lineHeight: 1.5 }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
                     Tamper-proof forensic trail of every entry and exit event, linked with high-res snapshot crops and corridor handoff times.
                   </p>
                 </div>
@@ -621,17 +621,17 @@ export default function PublicHomeView({
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           {/* Real-time Gate Indicators */}
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '20px',
             padding: '32px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid var(--border-subtle)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px' }}>
               <div>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+                <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                   Live Campus Gate Operational Status
                 </h2>
-                <p style={{ fontSize: '13px', color: '#64748b', marginTop: '4px' }}>
+                <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '4px' }}>
                   Real-time sensor telemetry and barrier health across active entry corridors
                 </p>
               </div>
@@ -657,48 +657,48 @@ export default function PublicHomeView({
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px', marginBottom: '28px' }}>
               {/* Gate 1 */}
               <div style={{
-                backgroundColor: '#11192e',
+                backgroundColor: 'var(--bg-card-subtle)',
                 borderRadius: '14px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                border: '1px solid var(--border-subtle)'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>Gate 1 — Main Ingress</h3>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>Gate 1 — Main Ingress</h3>
                   </div>
-                  <span style={{ fontSize: '11px', color: '#38bdf8', backgroundColor: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
+                  <span style={{ fontSize: '11px', color: 'var(--accent-primary)', backgroundColor: 'rgba(56, 189, 248, 0.1)', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
                     FastLane Enabled
                   </span>
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', textAlign: 'center' }}>
-                  <div style={{ backgroundColor: '#0a0f1d', padding: '10px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>Queue Time</div>
+                  <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '10px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Queue Time</div>
                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>0.0 s</div>
                   </div>
-                  <div style={{ backgroundColor: '#0a0f1d', padding: '10px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>Avg Clearance</div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#38bdf8', marginTop: '2px' }}>318 ms</div>
+                  <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '10px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Avg Clearance</div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--accent-primary)', marginTop: '2px' }}>318 ms</div>
                   </div>
-                  <div style={{ backgroundColor: '#0a0f1d', padding: '10px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>Barrier Health</div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>100% OK</div>
+                  <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '10px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Barrier Health</div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>100% OK</div>
                   </div>
                 </div>
               </div>
 
               {/* Gate 2 */}
               <div style={{
-                backgroundColor: '#11192e',
+                backgroundColor: 'var(--bg-card-subtle)',
                 borderRadius: '14px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                border: '1px solid var(--border-subtle)'
               }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ width: '10px', height: '10px', borderRadius: '50%', backgroundColor: '#10b981' }} />
-                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>Gate 2 — West Academic Ingress</h3>
+                    <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>Gate 2 — West Academic Ingress</h3>
                   </div>
                   <span style={{ fontSize: '11px', color: '#10b981', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '6px', fontWeight: 700 }}>
                     Normal Flow
@@ -706,17 +706,17 @@ export default function PublicHomeView({
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '10px', textAlign: 'center' }}>
-                  <div style={{ backgroundColor: '#0a0f1d', padding: '10px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>Queue Time</div>
+                  <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '10px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Queue Time</div>
                     <div style={{ fontSize: '15px', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>&lt; 5 s</div>
                   </div>
-                  <div style={{ backgroundColor: '#0a0f1d', padding: '10px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>Avg Clearance</div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#38bdf8', marginTop: '2px' }}>342 ms</div>
+                  <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '10px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Avg Clearance</div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--accent-primary)', marginTop: '2px' }}>342 ms</div>
                   </div>
-                  <div style={{ backgroundColor: '#0a0f1d', padding: '10px', borderRadius: '8px' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b' }}>Barrier Health</div>
-                    <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', marginTop: '2px' }}>100% OK</div>
+                  <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '10px', borderRadius: '8px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Barrier Health</div>
+                    <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', marginTop: '2px' }}>100% OK</div>
                   </div>
                 </div>
               </div>
@@ -724,18 +724,18 @@ export default function PublicHomeView({
 
             {/* Instant Plate Pass Verification Tool */}
             <div style={{
-              backgroundColor: '#0a0f1d',
+              backgroundColor: 'var(--bg-card-subtle)',
               borderRadius: '16px',
               padding: '24px',
               border: '1px solid rgba(59, 130, 246, 0.25)'
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
                 <Search size={18} color="#38bdf8" />
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                   Instant Gate Pass Verification Tool
                 </h3>
               </div>
-              <p style={{ fontSize: '13px', color: '#94a3b8', margin: '0 0 16px' }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: '0 0 16px' }}>
                 Check if your vehicle license plate is authorized for automated barrier lift before approaching the gate.
               </p>
 
@@ -748,13 +748,13 @@ export default function PublicHomeView({
                   style={{
                     flex: 1,
                     height: '44px',
-                    backgroundColor: '#111827',
-                    border: '1px solid rgba(255, 255, 255, 0.12)',
+                    backgroundColor: 'var(--bg-input)',
+                    border: '1px solid var(--border-subtle)',
                     borderRadius: '10px',
                     padding: '0 16px',
                     fontSize: '14px',
                     fontFamily: 'var(--font-mono)',
-                    color: '#f8fafc',
+                    color: 'var(--text-main)',
                     textTransform: 'uppercase'
                   }}
                 />
@@ -762,8 +762,8 @@ export default function PublicHomeView({
                   type="submit"
                   style={{
                     height: '44px',
-                    backgroundColor: '#2563eb',
-                    color: '#fff',
+                    backgroundColor: 'var(--accent-primary)',
+                    color: 'var(--accent-primary-text)',
                     padding: '0 24px',
                     borderRadius: '10px',
                     fontSize: '13px',
@@ -800,7 +800,7 @@ export default function PublicHomeView({
                     )}
                     <div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <span style={{ fontSize: '16px', fontWeight: 800, color: '#f8fafc', fontFamily: 'var(--font-mono)' }}>
+                        <span style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                           {plateCheckResult.plate}
                         </span>
                         <span style={{
@@ -814,15 +814,15 @@ export default function PublicHomeView({
                           {plateCheckResult.status}
                         </span>
                       </div>
-                      <p style={{ fontSize: '12.5px', color: '#cbd5e1', margin: '4px 0 0' }}>
+                      <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', margin: '4px 0 0' }}>
                         {plateCheckResult.message}
                       </p>
                     </div>
                   </div>
 
                   <div style={{ textAlign: 'right', fontSize: '12px' }}>
-                    <div style={{ color: '#64748b' }}>Allowed Access</div>
-                    <div style={{ color: '#38bdf8', fontWeight: 600 }}>{plateCheckResult.gateAccess}</div>
+                    <div style={{ color: 'var(--text-muted)' }}>Allowed Access</div>
+                    <div style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>{plateCheckResult.gateAccess}</div>
                   </div>
                 </div>
               )}
@@ -837,73 +837,73 @@ export default function PublicHomeView({
       {activeNav === 'how-it-works' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '20px',
             padding: '36px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid var(--border-subtle)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(56, 189, 248, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38bdf8' }}>
+              <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(56, 189, 248, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--accent-primary)' }}>
                 <Workflow size={18} />
               </div>
-              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                 How the Multi-Camera Pipeline Works
               </h2>
             </div>
             
-            <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '28px' }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '28px' }}>
               From gate ingress line crossing to cross-camera handoff in 4 coordinated AI stages:
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px', marginBottom: '28px' }}>
               <div style={{
-                backgroundColor: '#11192e',
+                backgroundColor: 'var(--bg-card-subtle)',
                 borderRadius: '14px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                border: '1px solid var(--border-subtle)'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#38bdf8', marginBottom: '8px' }}>01</div>
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', margin: '0 0 8px' }}>Line Crossing</h4>
-                <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '8px' }}>01</div>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 8px' }}>Line Crossing</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                   YOLOv8 vehicle detector combined with ByteTrack tracks vehicle trajectories across the configured gate ingress line.
                 </p>
               </div>
 
               <div style={{
-                backgroundColor: '#11192e',
+                backgroundColor: 'var(--bg-card-subtle)',
                 borderRadius: '14px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                border: '1px solid var(--border-subtle)'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#38bdf8', marginBottom: '8px' }}>02</div>
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', margin: '0 0 8px' }}>Quality Gate</h4>
-                <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '8px' }}>02</div>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 8px' }}>Quality Gate</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                   Laplacian variance filter rejects blurry or low-resolution crops (sharpness threshold &gt; 120) before OCR execution.
                 </p>
               </div>
 
               <div style={{
-                backgroundColor: '#11192e',
+                backgroundColor: 'var(--bg-card-subtle)',
                 borderRadius: '14px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                border: '1px solid var(--border-subtle)'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#38bdf8', marginBottom: '8px' }}>03</div>
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', margin: '0 0 8px' }}>Indian Plate OCR</h4>
-                <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent-primary)', marginBottom: '8px' }}>03</div>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 8px' }}>Indian Plate OCR</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                   EasyOCR with regex sanitization disambiguates letters and numbers (e.g., MP07AB1234) against authorized campus records.
                 </p>
               </div>
 
               <div style={{
-                backgroundColor: '#11192e',
+                backgroundColor: 'var(--bg-card-subtle)',
                 borderRadius: '14px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                border: '1px solid var(--border-subtle)'
               }}>
                 <div style={{ fontSize: '24px', fontWeight: 800, color: '#10b981', marginBottom: '8px' }}>04</div>
-                <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', margin: '0 0 8px' }}>Corridor Handoff</h4>
-                <p style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.5, margin: 0 }}>
+                <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 8px' }}>Corridor Handoff</h4>
+                <p style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
                   Downstream corridor & parking cameras correlate vehicle transitions within expected 30–90s travel windows.
                 </p>
               </div>
@@ -911,15 +911,15 @@ export default function PublicHomeView({
 
             {/* Reconciliation Proof Walkthrough */}
             <div style={{
-              backgroundColor: '#0a0f1d',
+              backgroundColor: 'var(--bg-card-subtle)',
               borderRadius: '14px',
               padding: '20px',
               border: '1px solid rgba(59, 130, 246, 0.2)'
             }}>
-              <h4 style={{ fontSize: '15px', fontWeight: 700, color: '#38bdf8', margin: '0 0 8px' }}>
+              <h4 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--accent-primary)', margin: '0 0 8px' }}>
                 Why Downstream Topology Correlation Matters
               </h4>
-              <p style={{ fontSize: '13px', color: '#cbd5e1', lineHeight: 1.6, margin: 0 }}>
+              <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                 When vehicle V-101 crosses Gate 1 under severe headlight glare, the OCR confidence may drop below threshold. The system flags this as a candidate observation rather than immediately rejecting the vehicle. When V-101 reaches Camera 2 (Academic Corridor) 38 seconds later under uniform lighting, the plate is recognized as MP07AB1234. The engine back-propagates this authorization to clear the Gate 1 event without false alarm friction!
               </p>
             </div>
@@ -933,61 +933,61 @@ export default function PublicHomeView({
       {activeNav === 'guidelines' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '20px',
             padding: '36px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid var(--border-subtle)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(245, 158, 11, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#f59e0b' }}>
                 <FileText size={18} />
               </div>
-              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                 Campus Vehicle Regulations & Pass Guidelines
               </h2>
             </div>
             
-            <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '24px' }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
               All students, faculty, and campus visitors must adhere to official campus traffic guidelines and pass protocols.
             </p>
 
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-              <div style={{ backgroundColor: '#11192e', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', marginBottom: '8px', fontWeight: 700 }}>
+              <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-primary)', marginBottom: '8px', fontWeight: 700 }}>
                   <Gauge size={16} />
                   <span>Campus Speed Limit (15 km/h)</span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   The strict speed limit on all campus roads and corridor roundabouts is 15 km/h. Optical speed sensors between Gate 1 and Central Library automatically flag overspeeding vehicles.
                 </p>
               </div>
 
-              <div style={{ backgroundColor: '#11192e', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', marginBottom: '8px', fontWeight: 700 }}>
                   <Compass size={16} />
                   <span>Designated Parking Zones</span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   Students must park exclusively in <strong>Zone A</strong> (Two-Wheelers) or <strong>Zone B</strong> (Four-Wheelers). Zone C is reserved for faculty and staff. Parking on pedestrian walkways will result in vehicle wheel-lock.
                 </p>
               </div>
 
-              <div style={{ backgroundColor: '#11192e', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#f59e0b', marginBottom: '8px', fontWeight: 700 }}>
                   <Clock size={16} />
                   <span>Hostel & Night Curfew Policy</span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   Student vehicles entering after <strong>10:30 PM</strong> require biometric guard log-in and warden approval. Overnight guest parking requires a temporary 24-hour pass issued at Gate 1 Control Room.
                 </p>
               </div>
 
-              <div style={{ backgroundColor: '#11192e', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
+              <div style={{ backgroundColor: 'var(--bg-card-subtle)', padding: '20px', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.06)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c084fc', marginBottom: '8px', fontWeight: 700 }}>
                   <ShieldCheck size={16} />
                   <span>Registration Document Requirements</span>
                 </div>
-                <p style={{ fontSize: '12.5px', color: '#94a3b8', lineHeight: 1.6, margin: 0 }}>
+                <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
                   For new registrations, students must provide: (1) Valid College Enrollment / ID, (2) State Registration Certificate (RC), (3) Driving License, and (4) Active Third-Party Vehicle Insurance.
                 </p>
               </div>
@@ -1002,21 +1002,21 @@ export default function PublicHomeView({
       {activeNav === 'developers' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '20px',
             padding: '36px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid var(--border-subtle)'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
               <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(192, 132, 252, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#c084fc' }}>
                 <Code2 size={18} />
               </div>
-              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                 Engineering & Architecture Team
               </h2>
             </div>
             
-            <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '28px' }}>
+            <p style={{ fontSize: '14px', color: 'var(--text-secondary)', marginBottom: '28px' }}>
               Built with state-of-the-art computer vision models, high-concurrency asynchronous backend services, and a sleek frontend interface.
             </p>
 
@@ -1028,16 +1028,16 @@ export default function PublicHomeView({
               marginBottom: '32px'
             }}>
               <div style={{
-                backgroundColor: '#111827',
+                backgroundColor: 'var(--bg-input)',
                 borderRadius: '12px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                border: '1px solid var(--border-subtle)'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#38bdf8', marginBottom: '12px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--accent-primary)', marginBottom: '12px' }}>
                   <Cpu size={18} />
                   <span style={{ fontSize: '14px', fontWeight: 700 }}>Computer Vision & AI</span>
                 </div>
-                <ul style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.8, paddingLeft: '16px', margin: 0 }}>
+                <ul style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.8, paddingLeft: '16px', margin: 0 }}>
                   <li>Ultralytics YOLOv8 Fine-tuned Detector</li>
                   <li>ByteTrack Multi-Object Tracker</li>
                   <li>Laplacian Sharpness Quality Gate</li>
@@ -1046,16 +1046,16 @@ export default function PublicHomeView({
               </div>
 
               <div style={{
-                backgroundColor: '#111827',
+                backgroundColor: 'var(--bg-input)',
                 borderRadius: '12px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                border: '1px solid var(--border-subtle)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#10b981', marginBottom: '12px' }}>
                   <Database size={18} />
                   <span style={{ fontSize: '14px', fontWeight: 700 }}>Backend & Reconciliation</span>
                 </div>
-                <ul style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.8, paddingLeft: '16px', margin: 0 }}>
+                <ul style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.8, paddingLeft: '16px', margin: 0 }}>
                   <li>FastAPI Asynchronous Web Engine</li>
                   <li>PostgreSQL 16 via Docker Container</li>
                   <li>SQLAlchemy 2.0 ORM with Migrations</li>
@@ -1064,16 +1064,16 @@ export default function PublicHomeView({
               </div>
 
               <div style={{
-                backgroundColor: '#111827',
+                backgroundColor: 'var(--bg-input)',
                 borderRadius: '12px',
                 padding: '20px',
-                border: '1px solid rgba(255, 255, 255, 0.06)'
+                border: '1px solid var(--border-subtle)'
               }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#c084fc', marginBottom: '12px' }}>
                   <Code2 size={18} />
                   <span style={{ fontSize: '14px', fontWeight: 700 }}>Frontend Dashboard</span>
                 </div>
-                <ul style={{ fontSize: '12px', color: '#94a3b8', lineHeight: 1.8, paddingLeft: '16px', margin: 0 }}>
+                <ul style={{ fontSize: '12px', color: 'var(--text-secondary)', lineHeight: 1.8, paddingLeft: '16px', margin: 0 }}>
                   <li>React 18 & Vite Fast Bundler</li>
                   <li>Recharts Visual Telemetry & Analytics</li>
                   <li>qrcode.react Self-Service Mobile Pass</li>
@@ -1084,7 +1084,7 @@ export default function PublicHomeView({
 
             {/* Developer Credits Card */}
             <div style={{
-              backgroundColor: '#11192e',
+              backgroundColor: 'var(--bg-card-subtle)',
               borderRadius: '14px',
               padding: '20px 24px',
               display: 'flex',
@@ -1097,22 +1097,22 @@ export default function PublicHomeView({
                   width: '46px',
                   height: '46px',
                   borderRadius: '50%',
-                  backgroundColor: '#1e293b',
+                  backgroundColor: 'var(--bg-card-subtle)',
                   border: '2px solid #3b82f6',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
                   fontWeight: 800,
                   fontSize: '15px',
-                  color: '#fff'
+                  color: 'var(--accent-primary-text)'
                 }}>
                   AG
                 </div>
                 <div>
-                  <h4 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+                  <h4 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                     Arin Gupta & Team
                   </h4>
-                  <p style={{ fontSize: '12px', color: '#64748b', margin: '2px 0 0' }}>
+                  <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: '2px 0 0' }}>
                     Computer Science & Engineering • Vision AI Project Lead
                   </p>
                 </div>
@@ -1126,14 +1126,14 @@ export default function PublicHomeView({
                   display: 'flex',
                   alignItems: 'center',
                   gap: '8px',
-                  backgroundColor: '#1e293b',
-                  color: '#38bdf8',
+                  backgroundColor: 'var(--bg-card-subtle)',
+                  color: 'var(--accent-primary)',
                   padding: '10px 18px',
                   borderRadius: '8px',
                   fontSize: '13px',
                   fontWeight: 600,
                   textDecoration: 'none',
-                  border: '1px solid rgba(56, 189, 248, 0.3)'
+                  border: '1px solid var(--border-medium)'
                 }}
               >
                 {/* Clean inline GitHub SVG icon */}
@@ -1154,10 +1154,10 @@ export default function PublicHomeView({
       {activeNav === 'contact' && (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '20px',
             padding: '36px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid var(--border-subtle)',
             display: 'grid',
             gridTemplateColumns: '1.2fr 1fr',
             gap: '36px'
@@ -1167,12 +1167,12 @@ export default function PublicHomeView({
                 <div style={{ width: '32px', height: '32px', borderRadius: '8px', backgroundColor: 'rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#10b981' }}>
                   <Phone size={18} />
                 </div>
-                <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+                <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                   Campus Gate Security & Support
                 </h2>
               </div>
 
-              <p style={{ fontSize: '14px', color: '#94a3b8', lineHeight: 1.6, marginBottom: '24px' }}>
+              <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: '24px' }}>
                 Have questions regarding gate pass clearance, vehicle registration errors, or unlisted guest entry permits? Contact the security control room or IT support desk.
               </p>
 
@@ -1182,8 +1182,8 @@ export default function PublicHomeView({
                     <MapPin size={18} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>Control Room Location</div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>Main Campus Gate 1 Security Tower, Ground Floor</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>Control Room Location</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Main Campus Gate 1 Security Tower, Ground Floor</div>
                   </div>
                 </div>
 
@@ -1192,8 +1192,8 @@ export default function PublicHomeView({
                     <Phone size={18} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>Emergency Gate Helplines</div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>Gate 1 Post: +91 751 240 9301 • Gate 2 Post: +91 751 240 9302</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>Emergency Gate Helplines</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Gate 1 Post: +91 751 240 9301 • Gate 2 Post: +91 751 240 9302</div>
                   </div>
                 </div>
 
@@ -1202,8 +1202,8 @@ export default function PublicHomeView({
                     <Mail size={18} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>IT Support & Passes Desk</div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>support.campusgate@mits.ac.in</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>IT Support & Passes Desk</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>support.campusgate@mits.ac.in</div>
                   </div>
                 </div>
 
@@ -1212,8 +1212,8 @@ export default function PublicHomeView({
                     <Clock size={18} />
                   </div>
                   <div>
-                    <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>Operating Hours</div>
-                    <div style={{ fontSize: '12px', color: '#64748b' }}>Automated Vision AI Gates: 24/7/365 Non-stop</div>
+                    <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>Operating Hours</div>
+                    <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Automated Vision AI Gates: 24/7/365 Non-stop</div>
                   </div>
                 </div>
               </div>
@@ -1221,12 +1221,12 @@ export default function PublicHomeView({
 
             {/* Quick Contact / Support Ticket Form */}
             <div style={{
-              backgroundColor: '#111827',
+              backgroundColor: 'var(--bg-input)',
               borderRadius: '16px',
               padding: '24px',
-              border: '1px solid rgba(255, 255, 255, 0.08)'
+              border: '1px solid var(--border-subtle)'
             }}>
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: '0 0 16px' }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 16px' }}>
                 Send Security Desk a Query
               </h3>
 
@@ -1253,7 +1253,7 @@ export default function PublicHomeView({
                   style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}
                 >
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
                       Your Name
                     </label>
                     <input
@@ -1263,18 +1263,18 @@ export default function PublicHomeView({
                       style={{
                         width: '100%',
                         height: '38px',
-                        backgroundColor: '#0a0f1d',
+                        backgroundColor: 'var(--bg-card-subtle)',
                         border: '1px solid rgba(255,255,255,0.1)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '12px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
                       College Email or Phone
                     </label>
                     <input
@@ -1284,18 +1284,18 @@ export default function PublicHomeView({
                       style={{
                         width: '100%',
                         height: '38px',
-                        backgroundColor: '#0a0f1d',
+                        backgroundColor: 'var(--bg-card-subtle)',
                         border: '1px solid rgba(255,255,255,0.1)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '12px',
-                        color: '#f8fafc'
+                        color: 'var(--text-main)'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
                       Vehicle Plate Number (Optional)
                     </label>
                     <input
@@ -1304,19 +1304,19 @@ export default function PublicHomeView({
                       style={{
                         width: '100%',
                         height: '38px',
-                        backgroundColor: '#0a0f1d',
+                        backgroundColor: 'var(--bg-card-subtle)',
                         border: '1px solid rgba(255,255,255,0.1)',
                         borderRadius: '8px',
                         padding: '0 12px',
                         fontSize: '12px',
                         fontFamily: 'var(--font-mono)',
-                        color: '#38bdf8'
+                        color: 'var(--accent-primary)'
                       }}
                     />
                   </div>
 
                   <div>
-                    <label style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
+                    <label style={{ fontSize: '11px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '4px' }}>
                       Message / Issue
                     </label>
                     <textarea
@@ -1325,12 +1325,12 @@ export default function PublicHomeView({
                       required
                       style={{
                         width: '100%',
-                        backgroundColor: '#0a0f1d',
+                        backgroundColor: 'var(--bg-card-subtle)',
                         border: '1px solid rgba(255,255,255,0.1)',
                         borderRadius: '8px',
                         padding: '8px 12px',
                         fontSize: '12px',
-                        color: '#f8fafc',
+                        color: 'var(--text-main)',
                         resize: 'none'
                       }}
                     />
@@ -1339,8 +1339,8 @@ export default function PublicHomeView({
                   <button
                     type="submit"
                     style={{
-                      backgroundColor: '#2563eb',
-                      color: '#fff',
+                      backgroundColor: 'var(--accent-primary)',
+                      color: 'var(--accent-primary-text)',
                       padding: '11px',
                       borderRadius: '8px',
                       fontSize: '13px',

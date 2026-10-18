@@ -77,10 +77,10 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
               <Camera size={20} />
             </div>
             <div>
-              <h3 style={{ fontSize: '17px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                 Configure New Camera Node
               </h3>
-              <p style={{ fontSize: '12px', color: '#64748b', margin: 0 }}>
+              <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
                 Register CCTV RTSP stream & geometric line boundary
               </p>
             </div>
@@ -88,7 +88,7 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
 
           <button
             onClick={onClose}
-            style={{ background: 'none', color: '#94a3b8', padding: '4px' }}
+            style={{ background: 'none', color: 'var(--text-secondary)', padding: '4px' }}
           >
             <X size={18} />
           </button>
@@ -97,7 +97,7 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
         {/* Form */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
-            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
               Camera Name
             </label>
             <input
@@ -109,19 +109,19 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
               style={{
                 width: '100%',
                 height: '38px',
-                backgroundColor: '#111827',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '8px',
                 padding: '0 12px',
                 fontSize: '13px',
-                color: '#f8fafc'
+                color: 'var(--text-main)'
               }}
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                 Camera Identifier
               </label>
               <input
@@ -132,19 +132,19 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 style={{
                   width: '100%',
                   height: '38px',
-                  backgroundColor: '#111827',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-subtle)',
                   borderRadius: '8px',
                   padding: '0 12px',
                   fontSize: '13px',
                   fontFamily: 'var(--font-mono)',
-                  color: '#f8fafc'
+                  color: 'var(--text-main)'
                 }}
               />
             </div>
 
             <div>
-              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                 Camera Role
               </label>
               <select
@@ -153,12 +153,12 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 style={{
                   width: '100%',
                   height: '38px',
-                  backgroundColor: '#111827',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-subtle)',
                   borderRadius: '8px',
                   padding: '0 10px',
                   fontSize: '13px',
-                  color: '#f8fafc'
+                  color: 'var(--text-main)'
                 }}
               >
                 <option value="ENTRY_GATE">Entry Gate (Primary Ingress)</option>
@@ -170,7 +170,7 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
               RTSP Video Stream URL
             </label>
             <input
@@ -181,20 +181,20 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
               style={{
                 width: '100%',
                 height: '38px',
-                backgroundColor: '#111827',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '8px',
                 padding: '0 12px',
                 fontSize: '13px',
                 fontFamily: 'var(--font-mono)',
-                color: '#f8fafc'
+                color: 'var(--text-main)'
               }}
             />
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
             <div>
-              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                 Resolution
               </label>
               <select
@@ -203,12 +203,12 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 style={{
                   width: '100%',
                   height: '38px',
-                  backgroundColor: '#111827',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-subtle)',
                   borderRadius: '8px',
                   padding: '0 10px',
                   fontSize: '13px',
-                  color: '#f8fafc'
+                  color: 'var(--text-main)'
                 }}
               >
                 <option value="1920x1080">1920x1080 (1080p FHD)</option>
@@ -219,7 +219,7 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
             </div>
 
             <div>
-              <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
                 Target Frame Rate
               </label>
               <select
@@ -228,12 +228,12 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 style={{
                   width: '100%',
                   height: '38px',
-                  backgroundColor: '#111827',
-                  border: '1px solid rgba(255, 255, 255, 0.1)',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-subtle)',
                   borderRadius: '8px',
                   padding: '0 10px',
                   fontSize: '13px',
-                  color: '#f8fafc'
+                  color: 'var(--text-main)'
                 }}
               >
                 <option value="30">30 FPS (Standard)</option>
@@ -244,7 +244,7 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', color: '#94a3b8', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
+            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
               Virtual Line-Crossing Boundary Coordinates
             </label>
             <input
@@ -254,13 +254,13 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
               style={{
                 width: '100%',
                 height: '38px',
-                backgroundColor: '#111827',
-                border: '1px solid rgba(255, 255, 255, 0.1)',
+                backgroundColor: 'var(--bg-input)',
+                border: '1px solid var(--border-subtle)',
                 borderRadius: '8px',
                 padding: '0 12px',
                 fontSize: '12px',
                 fontFamily: 'var(--font-mono)',
-                color: '#38bdf8'
+                color: 'var(--accent-primary)'
               }}
             />
           </div>

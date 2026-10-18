@@ -61,7 +61,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
       {/* Mobile Device Simulation Frame */}
       <div style={{
         width: '390px',
-        backgroundColor: '#0a0f1d',
+        backgroundColor: 'var(--bg-card-subtle)',
         borderRadius: '36px',
         border: '8px solid #1e293b',
         boxShadow: '0 25px 60px rgba(0,0,0,0.8), 0 0 0 1px rgba(255,255,255,0.1)',
@@ -80,8 +80,8 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
           justifyContent: 'space-between',
           fontSize: '12px',
           fontWeight: 600,
-          color: '#f8fafc',
-          backgroundColor: '#0a0f1d',
+          color: 'var(--text-main)',
+          backgroundColor: 'var(--bg-card-subtle)',
           zIndex: 20
         }}>
           <span>9:41</span>
@@ -141,7 +141,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
                   width: '40px',
                   height: '40px',
                   borderRadius: '50%',
-                  backgroundColor: '#1e293b',
+                  backgroundColor: 'var(--bg-card-subtle)',
                   border: '2px solid #3b82f6',
                   display: 'flex',
                   alignItems: 'center',
@@ -152,8 +152,8 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
                   RS
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Good Morning</div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>Guard Rajesh</div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>Good Morning</div>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)' }}>Guard Rajesh</div>
                 </div>
               </div>
 
@@ -162,12 +162,12 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
                 width: '36px',
                 height: '36px',
                 borderRadius: '10px',
-                backgroundColor: '#131c31',
+                backgroundColor: 'var(--bg-card-subtle)',
                 border: '1px solid rgba(255,255,255,0.08)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: '#f8fafc'
+                color: 'var(--text-main)'
               }}>
                 <Bell size={18} />
                 <span style={{
@@ -190,13 +190,13 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
               marginBottom: '20px'
             }}>
               <div style={{
-                backgroundColor: '#101d36',
+                backgroundColor: 'var(--bg-card-subtle)',
                 borderRadius: '14px',
                 padding: '14px',
                 border: '1px solid rgba(59, 130, 246, 0.25)'
               }}>
-                <div style={{ fontSize: '24px', fontWeight: 800, color: '#38bdf8' }}>12</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', fontWeight: 600 }}>Today Entries</div>
+                <div style={{ fontSize: '24px', fontWeight: 800, color: 'var(--accent-primary)' }}>12</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 600 }}>Today Entries</div>
               </div>
 
               <div style={{
@@ -206,13 +206,13 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
                 border: '1px solid rgba(239, 68, 68, 0.25)'
               }}>
                 <div style={{ fontSize: '24px', fontWeight: 800, color: '#ef4444' }}>3</div>
-                <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px', fontWeight: 600 }}>Active Alerts</div>
+                <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px', fontWeight: 600 }}>Active Alerts</div>
               </div>
             </div>
 
             {/* Barrier Gate Control */}
             <div style={{
-              backgroundColor: '#0f172a',
+              backgroundColor: 'var(--bg-card)',
               borderRadius: '14px',
               padding: '14px',
               border: '1px solid rgba(255,255,255,0.08)',
@@ -222,7 +222,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
               justifyContent: 'space-between'
             }}>
               <div>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>Gate 1 Barrier Arm</div>
+                <div style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>Gate 1 Barrier Arm</div>
                 <div style={{
                   fontSize: '14px',
                   fontWeight: 700,
@@ -236,7 +236,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
                 onClick={handleOpenBarrier}
                 style={{
                   backgroundColor: barrierStatus === 'OPEN' ? '#10b981' : '#2563eb',
-                  color: '#fff',
+                  color: 'var(--accent-primary-text)',
                   borderRadius: '8px',
                   padding: '8px 12px',
                   fontSize: '12px',
@@ -258,8 +258,8 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
               justifyContent: 'space-between',
               marginBottom: '12px'
             }}>
-              <span style={{ fontSize: '14px', fontWeight: 700, color: '#f8fafc' }}>Live Alerts</span>
-              <span style={{ fontSize: '11px', color: '#38bdf8', fontWeight: 600 }}>View All</span>
+              <span style={{ fontSize: '14px', fontWeight: 700, color: 'var(--text-main)' }}>Live Alerts</span>
+              <span style={{ fontSize: '11px', color: 'var(--accent-primary)', fontWeight: 600 }}>View All</span>
             </div>
 
             {/* Alert List */}
@@ -267,7 +267,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
               <div
                 onClick={() => setActiveScreen('alert-detail')}
                 style={{
-                  backgroundColor: '#141d33',
+                  backgroundColor: 'var(--bg-card-subtle)',
                   borderRadius: '12px',
                   padding: '12px',
                   border: '1px solid rgba(239, 68, 68, 0.3)',
@@ -281,13 +281,13 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
                   <img src="/assets/ChatGPT Image Sep 27, 2026, 11_19_50 AM.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#f8fafc', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                     MP07XY9999
                   </div>
                   <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: 600 }}>
                     Unknown Vehicle
                   </div>
-                  <div style={{ fontSize: '10px', color: '#64748b' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                     Gate 1 • 10:41 AM
                   </div>
                 </div>
@@ -296,7 +296,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
               <div
                 onClick={() => setActiveScreen('alert-detail')}
                 style={{
-                  backgroundColor: '#141d33',
+                  backgroundColor: 'var(--bg-card-subtle)',
                   borderRadius: '12px',
                   padding: '12px',
                   border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -310,13 +310,13 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
                   <img src="/assets/ChatGPT Image Sep 27, 2026, 11_19_51 AM.png" alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ fontSize: '13px', fontWeight: 800, color: '#f8fafc', fontFamily: 'var(--font-mono)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                     MP07GH3456
                   </div>
                   <div style={{ fontSize: '11px', color: '#f59e0b', fontWeight: 600 }}>
                     Suspicious Vehicle
                   </div>
-                  <div style={{ fontSize: '10px', color: '#64748b' }}>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
                     Gate 2 • 10:38 AM
                   </div>
                 </div>
@@ -347,11 +347,11 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
             }}>
               <button
                 onClick={() => setActiveScreen('home')}
-                style={{ background: 'none', color: '#fff' }}
+                style={{ background: 'none', color: 'var(--accent-primary-text)' }}
               >
                 <ChevronLeft size={24} />
               </button>
-              <span style={{ fontSize: '15px', fontWeight: 700, color: '#fff' }}>
+              <span style={{ fontSize: '15px', fontWeight: 700, color: 'var(--accent-primary-text)' }}>
                 Scan Vehicle Plate
               </span>
               <div style={{ width: '24px' }} />
@@ -407,7 +407,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
               <div style={{
                 position: 'absolute',
                 bottom: '100px',
-                color: '#f8fafc',
+                color: 'var(--text-main)',
                 fontSize: '12px',
                 fontWeight: 600,
                 textAlign: 'center',
@@ -419,7 +419,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
 
             {/* Bottom Shutter & Manual Entry */}
             <div style={{
-              backgroundColor: '#0a0f1d',
+              backgroundColor: 'var(--bg-card-subtle)',
               padding: '20px',
               display: 'flex',
               flexDirection: 'column',
@@ -448,7 +448,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
                 }}
                 style={{
                   background: 'none',
-                  color: '#94a3b8',
+                  color: 'var(--text-secondary)',
                   fontSize: '12px',
                   fontWeight: 600
                 }}
@@ -475,7 +475,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
                 alignItems: 'center',
                 gap: '6px',
                 background: 'none',
-                color: '#94a3b8',
+                color: 'var(--text-secondary)',
                 fontSize: '12px',
                 fontWeight: 600,
                 marginBottom: '12px'
@@ -500,7 +500,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
               fontSize: '22px',
               fontWeight: 800,
               fontFamily: 'var(--font-mono)',
-              color: '#f8fafc',
+              color: 'var(--text-main)',
               marginBottom: '12px'
             }}>
               {activeDetection.plate}
@@ -511,22 +511,22 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
               flexDirection: 'column',
               gap: '8px',
               fontSize: '12px',
-              backgroundColor: '#0f172a',
+              backgroundColor: 'var(--bg-card)',
               padding: '14px',
               borderRadius: '12px',
               border: '1px solid rgba(255,255,255,0.06)',
               marginBottom: '18px'
             }}>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Owner</span>
-                <span style={{ color: '#e2e8f0', fontWeight: 600 }}>{activeDetection.owner}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Owner</span>
+                <span style={{ color: 'var(--text-main)', fontWeight: 600 }}>{activeDetection.owner}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Make / Model</span>
-                <span style={{ color: '#e2e8f0' }}>{activeDetection.model}</span>
+                <span style={{ color: 'var(--text-muted)' }}>Make / Model</span>
+                <span style={{ color: 'var(--text-main)' }}>{activeDetection.model}</span>
               </div>
               <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: '#64748b' }}>Status</span>
+                <span style={{ color: 'var(--text-muted)' }}>Status</span>
                 <span style={{ color: '#10b981', fontWeight: 700 }}>{activeDetection.status}</span>
               </div>
             </div>
@@ -579,7 +579,7 @@ export default function GuardStationView({ onAllowEntry, onRejectEntry }) {
         <div style={{
           height: '60px',
           borderTop: '1px solid rgba(255, 255, 255, 0.08)',
-          backgroundColor: '#0a0f1d',
+          backgroundColor: 'var(--bg-card-subtle)',
           display: 'grid',
           gridTemplateColumns: 'repeat(3, 1fr)',
           alignItems: 'center',

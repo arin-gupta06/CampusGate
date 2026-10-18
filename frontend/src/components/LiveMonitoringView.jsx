@@ -113,10 +113,10 @@ export default function LiveMonitoringView({
         justifyContent: 'space-between'
       }}>
         <div>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             Live Monitoring & Camera Topology Hub
           </h2>
-          <p style={{ fontSize: '13px', color: '#64748b', marginTop: '2px' }}>
+          <p style={{ fontSize: '13px', color: 'var(--text-muted)', marginTop: '2px' }}>
             Multi-camera RTSP surveillance, virtual line-crossing gates, and geometric handoff reconciliation
           </p>
         </div>
@@ -125,10 +125,10 @@ export default function LiveMonitoringView({
           {/* Sub-view toggle */}
           <div style={{
             display: 'flex',
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             padding: '3px',
             borderRadius: '8px',
-            border: '1px solid rgba(255, 255, 255, 0.08)'
+            border: '1px solid var(--border-subtle)'
           }}>
             <button
               onClick={() => setSubView('ALL')}
@@ -198,13 +198,13 @@ export default function LiveMonitoringView({
               display: 'flex',
               alignItems: 'center',
               gap: '6px',
-              backgroundColor: '#2563eb',
-              color: '#fff',
+              backgroundColor: 'var(--accent-primary)',
+              color: 'var(--accent-primary-text)',
               padding: '8px 14px',
               borderRadius: '8px',
               fontSize: '12px',
               fontWeight: 600,
-              boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+              boxShadow: 'var(--shadow-elevated)'
             }}
           >
             <Plus size={15} />
@@ -232,7 +232,7 @@ export default function LiveMonitoringView({
           </div>
           <button
             onClick={() => setWebcamError(null)}
-            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '12px' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', cursor: 'pointer', fontSize: '12px' }}
           >
             Dismiss
           </button>
@@ -242,10 +242,10 @@ export default function LiveMonitoringView({
       {/* Part 1: Live Camera Streams Matrix or Empty State */}
       {(subView === 'ALL' || subView === 'CAMERAS') && (
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '16px',
           padding: '22px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)'
         }}>
           <div style={{
             display: 'flex',
@@ -255,7 +255,7 @@ export default function LiveMonitoringView({
           }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <Video size={18} color="#3b82f6" />
-              <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+              <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                 Active Surveillance Feeds ({cameras.length + (isWebcamActive ? 1 : 0)})
               </h3>
             </div>
@@ -273,9 +273,9 @@ export default function LiveMonitoringView({
           {/* If NO cameras are configured and webcam is not active, display the required clean empty state */}
           {!hasCameras ? (
             <div style={{
-              backgroundColor: '#070b14',
+              backgroundColor: 'var(--bg-card-subtle)',
               borderRadius: '14px',
-              border: '2px dashed rgba(255, 255, 255, 0.1)',
+              border: '2px dashed var(--border-medium)',
               padding: '50px 24px',
               textAlign: 'center',
               display: 'flex',
@@ -299,12 +299,12 @@ export default function LiveMonitoringView({
                 <Camera size={30} />
               </div>
 
-              <h4 style={{ fontSize: '18px', fontWeight: 700, color: '#f8fafc', margin: '0 0 6px' }}>
+              <h4 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--text-main)', margin: '0 0 6px' }}>
                 No camera feed configured
               </h4>
               <p style={{
                 fontSize: '13px',
-                color: '#94a3b8',
+                color: 'var(--text-secondary)',
                 maxWidth: '440px',
                 margin: '0 auto 24px',
                 lineHeight: 1.5
@@ -320,7 +320,7 @@ export default function LiveMonitoringView({
                     alignItems: 'center',
                     gap: '8px',
                     backgroundColor: '#059669',
-                    color: '#fff',
+                    color: 'var(--accent-primary-text)',
                     borderRadius: '10px',
                     padding: '11px 20px',
                     fontSize: '13px',
@@ -338,13 +338,13 @@ export default function LiveMonitoringView({
                     display: 'flex',
                     alignItems: 'center',
                     gap: '8px',
-                    backgroundColor: '#2563eb',
-                    color: '#fff',
+                    backgroundColor: 'var(--accent-primary)',
+                    color: 'var(--accent-primary-text)',
                     borderRadius: '10px',
                     padding: '11px 22px',
                     fontSize: '13px',
                     fontWeight: 600,
-                    boxShadow: '0 4px 14px rgba(37, 99, 235, 0.4)'
+                    boxShadow: 'var(--shadow-elevated)'
                   }}
                 >
                   <Plus size={16} />
@@ -358,9 +358,9 @@ export default function LiveMonitoringView({
                       display: 'flex',
                       alignItems: 'center',
                       gap: '8px',
-                      backgroundColor: '#1e293b',
-                      color: '#38bdf8',
-                      border: '1px solid rgba(56, 189, 248, 0.3)',
+                      backgroundColor: 'var(--bg-card-subtle)',
+                      color: 'var(--accent-primary)',
+                      border: '1px solid var(--border-medium)',
                       borderRadius: '10px',
                       padding: '11px 18px',
                       fontSize: '13px',
@@ -384,7 +384,7 @@ export default function LiveMonitoringView({
               {isWebcamActive && (
                 <div
                   style={{
-                    backgroundColor: '#070b14',
+                    backgroundColor: 'var(--bg-card-subtle)',
                     borderRadius: '12px',
                     border: '2px solid rgba(16, 185, 129, 0.6)',
                     overflow: 'hidden',
@@ -396,8 +396,8 @@ export default function LiveMonitoringView({
                   {/* Camera Top Info Bar */}
                   <div style={{
                     padding: '10px 14px',
-                    backgroundColor: '#0b1120',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                    backgroundColor: 'var(--bg-card-subtle)',
+                    borderBottom: '1px solid var(--border-subtle)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between'
@@ -410,7 +410,7 @@ export default function LiveMonitoringView({
                         backgroundColor: '#ef4444',
                         boxShadow: '0 0 8px #ef4444'
                       }} />
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
                         Laptop Built-in Webcam
                       </span>
                       <span style={{
@@ -454,7 +454,7 @@ export default function LiveMonitoringView({
                     position: 'relative',
                     width: '100%',
                     aspectRatio: '16/9',
-                    backgroundColor: '#050811',
+                    backgroundColor: 'var(--bg-base)',
                     overflow: 'hidden'
                   }}>
                     <video
@@ -478,7 +478,7 @@ export default function LiveMonitoringView({
                       backgroundColor: 'rgba(239, 68, 68, 0.9)',
                       padding: '3px 8px',
                       borderRadius: '4px',
-                      color: '#fff',
+                      color: 'var(--accent-primary-text)',
                       fontSize: '9px',
                       fontWeight: 800,
                       letterSpacing: '0.4px',
@@ -509,13 +509,13 @@ export default function LiveMonitoringView({
                     }}>
                       <span style={{
                         backgroundColor: 'rgba(15, 23, 42, 0.85)',
-                        color: '#38bdf8',
+                        color: 'var(--accent-primary)',
                         fontSize: '9px',
                         fontFamily: 'monospace',
                         fontWeight: 700,
                         padding: '2px 6px',
                         borderRadius: '4px',
-                        border: '1px solid rgba(56, 189, 248, 0.3)'
+                        border: '1px solid var(--border-medium)'
                       }}>
                         ANPR SCAN TARGET
                       </span>
@@ -586,7 +586,7 @@ export default function LiveMonitoringView({
                         padding: '2px 6px',
                         borderRadius: '4px',
                         fontSize: '10px',
-                        color: '#94a3b8',
+                        color: 'var(--text-secondary)',
                         fontFamily: 'monospace'
                       }}>
                         STREAM: LOCAL_MEDIA_TRACK_0
@@ -600,9 +600,9 @@ export default function LiveMonitoringView({
                 <div
                   key={cam.id || idx}
                   style={{
-                    backgroundColor: '#070b14',
+                    backgroundColor: 'var(--bg-card-subtle)',
                     borderRadius: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    border: '1px solid var(--border-subtle)',
                     overflow: 'hidden',
                     display: 'flex',
                     flexDirection: 'column'
@@ -611,8 +611,8 @@ export default function LiveMonitoringView({
                   {/* Camera Top Info Bar */}
                   <div style={{
                     padding: '10px 14px',
-                    backgroundColor: '#0b1120',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.06)',
+                    backgroundColor: 'var(--bg-card-subtle)',
+                    borderBottom: '1px solid var(--border-subtle)',
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between'
@@ -625,7 +625,7 @@ export default function LiveMonitoringView({
                         backgroundColor: '#10b981',
                         boxShadow: '0 0 6px #10b981'
                       }} />
-                      <span style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>{cam.name}</span>
+                      <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>{cam.name}</span>
                       <span style={{
                         backgroundColor: 'rgba(59, 130, 246, 0.15)',
                         color: '#60a5fa',
@@ -639,13 +639,13 @@ export default function LiveMonitoringView({
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                      <span style={{ fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                         {cam.fps || 30} FPS • {cam.resolution || '1080p'}
                       </span>
-                      <button style={{ background: 'none', color: '#94a3b8', padding: '2px' }} title="Calibrate Line Crossing">
+                      <button style={{ background: 'none', color: 'var(--text-secondary)', padding: '2px' }} title="Calibrate Line Crossing">
                         <Sliders size={13} />
                       </button>
-                      <button style={{ background: 'none', color: '#94a3b8', padding: '2px' }} title="Restart Stream">
+                      <button style={{ background: 'none', color: 'var(--text-secondary)', padding: '2px' }} title="Restart Stream">
                         <RefreshCw size={13} />
                       </button>
                       {onDeleteCamera && (
@@ -665,7 +665,7 @@ export default function LiveMonitoringView({
                     position: 'relative',
                     width: '100%',
                     aspectRatio: '16/9',
-                    backgroundColor: '#050811',
+                    backgroundColor: 'var(--bg-base)',
                     overflow: 'hidden',
                     display: 'flex',
                     alignItems: 'center',
@@ -706,7 +706,7 @@ export default function LiveMonitoringView({
                         <div style={{ position: 'absolute', width: '20px', height: '1px', backgroundColor: 'rgba(56, 189, 248, 0.6)' }} />
                         <div style={{ position: 'absolute', height: '20px', width: '1px', backgroundColor: 'rgba(56, 189, 248, 0.6)' }} />
                       </div>
-                      <span style={{ fontSize: '11px', color: '#94a3b8', fontFamily: 'var(--font-mono)' }}>
+                      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', fontFamily: 'var(--font-mono)' }}>
                         RTSP STREAM ACTIVE • AI DETECTOR ARMED
                       </span>
                     </div>
@@ -719,7 +719,7 @@ export default function LiveMonitoringView({
                       backgroundColor: 'rgba(239, 68, 68, 0.9)',
                       padding: '2px 6px',
                       borderRadius: '4px',
-                      color: '#fff',
+                      color: 'var(--accent-primary-text)',
                       fontSize: '9px',
                       fontWeight: 800,
                       letterSpacing: '0.4px',
@@ -755,7 +755,7 @@ export default function LiveMonitoringView({
                       </span>
                       <span style={{
                         backgroundColor: 'rgba(0,0,0,0.6)',
-                        color: '#94a3b8',
+                        color: 'var(--text-secondary)',
                         fontSize: '8px',
                         padding: '1px 4px',
                         transform: 'translateY(-100%)'
@@ -825,19 +825,19 @@ export default function LiveMonitoringView({
         }}>
           {/* Interactive Topology Graph */}
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
             padding: '22px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid var(--border-subtle)',
             display: 'flex',
             flexDirection: 'column'
           }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '14px' }}>
               <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+                <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
                   Camera Geometric Topology & Transit Path
                 </h3>
-                <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
+                <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px' }}>
                   Directional graph governing expected travel time windows between cameras
                 </p>
               </div>
@@ -855,9 +855,9 @@ export default function LiveMonitoringView({
 
             {/* SVG Interactive Topology Visualization */}
             <div style={{
-              backgroundColor: '#070b14',
+              backgroundColor: 'var(--bg-card-subtle)',
               borderRadius: '12px',
-              border: '1px solid rgba(255, 255, 255, 0.06)',
+              border: '1px solid var(--border-subtle)',
               overflow: 'hidden',
               height: '320px',
               position: 'relative'
@@ -903,17 +903,17 @@ export default function LiveMonitoringView({
 
           {/* Cross-Camera Reconciliation Status & Handoff Pipeline */}
           <div style={{
-            backgroundColor: '#0f172a',
+            backgroundColor: 'var(--bg-card)',
             borderRadius: '16px',
             padding: '22px',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            border: '1px solid var(--border-subtle)',
             display: 'flex',
             flexDirection: 'column'
           }}>
-            <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+            <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
               Cross-Camera Handoff Pipeline
             </h3>
-            <p style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', marginBottom: '14px' }}>
+            <p style={{ fontSize: '12px', color: 'var(--text-muted)', marginTop: '2px', marginBottom: '14px' }}>
               Resolves vehicles with unreadable plates using downstream evidence
             </p>
 
@@ -922,17 +922,17 @@ export default function LiveMonitoringView({
                 <div
                   key={ho.id}
                   style={{
-                    backgroundColor: '#11192d',
+                    backgroundColor: 'var(--bg-card-subtle)',
                     borderRadius: '10px',
                     padding: '12px',
-                    border: '1px solid rgba(255, 255, 255, 0.06)',
+                    border: '1px solid var(--border-subtle)',
                     display: 'flex',
                     flexDirection: 'column',
                     gap: '6px'
                   }}
                 >
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                    <span className="plate-number" style={{ fontSize: '13px', color: '#f8fafc', fontWeight: 800 }}>
+                    <span className="plate-number" style={{ fontSize: '13px', color: 'var(--text-main)', fontWeight: 800 }}>
                       {ho.plate}
                     </span>
                     <span style={{
@@ -947,17 +947,17 @@ export default function LiveMonitoringView({
                     </span>
                   </div>
 
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: '#94a3b8' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '11px', color: 'var(--text-secondary)' }}>
                     <span>{ho.sourceCam}</span>
                     <ArrowRight size={12} color="#3b82f6" />
                     <span>{ho.destCam}</span>
                   </div>
 
-                  <div style={{ fontSize: '10px', color: '#64748b' }}>
-                    Travel Time: <strong style={{ color: '#cbd5e1' }}>{ho.timeDelta}</strong> • Conf: <strong style={{ color: '#10b981' }}>{(ho.confidence * 100).toFixed(0)}%</strong>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>
+                    Travel Time: <strong style={{ color: 'var(--text-secondary)' }}>{ho.timeDelta}</strong> • Conf: <strong style={{ color: '#10b981' }}>{(ho.confidence * 100).toFixed(0)}%</strong>
                   </div>
 
-                  <div style={{ fontSize: '11px', color: '#38bdf8', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--accent-primary)', marginTop: '2px' }}>
                     {ho.reason}
                   </div>
                 </div>

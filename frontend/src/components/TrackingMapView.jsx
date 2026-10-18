@@ -37,10 +37,10 @@ export default function TrackingMapView({ vehicle }) {
     <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
       {/* Top Header Row with Vehicle Selector */}
       <div style={{
-        backgroundColor: '#0f172a',
+        backgroundColor: 'var(--bg-card)',
         borderRadius: '14px',
         padding: '16px 20px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        border: '1px solid var(--border-subtle)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between'
@@ -62,7 +62,7 @@ export default function TrackingMapView({ vehicle }) {
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <span className="plate-number" style={{ fontSize: '18px', color: '#f8fafc', fontWeight: 800 }}>
+              <span className="plate-number" style={{ fontSize: '18px', color: 'var(--text-main)', fontWeight: 800 }}>
                 {selectedVehicle.plate_number}
               </span>
               <span style={{
@@ -77,7 +77,7 @@ export default function TrackingMapView({ vehicle }) {
                 Verified
               </span>
             </div>
-            <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
+            <div style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '2px' }}>
               {selectedVehicle.make_model} • {selectedVehicle.color}
             </div>
           </div>
@@ -86,9 +86,9 @@ export default function TrackingMapView({ vehicle }) {
         {/* Date Filter & View toggle */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
           <button style={{
-            backgroundColor: '#1e293b',
-            color: '#e2e8f0',
-            border: '1px solid rgba(255, 255, 255, 0.08)',
+            backgroundColor: 'var(--bg-card-subtle)',
+            color: 'var(--text-main)',
+            border: '1px solid var(--border-subtle)',
             padding: '7px 14px',
             borderRadius: '8px',
             fontSize: '12px',
@@ -111,14 +111,14 @@ export default function TrackingMapView({ vehicle }) {
       }}>
         {/* Left Column: Movement Timeline */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column'
         }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', marginBottom: '18px' }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', marginBottom: '18px' }}>
             Movement Timeline
           </h3>
 
@@ -161,13 +161,13 @@ export default function TrackingMapView({ vehicle }) {
                   </div>
 
                   <div style={{ flex: 1, paddingBottom: '10px' }}>
-                    <div style={{ fontSize: '11px', color: '#64748b', fontFamily: 'var(--font-mono)' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-mono)' }}>
                       {step.time}
                     </div>
-                    <div style={{ fontSize: '13px', color: '#f8fafc', fontWeight: 600, marginTop: '2px' }}>
+                    <div style={{ fontSize: '13px', color: 'var(--text-main)', fontWeight: 600, marginTop: '2px' }}>
                       {step.location}
                     </div>
-                    <div style={{ fontSize: '11px', color: '#94a3b8', marginTop: '2px' }}>
+                    <div style={{ fontSize: '11px', color: 'var(--text-secondary)', marginTop: '2px' }}>
                       {step.desc}
                     </div>
                   </div>
@@ -179,9 +179,9 @@ export default function TrackingMapView({ vehicle }) {
 
         {/* Center: Campus Map Canvas (Top-down Interactive Visualization) */}
         <div style={{
-          backgroundColor: '#070b14',
+          backgroundColor: 'var(--bg-card-subtle)',
           borderRadius: '14px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border-subtle)',
           position: 'relative',
           overflow: 'hidden',
           minHeight: '440px',
@@ -197,14 +197,14 @@ export default function TrackingMapView({ vehicle }) {
             backdropFilter: 'blur(6px)',
             padding: '6px 12px',
             borderRadius: '8px',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
+            border: '1px solid var(--border-subtle)',
             zIndex: 10,
             display: 'flex',
             alignItems: 'center',
             gap: '8px'
           }}>
             <Navigation size={14} color="#38bdf8" />
-            <span style={{ fontSize: '12px', color: '#f8fafc', fontWeight: 600 }}>
+            <span style={{ fontSize: '12px', color: 'var(--text-main)', fontWeight: 600 }}>
               Campus Geometric Topology
             </span>
           </div>
@@ -229,7 +229,7 @@ export default function TrackingMapView({ vehicle }) {
             <rect x="470" y="80" width="150" height="100" rx="8" fill="#131c31" stroke="rgba(255, 255, 255, 0.1)" strokeWidth="1.5" />
             <text x="545" y="135" fill="#64748b" fontSize="12" textAnchor="middle" fontWeight="600">Admin Block</text>
 
-            <rect x="420" y="270" width="220" height="130" rx="8" fill="#0f1f2e" stroke="#10b981" strokeDasharray="4" strokeWidth="1.5" />
+            <rect x="420" y="270" width="220" height="130" rx="8" fill="var(--bg-card-subtle)" stroke="#10b981" strokeDasharray="4" strokeWidth="1.5" />
             <text x="530" y="340" fill="#10b981" fontSize="13" textAnchor="middle" fontWeight="700">Parking Area (Zone A)</text>
 
             {/* Road Network Pathways */}
@@ -271,15 +271,15 @@ export default function TrackingMapView({ vehicle }) {
 
         {/* Right Column: Camera Snapshots Strip */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)',
+          border: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column',
           gap: '14px'
         }}>
-          <h3 style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+          <h3 style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             Camera Snapshots
           </h3>
 
@@ -288,10 +288,10 @@ export default function TrackingMapView({ vehicle }) {
               <div
                 key={i}
                 style={{
-                  backgroundColor: '#070b14',
+                  backgroundColor: 'var(--bg-card-subtle)',
                   borderRadius: '10px',
                   overflow: 'hidden',
-                  border: '1px solid rgba(255, 255, 255, 0.08)'
+                  border: '1px solid var(--border-subtle)'
                 }}
               >
                 <div style={{ position: 'relative', height: '95px' }}>
@@ -309,7 +309,7 @@ export default function TrackingMapView({ vehicle }) {
                     borderRadius: '4px',
                     fontSize: '10px',
                     fontFamily: 'var(--font-mono)',
-                    color: '#e2e8f0'
+                    color: 'var(--text-main)'
                   }}>
                     {item.label}
                   </div>

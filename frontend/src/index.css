@@ -302,10 +302,10 @@ aside, header {
   [style*="background-color: #2563eb"],
   [style*="background-color: #3b82f6"],
   [style*="background: linear-gradient(135deg, #2563eb"] {
-    background: #09090b !important;
-    background-color: #09090b !important;
-    color: #ffffff !important;
-    border-color: #09090b !important;
+    background: var(--accent-primary) !important;
+    background-color: var(--accent-primary) !important;
+    color: var(--accent-primary-text) !important;
+    border-color: var(--accent-primary) !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15) !important;
   }
 

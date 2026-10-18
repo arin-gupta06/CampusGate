@@ -39,7 +39,7 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
             alignItems: 'center',
             gap: '8px',
             background: 'none',
-            color: '#94a3b8',
+            color: 'var(--text-secondary)',
             fontSize: '13px',
             fontWeight: 600
           }}
@@ -50,17 +50,17 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
 
         {/* Profile Switcher for demo */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <span style={{ fontSize: '12px', color: '#64748b' }}>Switch Demo Profile:</span>
+          <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>Switch Demo Profile:</span>
           <select
             value={selectedUserIndex}
             onChange={(e) => setSelectedUserIndex(parseInt(e.target.value))}
             style={{
-              backgroundColor: '#0f172a',
-              border: '1px solid rgba(255, 255, 255, 0.1)',
+              backgroundColor: 'var(--bg-card)',
+              border: '1px solid var(--border-subtle)',
               borderRadius: '8px',
               padding: '6px 12px',
               fontSize: '12px',
-              color: '#f8fafc'
+              color: 'var(--text-main)'
             }}
           >
             {MOCK_ALL_USERS.map((u, i) => (
@@ -74,10 +74,10 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
 
       {/* Main Profile Header Card */}
       <div style={{
-        backgroundColor: '#0f172a',
+        backgroundColor: 'var(--bg-card)',
         borderRadius: '20px',
         padding: '28px',
-        border: '1px solid rgba(255, 255, 255, 0.08)',
+        border: '1px solid var(--border-subtle)',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'space-between',
@@ -95,7 +95,7 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
             justifyContent: 'center',
             fontSize: '24px',
             fontWeight: 800,
-            color: '#fff',
+            color: 'var(--accent-primary-text)',
             boxShadow: '0 0 24px rgba(37, 99, 235, 0.4)'
           }}>
             {currentUser.initials}
@@ -103,7 +103,7 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h2 style={{ fontSize: '24px', fontWeight: 800, color: '#f8fafc', margin: 0 }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 800, color: 'var(--text-main)', margin: 0 }}>
                 {currentUser.name}
               </h2>
               <span style={{
@@ -123,8 +123,8 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
               </span>
             </div>
 
-            <div style={{ fontSize: '13px', color: '#94a3b8', marginTop: '4px' }}>
-              {currentUser.role} • {currentUser.semester} • Roll: <strong style={{ color: '#f8fafc', fontFamily: 'var(--font-mono)' }}>{currentUser.rollNumber}</strong>
+            <div style={{ fontSize: '13px', color: 'var(--text-secondary)', marginTop: '4px' }}>
+              {currentUser.role} • {currentUser.semester} • Roll: <strong style={{ color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>{currentUser.rollNumber}</strong>
             </div>
           </div>
         </div>
@@ -132,9 +132,9 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
         <button
           onClick={onNavigateToSettings}
           style={{
-            backgroundColor: '#1e293b',
-            color: '#38bdf8',
-            border: '1px solid rgba(56, 189, 248, 0.3)',
+            backgroundColor: 'var(--bg-card-subtle)',
+            color: 'var(--accent-primary)',
+            border: '1px solid var(--border-medium)',
             borderRadius: '10px',
             padding: '10px 16px',
             fontSize: '13px',
@@ -157,99 +157,99 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
       }}>
         {/* Branch / Department */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
             <Building size={16} color="#3b82f6" />
             <span>Branch / Department</span>
           </div>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)' }}>
             {currentUser.department}
           </div>
         </div>
 
         {/* Number of Vehicles */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
             <Car size={16} color="#10b981" />
             <span>Registered Vehicles</span>
           </div>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)' }}>
             {currentUser.vehicles?.length || 0} Registered Pass
           </div>
         </div>
 
         {/* Vehicle License Plate */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
             <ShieldCheck size={16} color="#38bdf8" />
             <span>Vehicle Number (Plate)</span>
           </div>
-          <div className="plate-number" style={{ fontSize: '16px', fontWeight: 800, color: '#38bdf8' }}>
+          <div className="plate-number" style={{ fontSize: '16px', fontWeight: 800, color: 'var(--accent-primary)' }}>
             {currentUser.vehicles?.join(', ') || 'No vehicle registered'}
           </div>
         </div>
 
         {/* Vehicle Type & Model */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
             <Car size={16} color="#f59e0b" />
             <span>Vehicle Model / Type</span>
           </div>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)' }}>
             {currentUser.vehicleType}
           </div>
         </div>
 
         {/* Contact Email & Phone */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
             <Mail size={16} color="#8b5cf6" />
             <span>Email & Phone</span>
           </div>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: '#f8fafc' }}>
+          <div style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)' }}>
             {currentUser.email}
           </div>
-          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+          <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px' }}>
             {currentUser.phone}
           </div>
         </div>
 
         {/* Pass Validity Expiry */}
         <div style={{
-          backgroundColor: '#0f172a',
+          backgroundColor: 'var(--bg-card)',
           borderRadius: '14px',
           padding: '18px 20px',
-          border: '1px solid rgba(255, 255, 255, 0.08)'
+          border: '1px solid var(--border-subtle)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: '#94a3b8', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px', fontWeight: 600, marginBottom: '6px' }}>
             <Calendar size={16} color="#10b981" />
             <span>Pass Expiry Validity</span>
           </div>
-          <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
             {currentUser.validTill}
           </div>
         </div>
@@ -257,13 +257,13 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
 
       {/* Recent Entry Audit History For This Profile */}
       <div style={{
-        backgroundColor: '#0f172a',
+        backgroundColor: 'var(--bg-card)',
         borderRadius: '16px',
         padding: '24px',
-        border: '1px solid rgba(255, 255, 255, 0.08)'
+        border: '1px solid var(--border-subtle)'
       }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
-          <h3 style={{ fontSize: '16px', fontWeight: 700, color: '#f8fafc', margin: 0 }}>
+          <h3 style={{ fontSize: '16px', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
             Recent Gate Activity for {currentUser.vehicles?.[0] || 'Member'}
           </h3>
           <span style={{ fontSize: '12px', color: '#10b981', fontWeight: 600 }}>
@@ -273,7 +273,7 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
           <div style={{
-            backgroundColor: '#111827',
+            backgroundColor: 'var(--bg-input)',
             borderRadius: '10px',
             padding: '14px',
             display: 'flex',
@@ -290,16 +290,16 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
                 boxShadow: '0 0 8px #10b981'
               }} />
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
                   Gate 1 - Main Entry (Ingress)
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                   Camera #1 line-crossing triggered • Barrier auto-lifted
                 </div>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '12px', color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                 Today, 10:42:15 AM
               </div>
               <span style={{
@@ -316,7 +316,7 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
           </div>
 
           <div style={{
-            backgroundColor: '#111827',
+            backgroundColor: 'var(--bg-input)',
             borderRadius: '10px',
             padding: '14px',
             display: 'flex',
@@ -333,16 +333,16 @@ export default function UserProfileView({ onBackToHome, onNavigateToSettings }) 
                 boxShadow: '0 0 8px #3b82f6'
               }} />
               <div>
-                <div style={{ fontSize: '13px', fontWeight: 700, color: '#f8fafc' }}>
+                <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-main)' }}>
                   Campus Road Corridor (Transit)
                 </div>
-                <div style={{ fontSize: '11px', color: '#64748b' }}>
+                <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>
                   Handoff verified in 42 seconds (speed: 24 km/h)
                 </div>
               </div>
             </div>
             <div style={{ textAlign: 'right' }}>
-              <div style={{ fontSize: '12px', color: '#e2e8f0', fontFamily: 'var(--font-mono)' }}>
+              <div style={{ fontSize: '12px', color: 'var(--text-main)', fontFamily: 'var(--font-mono)' }}>
                 Today, 10:45:22 AM
               </div>
               <span style={{
