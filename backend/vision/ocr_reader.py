@@ -18,8 +18,8 @@ STANDARD_PLATE_REGEX = re.compile(r"^([A-Z]{2})([0-9]{1,2})([A-Z]{0,3})([0-9]{4}
 # Bharat Series: Year (2 digits) + BH + Number (4 digits) + Letters (1-2 letters)
 BHARAT_SERIES_REGEX = re.compile(r"^([0-9]{2})BH([0-9]{4})([A-Z]{1,2})$")
 
-CHAR_TO_DIGIT = {"O": "0", "I": "1", "Z": "2", "S": "5", "B": "8", "G": "6", "Q": "0"}
-DIGIT_TO_CHAR = {"0": "O", "1": "I", "2": "Z", "5": "S", "8": "B", "6": "G"}
+CHAR_TO_DIGIT = {"O": "0", "Q": "0", "D": "0", "I": "1", "L": "1", "Z": "7", "T": "7", "S": "5", "B": "8", "G": "6", "A": "4"}
+DIGIT_TO_CHAR = {"0": "O", "1": "I", "7": "Z", "5": "S", "8": "B", "6": "G", "4": "A", "2": "Z"}
 
 class IndianPlateNormalizer:
     @staticmethod
@@ -33,48 +33,58 @@ class IndianPlateNormalizer:
     def validate_and_normalize(cls, raw_text: str) -> Tuple[Optional[str], bool, str]:
         """
         Validates and attempts contextual correction for Indian registration numbers.
+        Handles HSRP badges (IND, 1ND, ID, ROM prefixes), character confusions (O/0, Z/7, etc.)
         Returns:
             normalized_plate (str or None)
             is_valid (bool)
-            pattern_type (str): 'STANDARD', 'BHARAT', or 'UNKNOWN'
+            pattern_type (str): 'STANDARD', 'STANDARD_CORRECTED', 'BHARAT', or 'UNKNOWN'
         """
         cleaned = cls.clean_text(raw_text)
-        if len(cleaned) < 6 or len(cleaned) > 12:
+        if len(cleaned) < 5:
             return cleaned if cleaned else None, False, "UNKNOWN"
 
-        # Check Bharat series first
-        bh_match = BHARAT_SERIES_REGEX.match(cleaned)
-        if bh_match:
+        # Check direct match first
+        if STANDARD_PLATE_REGEX.match(cleaned) and cleaned[:2] in INDIAN_STATE_CODES:
+            return cleaned, True, "STANDARD"
+        if BHARAT_SERIES_REGEX.match(cleaned):
             return cleaned, True, "BHARAT"
 
-        # Check Standard format
-        std_match = STANDARD_PLATE_REGEX.match(cleaned)
-        if std_match:
-            state = std_match.group(1)
-            if state in INDIAN_STATE_CODES:
-                return cleaned, True, "STANDARD"
+        # Strip prefixes like IND, 1ND, ID, ROM, 7D by locating state code
+        start_idx = -1
+        for st in INDIAN_STATE_CODES:
+            pos = cleaned.find(st)
+            if pos != -1 and (start_idx == -1 or pos < start_idx):
+                start_idx = pos
 
-        # Attempt heuristic positional corrections
-        corrected = list(cleaned)
-        # Position 0 & 1 must be letters (State code)
-        if len(corrected) >= 2:
-            if corrected[0] in DIGIT_TO_CHAR:
-                corrected[0] = DIGIT_TO_CHAR[corrected[0]]
-            if corrected[1] in DIGIT_TO_CHAR:
-                corrected[1] = DIGIT_TO_CHAR[corrected[1]]
+        candidate = cleaned[start_idx:] if start_idx != -1 else cleaned
 
-        # Last 4 characters should be digits
-        if len(corrected) >= 8:
-            for i in range(len(corrected) - 4, len(corrected)):
-                if corrected[i] in CHAR_TO_DIGIT:
-                    corrected[i] = CHAR_TO_DIGIT[corrected[i]]
+        # Standard plate format correction: State(2) + District(1-2) + Series(0-3) + Number(4)
+        if len(candidate) >= 7 and candidate[:2] in INDIAN_STATE_CODES:
+            state = candidate[:2]
+            rest = candidate[2:]
 
-        candidate = "".join(corrected)
-        std_match_corr = STANDARD_PLATE_REGEX.match(candidate)
-        if std_match_corr and std_match_corr.group(1) in INDIAN_STATE_CODES:
-            return candidate, True, "STANDARD_CORRECTED"
+            # Last 4 characters must be digits
+            last4_raw = rest[-4:]
+            last4 = "".join(CHAR_TO_DIGIT.get(c, c) if not c.isdigit() else c for c in last4_raw)
 
-        return cleaned, False, "UNVERIFIED"
+            middle = rest[:-4]
+            dist_digits = ""
+            series_letters = ""
+
+            for c in middle:
+                if len(dist_digits) < 2 and (c.isdigit() or c in CHAR_TO_DIGIT):
+                    dist_digits += CHAR_TO_DIGIT.get(c, c)
+                else:
+                    series_letters += DIGIT_TO_CHAR.get(c, c) if c.isdigit() else c
+
+            if len(dist_digits) == 1 and dist_digits in ["1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+                dist_digits = "0" + dist_digits
+
+            full_candidate = state + dist_digits + series_letters + last4
+            if STANDARD_PLATE_REGEX.match(full_candidate):
+                return full_candidate, True, "STANDARD_CORRECTED"
+
+        return candidate, False, "UNVERIFIED"
 
 class PlateReadingAggregator:
     """

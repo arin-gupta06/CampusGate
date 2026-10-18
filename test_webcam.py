@@ -28,6 +28,8 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
+from backend.vision.ocr_reader import IndianPlateNormalizer
+
 def parse_args():
     parser = argparse.ArgumentParser(description="Campus Gate - Laptop Webcam Testing Utility")
     parser.add_argument("--cam", type=int, default=0, help="Camera device index (0 for built-in laptop camera)")
@@ -124,6 +126,7 @@ def main():
     fps_display = "0.0"
     last_ocr_time = 0
     current_plate_text = None
+    recent_reads = []
     plate_status = "SCANNING"
 
     # Save directory
@@ -184,23 +187,64 @@ def main():
                     cv2.putText(frame, label, (x1, max(18, y1 - 6)),
                                 cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2, cv2.LINE_AA)
 
-            # Run OCR on the best plate crop every 0.6 seconds
+            # Run OCR on the best plate crop every 0.4 seconds with preprocessing & normalization
             now = time.time()
-            if detected_plates and ocr_reader and (now - last_ocr_time > 0.6):
+            if detected_plates and ocr_reader and (now - last_ocr_time > 0.4):
                 last_ocr_time = now
                 px1, py1, px2, py2, pconf = detected_plates[0]
                 crop = frame[max(0, py1):min(h, py2), max(0, px1):min(w, px2)]
 
                 if crop.size > 0:
                     try:
-                        ocr_res = ocr_reader.readtext(crop)
+                        # 1. Image preprocessing: Upscale small crops & enhance contrast with CLAHE
+                        ch, cw = crop.shape[:2]
+                        if ch < 110:
+                            scale = 110.0 / ch
+                            crop_resized = cv2.resize(crop, (int(cw * scale), 110), interpolation=cv2.INTER_CUBIC)
+                        else:
+                            crop_resized = crop
+
+                        cgray = cv2.cvtColor(crop_resized, cv2.COLOR_BGR2GRAY) if len(crop_resized.shape) == 3 else crop_resized
+                        cfiltered = cv2.bilateralFilter(cgray, 9, 75, 75)
+                        clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
+                        cprocessed = clahe.apply(cfiltered)
+
+                        # 2. Run EasyOCR with character allowlist
+                        ocr_res = ocr_reader.readtext(cprocessed, allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ", paragraph=False)
+                        if not ocr_res:
+                            # Fallback on raw crop
+                            ocr_res = ocr_reader.readtext(crop, allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ", paragraph=False)
+
                         if ocr_res:
-                            raw_text = "".join([r[1] for r in ocr_res]).upper().replace(" ", "").replace("-", "")
-                            # Filter alphanumeric
-                            clean_text = "".join([c for c in raw_text if c.isalnum()])
-                            if len(clean_text) >= 4:
-                                current_plate_text = clean_text
-                                print(f"[*] Detected Plate OCR: {current_plate_text}")
+                            raw_candidates = []
+                            for r in ocr_res:
+                                text_clean = "".join([c for c in r[1].upper() if c.isalnum()])
+                                if len(text_clean) >= 2:
+                                    raw_candidates.append(text_clean)
+
+                            combined_raw = "".join(raw_candidates)
+
+                            if len(combined_raw) >= 4:
+                                # 3. Apply Indian Plate Normalizer (strips HSRP prefixes like IND/ROM and fixes O/0, Z/7)
+                                norm_plate, is_valid, ptype = IndianPlateNormalizer.validate_and_normalize(combined_raw)
+
+                                candidate_plate = norm_plate if is_valid else (norm_plate or combined_raw)
+                                recent_reads.append(candidate_plate)
+                                if len(recent_reads) > 7:
+                                    recent_reads.pop(0)
+
+                                # 4. Rolling consensus (majority vote across last frames)
+                                counts = {}
+                                for p in recent_reads:
+                                    counts[p] = counts.get(p, 0) + 1
+                                top_plate, count = max(counts.items(), key=lambda x: x[1])
+
+                                if is_valid or count >= 2:
+                                    if top_plate != current_plate_text:
+                                        print(f"[✓] Plate Resolved: {top_plate} (Raw OCR: '{combined_raw}' -> {ptype})")
+                                    current_plate_text = top_plate
+                                else:
+                                    print(f"[*] Raw OCR: '{combined_raw}' (Validating...)")
                     except Exception as err:
                         pass
 
