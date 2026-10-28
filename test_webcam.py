@@ -20,6 +20,8 @@ import os
 import time
 import argparse
 from pathlib import Path
+import math
+from typing import Dict, Any, List, Optional, Tuple
 import cv2
 import numpy as np
 
@@ -30,6 +32,8 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from backend.vision.ocr_reader import IndianPlateNormalizer
 from backend.vision.yolo_char_reader import YOLOCharacterEngine
+from backend.vision.quality_gate import PlateQualityGate
+from backend.vision.spatio_temporal_matcher import SpatioTemporalPlateMatcher
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Campus Gate - Laptop Webcam Testing Utility")
@@ -37,7 +41,8 @@ def parse_args():
     parser.add_argument("--weights", type=str, default=None, help="Path to YOLO weights (.pt)")
     parser.add_argument("--engine", type=str, choices=["yolo", "easyocr"], default="yolo", 
                         help="Character reader engine: 'yolo' (YOLO Character Detector, default) or 'easyocr'")
-    parser.add_argument("--conf", type=float, default=0.35, help="Detection confidence threshold")
+    parser.add_argument("--conf", type=float, default=0.20, help="Detection confidence threshold (lowered for distant plates)")
+    parser.add_argument("--imgsz", type=int, default=1280, help="Inference resolution (1280 preserves small distant plates)")
     parser.add_argument("--ocr", action="store_true", default=True, help="Enable live character reading on plates (default: True)")
     parser.add_argument("--no-ocr", dest="ocr", action="store_false", help="Disable OCR for faster FPS")
     parser.add_argument("--mirror", action="store_true", default=False, help="Enable mirror / selfie mode preview")
@@ -110,6 +115,10 @@ def main():
             except Exception as e:
                 print(f"[!] EasyOCR initialization failed ({e}), continuing with visual detection only.")
 
+    # Quality Gate & Spatio-Temporal Matcher
+    quality_gate = PlateQualityGate()
+    spatio_matcher = SpatioTemporalPlateMatcher()
+
     # 3. Known authorized plates database (for instant offline check)
     MOCK_AUTHORIZED = {
         "MP07AB1234": ("Arin Gupta", "Student - Computer Science"),
@@ -139,10 +148,9 @@ def main():
     fps_count = 0
     fps_start = time.time()
     fps_display = "0.0"
-    last_ocr_time = 0
-    current_plate_text = None
-    recent_reads = []
-    plate_status = "SCANNING"
+    # Multi-Plate Spatial State Tracker
+    tracked_plates: Dict[int, Dict[str, Any]] = {}
+    next_plate_id = 1
 
     # Save directory
     snapshots_dir = PROJECT_ROOT / "webcam_snapshots"
@@ -164,24 +172,25 @@ def main():
                 continue
 
             h, w = frame.shape[:2]
+            now = time.time()
             fps_count += 1
-            if time.time() - fps_start >= 1.0:
-                fps_display = f"{fps_count / (time.time() - fps_start):.1f}"
+            if now - fps_start >= 1.0:
+                fps_display = f"{fps_count / (now - fps_start):.1f}"
                 fps_count = 0
-                fps_start = time.time()
+                fps_start = now
 
-            # Virtual Entry Line (Positioned near bottom, toggle with 'l')
+            # Virtual Entry Line
             if show_virtual_line:
                 line_y = int(h * 0.82)
                 cv2.line(frame, (0, line_y), (w, line_y), (0, 255, 128), 2)
                 cv2.putText(frame, "VIRTUAL ENTRY SENSOR LINE (GATE 1) [Press 'l' to toggle]", (20, line_y - 8),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 128), 1, cv2.LINE_AA)
 
-            # Run YOLO Detection
-            results = model.predict(frame, conf=args.conf, verbose=False)[0]
+            # 1. Run YOLO Detection at native high resolution
+            results = model.predict(frame, conf=args.conf, imgsz=args.imgsz, verbose=False)[0]
 
-            detected_plates = []
-            detected_vehicles = []
+            raw_detected_plates = []
+            raw_detected_vehicles = []
 
             if results.boxes is not None and len(results.boxes) > 0:
                 for box in results.boxes:
@@ -190,112 +199,216 @@ def main():
                     cls_name = model.names.get(cls_id, str(cls_id))
                     x1, y1, x2, y2 = [int(v) for v in box.xyxy[0].tolist()]
 
-                    # Bounding Box Colors
                     if cls_id == 1 or "plate" in cls_name.lower():
-                        # License Plate Box (Green)
-                        color = (0, 255, 0)
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                        detected_plates.append((x1, y1, x2, y2, conf))
-                        label = f"PLATE: {current_plate_text}" if current_plate_text else f"PLATE: {conf:.2f}"
+                        raw_detected_plates.append({"box": [x1, y1, x2, y2], "conf": conf})
                     else:
-                        # Vehicle Box (Cyan)
-                        color = (255, 191, 0)
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
-                        detected_vehicles.append((x1, y1, x2, y2, conf))
-                        label = f"{cls_name}: {conf:.2f}"
+                        raw_detected_vehicles.append({
+                            "track_id": len(raw_detected_vehicles) + 1,
+                            "box": [x1, y1, x2, y2],
+                            "conf": conf,
+                            "name": cls_name
+                        })
 
-                    cv2.putText(frame, label, (x1, max(18, y1 - 6)),
-                                cv2.FONT_HERSHEY_SIMPLEX, 0.55, color, 2, cv2.LINE_AA)
+            # 2. Central Digital Zoom Pass if no plates found (for distant plates)
+            if not raw_detected_plates:
+                zy1, zy2 = int(h * 0.12), int(h * 0.88)
+                zx1, zx2 = int(w * 0.12), int(w * 0.88)
+                center_roi = frame[zy1:zy2, zx1:zx2]
+                zoom_results = model.predict(center_roi, conf=max(0.14, args.conf - 0.05), imgsz=args.imgsz, verbose=False)[0]
+                if zoom_results.boxes is not None and len(zoom_results.boxes) > 0:
+                    for zbox in zoom_results.boxes:
+                        zcls = int(zbox.cls[0])
+                        zconf = float(zbox.conf[0])
+                        zname = model.names.get(zcls, str(zcls))
+                        if zcls == 1 or "plate" in zname.lower():
+                            bx1, by1, bx2, by2 = [int(v) for v in zbox.xyxy[0].tolist()]
+                            gx1, gy1, gx2, gy2 = zx1 + bx1, zy1 + by1, zx1 + bx2, zy1 + by2
+                            raw_detected_plates.append({"box": [gx1, gy1, gx2, gy2], "conf": zconf, "source": "ZOOM"})
 
-            # Run Character Recognition on the best plate crop
-            now = time.time()
-            char_interval = 0.20 if char_engine else 0.40
-            if detected_plates and (char_engine or ocr_reader) and (now - last_ocr_time > char_interval):
-                last_ocr_time = now
-                px1, py1, px2, py2, pconf = detected_plates[0]
-                crop = frame[max(0, py1):min(h, py2), max(0, px1):min(w, px2)]
+            # 3. Associate detected plates with persistent Plate Tracks (Distance-based Tracking)
+            visible_plate_ids = set()
+            for rpl in raw_detected_plates:
+                pbx = rpl["box"]
+                pcx = (pbx[0] + pbx[2]) / 2.0
+                pcy = (pbx[1] + pbx[3]) / 2.0
 
-                if crop.size > 0:
-                    try:
-                        combined_raw = ""
-                        norm_plate = None
-                        is_valid = False
-                        ptype = "UNKNOWN"
+                # Match to closest active plate track
+                best_pid = None
+                best_dist = 110.0  # Max pixel jump between frames
+                for pid, t in tracked_plates.items():
+                    dist = math.hypot(pcx - t["center"][0], pcy - t["center"][1])
+                    if dist < best_dist:
+                        best_dist = dist
+                        best_pid = pid
 
-                        if char_engine:
-                            # 1. High-speed YOLO Character Detection (36 classes, sorted left-to-right)
-                            raw_candidates, norm_res, avg_conf, valid_res, char_boxes = char_engine.read_plate(crop)
-                            combined_raw = raw_candidates or ""
-                            norm_plate = norm_res
-                            is_valid = valid_res
-                            ptype = "YOLO_CHARACTERS"
-                        elif ocr_reader:
-                            # 2. EasyOCR Fallback with CLAHE preprocessing
-                            ch, cw = crop.shape[:2]
-                            if ch < 110:
-                                scale = 110.0 / ch
-                                crop_resized = cv2.resize(crop, (int(cw * scale), 110), interpolation=cv2.INTER_CUBIC)
-                            else:
-                                crop_resized = crop
-
-                            cgray = cv2.cvtColor(crop_resized, cv2.COLOR_BGR2GRAY) if len(crop_resized.shape) == 3 else crop_resized
-                            cfiltered = cv2.bilateralFilter(cgray, 9, 75, 75)
-                            clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
-                            cprocessed = clahe.apply(cfiltered)
-
-                            ocr_res = ocr_reader.readtext(cprocessed, allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ", paragraph=False)
-                            if not ocr_res:
-                                ocr_res = ocr_reader.readtext(crop, allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ", paragraph=False)
-
-                            if ocr_res:
-                                raw_candidates = []
-                                for r in ocr_res:
-                                    text_clean = "".join([c for c in r[1].upper() if c.isalnum()])
-                                    if len(text_clean) >= 2:
-                                        raw_candidates.append(text_clean)
-                                combined_raw = "".join(raw_candidates)
-                                norm_plate, is_valid, ptype = IndianPlateNormalizer.validate_and_normalize(combined_raw)
-                                if not is_valid:
-                                    rev_plate, rev_valid, rev_ptype = IndianPlateNormalizer.validate_and_normalize(combined_raw[::-1])
-                                    if rev_valid:
-                                        norm_plate, is_valid, ptype = rev_plate, rev_valid, rev_ptype
-
-                        if combined_raw and len(combined_raw) >= 4:
-                            candidate_plate = norm_plate if is_valid else (norm_plate or combined_raw)
-                            recent_reads.append(candidate_plate)
-                            if len(recent_reads) > 7:
-                                recent_reads.pop(0)
-
-                            # Rolling consensus (majority vote across last frames)
-                            counts = {}
-                            for p in recent_reads:
-                                counts[p] = counts.get(p, 0) + 1
-                            top_plate, count = max(counts.items(), key=lambda x: x[1])
-
-                            if is_valid or count >= 2:
-                                if top_plate != current_plate_text:
-                                    print(f"[✓] Plate Resolved: {top_plate} (Raw: '{combined_raw}' -> {ptype})")
-                                current_plate_text = top_plate
-                            else:
-                                print(f"[*] Raw: '{combined_raw}' (Validating...)")
-                    except Exception as err:
-                        pass
-
-            # Authorization Check for Detected Plate
-            if current_plate_text:
-                if current_plate_text in MOCK_AUTHORIZED:
-                    owner, note = MOCK_AUTHORIZED[current_plate_text]
-                    plate_status = f"AUTHORIZED: {current_plate_text} ({owner})"
-                    banner_color = (16, 185, 129)  # Green
-                elif current_plate_text in MOCK_BLACKLISTED:
-                    owner, note = MOCK_BLACKLISTED[current_plate_text]
-                    plate_status = f"BLACKLISTED: {current_plate_text} ({owner})"
-                    banner_color = (0, 0, 255)  # Red
+                if best_pid is not None:
+                    # Update existing track
+                    tracked_plates[best_pid]["box"] = pbx
+                    tracked_plates[best_pid]["center"] = (pcx, pcy)
+                    tracked_plates[best_pid]["conf"] = rpl["conf"]
+                    tracked_plates[best_pid]["last_seen"] = now
+                    visible_plate_ids.add(best_pid)
                 else:
-                    plate_status = f"UNKNOWN / GUEST: {current_plate_text} (Review Required)"
+                    # Register new plate track
+                    pid = next_plate_id
+                    next_plate_id += 1
+                    tracked_plates[pid] = {
+                        "id": pid,
+                        "box": pbx,
+                        "center": (pcx, pcy),
+                        "conf": rpl["conf"],
+                        "reads": [],
+                        "resolved_plate": None,
+                        "is_valid": False,
+                        "last_ocr_time": 0.0,
+                        "last_seen": now
+                    }
+                    visible_plate_ids.add(pid)
+
+            # Purge dead plate tracks older than 1.5 seconds
+            stale_pids = [pid for pid, t in tracked_plates.items() if now - t["last_seen"] > 1.5]
+            for pid in stale_pids:
+                del tracked_plates[pid]
+
+            # 4. Run Character Recognition INDEPENDENTLY on EACH visible plate
+            for pid in visible_plate_ids:
+                p_info = tracked_plates[pid]
+                if (char_engine or ocr_reader) and (now - p_info["last_ocr_time"] > 0.18):
+                    p_info["last_ocr_time"] = now
+                    px1, py1, px2, py2 = p_info["box"]
+                    crop = frame[max(0, py1):min(h, py2), max(0, px1):min(w, px2)]
+
+                    if crop.size > 0:
+                        # Super-resolution upscaling for small/distant crops
+                        ch, cw = crop.shape[:2]
+                        if ch < 80 or cw < 160:
+                            scale = max(2.2, 90.0 / max(ch, 1))
+                            crop = cv2.resize(crop, (int(cw * scale), int(ch * scale)), interpolation=cv2.INTER_CUBIC)
+                            g = cv2.GaussianBlur(crop, (0, 0), 2.0)
+                            crop = cv2.addWeighted(crop, 1.45, g, -0.45, 0)
+
+                        try:
+                            combined_raw = ""
+                            norm_plate = None
+                            is_valid = False
+                            ptype = "UNKNOWN"
+
+                            if char_engine:
+                                raw_cand, norm_res, avg_c, valid_res, _ = char_engine.read_plate(crop)
+                                combined_raw = raw_cand or ""
+                                norm_plate = norm_res
+                                is_valid = valid_res
+                                ptype = "YOLO_CHARACTERS"
+                            elif ocr_reader:
+                                ocr_res = ocr_reader.readtext(crop, allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ", paragraph=False)
+                                if ocr_res:
+                                    combined_raw = "".join([c for c in "".join([r[1].upper() for r in ocr_res]) if c.isalnum()])
+                                    norm_plate, is_valid, ptype = IndianPlateNormalizer.validate_and_normalize(combined_raw)
+
+                            if combined_raw and len(combined_raw) >= 4:
+                                candidate = norm_plate if is_valid else (norm_plate or combined_raw)
+                                p_info["reads"].append(candidate)
+                                if len(p_info["reads"]) > 7:
+                                    p_info["reads"].pop(0)
+
+                                # Rolling consensus for THIS specific plate
+                                counts = {}
+                                for r in p_info["reads"]:
+                                    counts[r] = counts.get(r, 0) + 1
+                                top_res, count = max(counts.items(), key=lambda x: x[1])
+
+                                if is_valid or count >= 2:
+                                    if top_res != p_info["resolved_plate"]:
+                                        print(f"[✓] Plate #{pid} Resolved: {top_res} (Raw: '{combined_raw}' -> {ptype})")
+                                    p_info["resolved_plate"] = top_res
+                                    p_info["is_valid"] = is_valid
+                        except Exception as e:
+                            pass
+
+            # 5. Spatio-Temporal Association between Multiple Vehicles and Multiple Plates
+            vehicle_plate_links = {}
+            if raw_detected_vehicles and tracked_plates:
+                active_plate_list = [
+                    {"box": tracked_plates[pid]["box"], "conf": tracked_plates[pid]["conf"], "pid": pid}
+                    for pid in visible_plate_ids
+                ]
+                v_inputs = [{"track_id": v["track_id"], "box": v["box"], "conf": v["conf"]} for v in raw_detected_vehicles]
+                matches, _ = spatio_matcher.match(v_inputs, active_plate_list)
+                for m in matches:
+                    matched_pid = None
+                    for pl in active_plate_list:
+                        if pl["box"] == m.plate_box:
+                            matched_pid = pl["pid"]
+                            break
+                    if matched_pid:
+                        vehicle_plate_links[m.vehicle_track_id] = matched_pid
+
+            # 6. Render Vehicles (Cyan) and draw connecting line to their matched plate
+            for veh in raw_detected_vehicles:
+                vx1, vy1, vx2, vy2 = veh["box"]
+                vid = veh["track_id"]
+                v_bottom_center = (int((vx1 + vx2) / 2.0), int(vy2))
+
+                if vid in vehicle_plate_links:
+                    matched_pid = vehicle_plate_links[vid]
+                    p_text = tracked_plates[matched_pid]["resolved_plate"] or f"PLATE #{matched_pid}"
+                    v_label = f"{veh['name']} #{vid} -> {p_text}"
+                    # Draw connecting line between vehicle and its specific plate
+                    pcx, pcy = tracked_plates[matched_pid]["center"]
+                    cv2.line(frame, v_bottom_center, (int(pcx), int(pcy)), (0, 255, 255), 2)
+                    cv2.circle(frame, (int(pcx), int(pcy)), 4, (0, 255, 255), -1)
+                else:
+                    v_label = f"{veh['name']} #{vid}: {veh['conf']:.2f}"
+
+                cv2.rectangle(frame, (vx1, vy1), (vx2, vy2), (255, 191, 0), 2)
+                cv2.putText(frame, v_label, (vx1, max(18, vy1 - 6)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 191, 0), 2, cv2.LINE_AA)
+
+            # 7. Render License Plates INDIVIDUALLY (Green) with their OWN unique recognized text
+            active_plates_list = []
+            for pid in visible_plate_ids:
+                p_info = tracked_plates[pid]
+                px1, py1, px2, py2 = p_info["box"]
+                resolved = p_info["resolved_plate"]
+
+                if resolved:
+                    plate_label = f"PLATE #{pid}: {resolved}"
+                    active_plates_list.append((pid, resolved))
+                else:
+                    plate_label = f"PLATE #{pid}: {p_info['conf']:.2f}"
+                    active_plates_list.append((pid, "READING..."))
+
+                cv2.rectangle(frame, (px1, py1), (px2, py2), (0, 255, 0), 2)
+                cv2.putText(frame, plate_label, (px1, max(18, py1 - 6)),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.58, (0, 255, 0), 2, cv2.LINE_AA)
+
+            # 8. Bottom Status Banner: Summarize all detected plates independently
+            if active_plates_list:
+                banner_items = []
+                has_auth = False
+                has_black = False
+
+                for pid, ptext in active_plates_list:
+                    if ptext in MOCK_AUTHORIZED:
+                        owner, _ = MOCK_AUTHORIZED[ptext]
+                        banner_items.append(f"#{pid} {ptext} (AUTH: {owner})")
+                        has_auth = True
+                    elif ptext in MOCK_BLACKLISTED:
+                        owner, _ = MOCK_BLACKLISTED[ptext]
+                        banner_items.append(f"#{pid} {ptext} (BLACKLISTED!)")
+                        has_black = True
+                    else:
+                        banner_items.append(f"#{pid} {ptext}")
+
+                plate_status = f"DETECTED ({len(active_plates_list)}): " + "  |  ".join(banner_items)
+                if has_black:
+                    banner_color = (0, 0, 255)  # Red
+                elif has_auth:
+                    banner_color = (16, 185, 129)  # Green
+                else:
                     banner_color = (0, 165, 255)  # Amber
             else:
-                plate_status = "HOLD UP NUMBER PLATE OR TOY CAR TO CAMERA"
+                plate_status = "HOLD UP NUMBER PLATES OR VEHICLES TO CAMERA"
                 banner_color = (40, 40, 40)
 
             # Top HUD Header Bar
@@ -332,7 +445,8 @@ def main():
                 cv2.imwrite(str(snap_path), frame)
                 print(f"[✓] Saved snapshot: {snap_path}")
             elif key in [ord('c'), ord('C')]:  # Trigger crossing
-                print(f"[!] Gate entry crossing simulated for plate: {current_plate_text or 'MP07AB1234'}")
+                sim_plate = next((t["resolved_plate"] for t in tracked_plates.values() if t.get("resolved_plate")), "MP07AB1234")
+                print(f"[!] Gate entry crossing simulated for plate: {sim_plate}")
             elif key in [ord('l'), ord('L')]:  # Toggle line
                 show_virtual_line = not show_virtual_line
                 print(f"[*] Virtual Entry Line: {'ON' if show_virtual_line else 'OFF'}")

@@ -115,6 +115,7 @@ class PlateReadingAggregator:
     def get_consensus(self) -> Tuple[Optional[str], float, bool]:
         """
         Returns the top-voted plate number, average confidence, and validity status.
+        Uses whole-string voting with slot-by-slot character alignment fallback.
         """
         if not self.plate_scores:
             return None, 0.0, False
@@ -123,6 +124,29 @@ class PlateReadingAggregator:
         matching_readings = [r for r in self.readings if r["normalized"] == top_plate]
         avg_conf = sum(r["confidence"] for r in matching_readings) / max(len(matching_readings), 1)
         is_valid = any(r["is_valid"] for r in matching_readings)
+
+        # Slot-by-slot character alignment fallback if top candidate is not fully valid
+        if not is_valid and len(self.readings) >= 2:
+            candidates = [r for r in self.readings if r.get("normalized") and len(r["normalized"]) in (9, 10)]
+            if candidates:
+                # Group by length
+                lengths = [len(r["normalized"]) for r in candidates]
+                dominant_len = max(set(lengths), key=lengths.count)
+                aligned = [r for r in candidates if len(r["normalized"]) == dominant_len]
+
+                reconstructed_chars = []
+                for idx in range(dominant_len):
+                    char_votes = defaultdict(float)
+                    for r in aligned:
+                        char_votes[r["normalized"][idx]] += r["weight"]
+                    best_char = max(char_votes.items(), key=lambda x: x[1])[0]
+                    reconstructed_chars.append(best_char)
+
+                reconstructed = "".join(reconstructed_chars)
+                recon_norm, recon_valid, _ = IndianPlateNormalizer.validate_and_normalize(reconstructed)
+                if recon_valid:
+                    top_plate = recon_norm
+                    is_valid = True
 
         return top_plate, round(avg_conf, 3), is_valid
 
