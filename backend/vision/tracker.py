@@ -1,4 +1,5 @@
 import uuid
+import time
 from typing import List, Dict, Any, Tuple, Optional
 import numpy as np
 import cv2
@@ -62,7 +63,7 @@ class CameraVisionTracker:
       2. Multi-Object / Multi-Plate Disambiguation via Hungarian Assignment
       3. Focal Zone Resolution Gating (suppresses distant character hallucinations)
       4. Cascaded Vehicle-Crop Zoom for Far Distance Detection
-      5. YOLO Character Engine with Indian Plate Syntax Verification
+      5. Resilient Dual-Tier ANPR: Primary YOLO Character Engine + Standby EasyOCR Fallback with Auto-Recovery
     """
     def __init__(
         self,
@@ -75,31 +76,50 @@ class CameraVisionTracker:
         engine_type: str = "yolo"
     ):
         self.camera_id = camera_id
-        self.weights_path = weights_path
+        self.weights_path = Path(weights_path)
         self.entry_line = entry_line or VirtualEntryLine((0, 360), (640, 360), "INBOUND")
         self.conf_threshold = conf_threshold
         self.device = device
         self.engine_type = engine_type.lower()
+        self.enable_ocr = enable_ocr
         
         self.model = YOLO(str(weights_path))
         self.quality_gate = PlateQualityGate()
         self.matcher = SpatioTemporalPlateMatcher()
         
-        # Load Character Recognition Engine
+        # Dual-Tier Engine Architecture: YOLO Primary + EasyOCR Standby
+        self.yolo_engine = None
+        self.easyocr_engine = None
+        self.last_yolo_retry_time = 0.0
+
         if enable_ocr:
-            if self.engine_type == "yolo" and YOLO_CHAR_AVAILABLE:
-                char_weights = weights_path.parent / "char_detector.pt"
-                if not char_weights.exists():
-                    char_weights = Path(__file__).resolve().parent / "weights" / "char_detector.pt"
-                self.char_engine = get_yolo_char_engine(str(char_weights) if char_weights.exists() else None)
-            else:
-                self.char_engine = get_ocr_engine()
-        else:
-            self.char_engine = None
-        
+            # 1. Initialize fallback engine so character reading is never dead
+            try:
+                self.easyocr_engine = get_ocr_engine()
+            except Exception:
+                pass
+
+            # 2. Initialize primary YOLO Character Engine
+            if self.engine_type == "yolo":
+                self._try_load_yolo_engine()
+
         # State tracking per track_id:
         # {track_id: {session_id, positions, aggregator, has_crossed, direction, plate_crops, last_known_plate}}
         self.tracks: Dict[int, Dict[str, Any]] = {}
+
+    def _try_load_yolo_engine(self) -> bool:
+        """Attempts to initialize or recover YOLO Character Engine without crashing."""
+        if self.yolo_engine is not None:
+            return True
+        try:
+            from backend.vision.yolo_char_reader import get_yolo_char_engine
+            char_weights = self.weights_path.parent / "char_detector.pt"
+            if not char_weights.exists():
+                char_weights = Path(__file__).resolve().parent / "weights" / "char_detector.pt"
+            self.yolo_engine = get_yolo_char_engine(str(char_weights) if char_weights.exists() else None)
+            return True
+        except Exception:
+            return False
 
     def _calculate_track_velocity(self, positions: List[Tuple[float, float]], window: int = 4) -> Tuple[float, float]:
         """Calculates smoothed pixel displacement per frame over recent observations."""
@@ -305,17 +325,42 @@ class CameraVisionTracker:
 
                     # FOCAL ZONE GATING:
                     # Trigger character recognition only when plate enters optimal resolution
-                    if metrics.get("should_trigger_char_reader", False) and self.char_engine:
-                        if isinstance(self.char_engine, YOLOCharacterEngine) or hasattr(self.char_engine, "assemble_characters_2d"):
-                            # YOLO Character Engine
-                            raw_ocr, norm_ocr, ocr_conf, is_valid, _ = self.char_engine.read_plate(crop)
-                        else:
-                            # EasyOCR fallback
-                            raw_ocr, norm_ocr, ocr_conf, is_valid = self.char_engine.read_plate(crop)
+                    if metrics.get("should_trigger_char_reader", False) and self.enable_ocr:
+                        # Auto-Recovery: if YOLO engine was unavailable, periodically retry loading it
+                        if self.yolo_engine is None and self.engine_type == "yolo":
+                            now_t = time.time()
+                            if now_t - self.last_yolo_retry_time > 6.0:
+                                self.last_yolo_retry_time = now_t
+                                self._try_load_yolo_engine()
+
+                        yolo_succeeded = False
+                        # 1. Primary Attempt: YOLO Character Engine
+                        if self.yolo_engine:
+                            try:
+                                raw_ocr, norm_ocr, ocr_conf, is_valid, _ = self.yolo_engine.read_plate(crop)
+                                if raw_ocr and len(raw_ocr) >= 4:
+                                    yolo_succeeded = True
+                            except Exception:
+                                yolo_succeeded = False
+
+                        # 2. Resilient Fallback: EasyOCR (ONLY if YOLO was unavailable or produced no valid characters)
+                        # EasyOCR is strictly secondary; YOLO is always Priority #1
+                        if not yolo_succeeded and self.easyocr_engine:
+                            try:
+                                e_raw, e_norm, e_conf, e_valid = self.easyocr_engine.read_plate(crop)
+                                if e_raw and len(e_raw) >= 4:
+                                    raw_ocr, norm_ocr, ocr_conf, is_valid = e_raw, e_norm, e_conf, e_valid
+                            except Exception:
+                                pass
 
                         if raw_ocr:
-                            track_info["aggregator"].add_reading(raw_ocr, ocr_conf, qscore)
-                            track_info["last_known_plate"] = norm_ocr or raw_ocr
+                            engine_label = "YOLO" if yolo_succeeded else "EASYOCR"
+                            track_info["aggregator"].add_reading(raw_ocr, ocr_conf, qscore, engine_source=engine_label)
+                            
+                        # Retrieve current consensus (or latched stable identity if available)
+                        consensus_str, consensus_conf, consensus_valid = track_info["aggregator"].get_consensus()
+                        track_info["last_known_plate"] = consensus_str or norm_ocr or raw_ocr
+                        track_info["is_latched"] = track_info["aggregator"].is_latched
 
                     associated_plate_crop = {
                         "crop": crop,
@@ -327,9 +372,10 @@ class CameraVisionTracker:
                         "should_trigger_char_reader": metrics.get("should_trigger_char_reader", False),
                         "metrics": metrics,
                         "raw_ocr": raw_ocr,
-                        "normalized_plate": norm_ocr or track_info.get("last_known_plate"),
+                        "normalized_plate": track_info.get("last_known_plate"),
                         "ocr_conf": ocr_conf,
                         "is_valid_format": is_valid,
+                        "is_latched": track_info["aggregator"].is_latched,
                         "match_type": m.match_type,
                         "match_cost": m.cost
                     }

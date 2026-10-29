@@ -14,15 +14,15 @@ class PlateQualityGate:
 
     def __init__(
         self,
-        min_width: int = 30,
-        min_height: int = 12,
-        focal_min_height: int = 14,        # Relaxed for distant plates
-        focal_min_width: int = 35,         # Relaxed for distant plates
-        min_aspect_ratio: float = 1.2,
-        max_aspect_ratio: float = 6.2,
-        blur_threshold: float = 32.0,       # Relaxed for normal camera 1/30s exposure
-        contrast_threshold: float = 18.0,
-        passing_score_threshold: float = 0.38
+        min_width: int = 24,
+        min_height: int = 10,
+        focal_min_height: int = 12,        # Relaxed for distant plates
+        focal_min_width: int = 28,         # Relaxed for distant plates
+        min_aspect_ratio: float = 0.85,    # Supports two-row square motorcycle & auto plates
+        max_aspect_ratio: float = 6.8,     # Supports long horizontal strip plates
+        blur_threshold: float = 24.0,      # Relaxed for low-light & high-speed exposure
+        contrast_threshold: float = 14.0,
+        passing_score_threshold: float = 0.28  # Allows harsh lighting & night plates through
     ):
         self.min_width = min_width
         self.min_height = min_height
@@ -39,9 +39,9 @@ class PlateQualityGate:
         Determines the optical focal zone based on plate bounding box dimensions.
         """
         if h < self.focal_min_height or w < self.focal_min_width:
-            return "ZONE_FAR"  # Distant approach: track only, do not run character detection
+            return "ZONE_FAR"  # Distant approach: track only, wait until closer
         elif w > 520:
-            return "ZONE_OVERSIZED"
+            return "ZONE_CLOSE_UP"  # Vehicle right at gate / close camera view: ideal for OCR!
         else:
             return "ZONE_FOCAL_SWEETSPOT"
 
@@ -130,7 +130,7 @@ class PlateQualityGate:
 
         should_trigger_char_reader = (
             passed and
-            focal_zone == "ZONE_FOCAL_SWEETSPOT" and
+            focal_zone in ("ZONE_FOCAL_SWEETSPOT", "ZONE_CLOSE_UP") and
             laplacian_var >= effective_blur_thresh
         )
 

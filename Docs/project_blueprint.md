@@ -668,7 +668,7 @@ For an audit system, false associations deserve particular attention because a c
 - Introduce motion filtering, specialized re-identification, or additional infrastructure only where results justify them.
 - Add the guard mobile interface and refine control-room workflows.
 
-**Deliverable:** A measured pilot report and a justified deployment decision.
+**Deliverable:** A measured pilot report and a justified deployment decision (detailed metrics documented in [system_performance_report.md](file:///d:/Campus%20Gate/Docs/system_performance_report.md)).
 
 ---
 

@@ -91,14 +91,25 @@ class PlateReadingAggregator:
     Accumulates multi-frame readings for a single vehicle track session.
     Prevents single-frame jitter or misreads from determining vehicle identity.
     """
-    def __init__(self, track_session_id: str):
+    def __init__(self, track_session_id: str, quorum_threshold: int = 3, dominance_ratio: float = 1.8):
         self.track_session_id = track_session_id
         self.readings: List[Dict] = []
         self.plate_scores = defaultdict(float)
+        self.quorum_threshold = quorum_threshold
+        self.dominance_ratio = dominance_ratio
+        self.is_latched = False
+        self.latched_plate: Optional[str] = None
+        self.latched_conf: float = 0.0
 
-    def add_reading(self, raw_text: str, confidence: float, quality_score: float):
+    def add_reading(self, raw_text: str, confidence: float, quality_score: float, engine_source: str = "YOLO"):
+        # If already latched with high confidence and valid syntax, reject minor noisy fluctuations
+        if self.is_latched:
+            return
+
         normalized, is_valid, pattern_type = IndianPlateNormalizer.validate_and_normalize(raw_text)
-        weight = confidence * quality_score * (1.5 if is_valid else 0.5)
+        # Priority weighting: prioritize YOLO Character Engine (1.5x) over EasyOCR fallback (0.75x)
+        engine_bonus = 1.5 if engine_source == "YOLO" else 0.75
+        weight = confidence * quality_score * (1.8 if is_valid else 0.4) * engine_bonus
 
         self.readings.append({
             "raw_text": raw_text,
@@ -106,49 +117,102 @@ class PlateReadingAggregator:
             "confidence": confidence,
             "quality_score": quality_score,
             "is_valid": is_valid,
+            "engine_source": engine_source,
             "weight": weight
         })
 
         if normalized:
             self.plate_scores[normalized] += weight
 
+        # Evaluate latching condition immediately upon new reading
+        self._check_latch_condition()
+
+    def _check_latch_condition(self):
+        """
+        Locks in the consensus plate once statistical quorum and dominance margins are achieved.
+        Prevents flickering when vehicle sits idling in front of gate.
+        """
+        if self.is_latched or len(self.readings) < self.quorum_threshold:
+            return
+
+        top_plate, avg_conf, is_valid = self._compute_consensus()
+        if not top_plate or not is_valid:
+            return
+
+        # Check dominance ratio against 2nd candidate
+        sorted_scores = sorted(self.plate_scores.items(), key=lambda x: x[1], reverse=True)
+        top_score = self.plate_scores.get(top_plate, 0.0)
+
+        runner_up_score = 0.0
+        for cand, score in sorted_scores:
+            if cand != top_plate:
+                runner_up_score = score
+                break
+
+        # If top candidate dominates runner-up by dominance ratio and has >= quorum_threshold readings
+        matching_count = sum(1 for r in self.readings if r.get("normalized") == top_plate or is_valid)
+        margin = (top_score / runner_up_score) if runner_up_score > 0 else 999.0
+
+        if matching_count >= self.quorum_threshold and margin >= self.dominance_ratio:
+            self.is_latched = True
+            self.latched_plate = top_plate
+            self.latched_conf = avg_conf
+
+    def _compute_consensus(self) -> Tuple[Optional[str], float, bool]:
+        """
+        Internal consensus calculator using Positional Character-Slot Alignment as first-class,
+        combining whole-string Bayesian weights with slot-by-slot character frequency.
+        """
+        if not self.readings:
+            return None, 0.0, False
+
+        # Filter valid or high-probability candidates (standard Indian plates are 9 or 10 alphanumeric chars)
+        candidates = [r for r in self.readings if r.get("normalized") and len(r["normalized"]) in (9, 10)]
+
+        if candidates:
+            # Determine dominant length (e.g., 10 characters for standard private/commercial, 9 for early series)
+            lengths = [len(r["normalized"]) for r in candidates]
+            dominant_len = max(set(lengths), key=lengths.count)
+            aligned = [r for r in candidates if len(r["normalized"]) == dominant_len]
+
+            # 1. Positional Character-Slot Vector Alignment
+            reconstructed_chars = []
+            slot_confidences = []
+            for idx in range(dominant_len):
+                char_votes = defaultdict(float)
+                for r in aligned:
+                    char_votes[r["normalized"][idx]] += r["weight"]
+                best_char, best_char_weight = max(char_votes.items(), key=lambda x: x[1])
+                reconstructed_chars.append(best_char)
+                total_slot_weight = sum(char_votes.values())
+                slot_confidences.append(best_char_weight / max(total_slot_weight, 1e-4))
+
+            slot_reconstructed = "".join(reconstructed_chars)
+            norm_str, is_valid, _ = IndianPlateNormalizer.validate_and_normalize(slot_reconstructed)
+
+            if is_valid:
+                avg_conf = sum(slot_confidences) / max(len(slot_confidences), 1)
+                return norm_str, round(avg_conf, 3), True
+
+        # Fallback to whole-string highest score if slot alignment did not produce valid RTO syntax
+        if self.plate_scores:
+            top_plate = max(self.plate_scores.items(), key=lambda item: item[1])[0]
+            matching_readings = [r for r in self.readings if r.get("normalized") == top_plate]
+            avg_conf = sum(r["confidence"] for r in matching_readings) / max(len(matching_readings), 1)
+            is_valid = any(r.get("is_valid", False) for r in matching_readings)
+            return top_plate, round(avg_conf, 3), is_valid
+
+        return None, 0.0, False
+
     def get_consensus(self) -> Tuple[Optional[str], float, bool]:
         """
         Returns the top-voted plate number, average confidence, and validity status.
-        Uses whole-string voting with slot-by-slot character alignment fallback.
+        If track is latched, returns the locked-in stable identity.
         """
-        if not self.plate_scores:
-            return None, 0.0, False
+        if self.is_latched and self.latched_plate:
+            return self.latched_plate, self.latched_conf, True
 
-        top_plate = max(self.plate_scores.items(), key=lambda item: item[1])[0]
-        matching_readings = [r for r in self.readings if r["normalized"] == top_plate]
-        avg_conf = sum(r["confidence"] for r in matching_readings) / max(len(matching_readings), 1)
-        is_valid = any(r["is_valid"] for r in matching_readings)
-
-        # Slot-by-slot character alignment fallback if top candidate is not fully valid
-        if not is_valid and len(self.readings) >= 2:
-            candidates = [r for r in self.readings if r.get("normalized") and len(r["normalized"]) in (9, 10)]
-            if candidates:
-                # Group by length
-                lengths = [len(r["normalized"]) for r in candidates]
-                dominant_len = max(set(lengths), key=lengths.count)
-                aligned = [r for r in candidates if len(r["normalized"]) == dominant_len]
-
-                reconstructed_chars = []
-                for idx in range(dominant_len):
-                    char_votes = defaultdict(float)
-                    for r in aligned:
-                        char_votes[r["normalized"][idx]] += r["weight"]
-                    best_char = max(char_votes.items(), key=lambda x: x[1])[0]
-                    reconstructed_chars.append(best_char)
-
-                reconstructed = "".join(reconstructed_chars)
-                recon_norm, recon_valid, _ = IndianPlateNormalizer.validate_and_normalize(reconstructed)
-                if recon_valid:
-                    top_plate = recon_norm
-                    is_valid = True
-
-        return top_plate, round(avg_conf, 3), is_valid
+        return self._compute_consensus()
 
 class EasyOCRPlateEngine:
     """

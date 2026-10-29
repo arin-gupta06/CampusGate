@@ -30,7 +30,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from backend.vision.ocr_reader import IndianPlateNormalizer
+from backend.vision.ocr_reader import IndianPlateNormalizer, PlateReadingAggregator
 from backend.vision.yolo_char_reader import YOLOCharacterEngine
 from backend.vision.quality_gate import PlateQualityGate
 from backend.vision.spatio_temporal_matcher import SpatioTemporalPlateMatcher
@@ -95,25 +95,31 @@ def main():
         sys.exit(1)
 
     # 2. Load Character Recognition Engine (YOLO or EasyOCR)
+    # 2. Load Character Recognition Engine (Dual-Tier: YOLO Primary + EasyOCR Standby Fallback)
     char_engine = None
     ocr_reader = None
+    yolo_wanted = (args.engine == "yolo")
+    last_yolo_retry_time = 0.0
+
     if args.ocr:
-        if args.engine == "yolo":
+        # Pre-initialize EasyOCR as standby fallback
+        try:
+            import easyocr
+            print("[*] Initializing EasyOCR engine (English) as standby fallback...")
+            ocr_reader = easyocr.Reader(['en'], gpu=False, verbose=False)
+            print("[✓] EasyOCR fallback engine ready!")
+        except Exception as e:
+            print(f"[!] EasyOCR standby initialization note ({e}).")
+
+        # Initialize YOLO Character Engine as Primary
+        if yolo_wanted:
             try:
                 char_weights = PROJECT_ROOT / "backend" / "vision" / "weights" / "char_detector.pt"
                 char_engine = YOLOCharacterEngine(str(char_weights))
+                print("[✓] YOLO Character Engine active as Primary ANPR reader!")
             except Exception as e:
-                print(f"[!] Failed to load YOLO Character Engine ({e}), falling back to EasyOCR.")
-                args.engine = "easyocr"
-
-        if args.engine == "easyocr":
-            try:
-                import easyocr
-                print("[*] Initializing EasyOCR engine (English)...")
-                ocr_reader = easyocr.Reader(['en'], gpu=False, verbose=False)
-                print("[✓] EasyOCR engine ready!")
-            except Exception as e:
-                print(f"[!] EasyOCR initialization failed ({e}), continuing with visual detection only.")
+                print(f"[!] YOLO Character Engine not ready ({e}). Falling back to EasyOCR temporarily, but will retry YOLO in the background.")
+                last_yolo_retry_time = time.time()
 
     # Quality Gate & Spatio-Temporal Matcher
     quality_gate = PlateQualityGate()
@@ -178,6 +184,18 @@ def main():
                 fps_display = f"{fps_count / (now - fps_start):.1f}"
                 fps_count = 0
                 fps_start = now
+
+            # Automatic YOLO Recovery: If YOLO was requested but was unready at launch, keep trying to load it
+            if args.ocr and yolo_wanted and char_engine is None and (now - last_yolo_retry_time > 6.0):
+                last_yolo_retry_time = now
+                try:
+                    char_weights = PROJECT_ROOT / "backend" / "vision" / "weights" / "char_detector.pt"
+                    if char_weights.exists():
+                        print("[*] Automatically retrying connection to YOLO Character Engine...")
+                        char_engine = YOLOCharacterEngine(str(char_weights))
+                        print("[✓] YOLO Character Engine connected! Re-promoted to Primary ANPR Engine.")
+                except Exception:
+                    pass
 
             # Virtual Entry Line
             if show_virtual_line:
@@ -257,9 +275,11 @@ def main():
                         "box": pbx,
                         "center": (pcx, pcy),
                         "conf": rpl["conf"],
+                        "aggregator": PlateReadingAggregator(str(pid), quorum_threshold=3, dominance_ratio=1.8),
                         "reads": [],
                         "resolved_plate": None,
                         "is_valid": False,
+                        "is_latched": False,
                         "last_ocr_time": 0.0,
                         "last_seen": now
                     }
@@ -292,36 +312,59 @@ def main():
                             norm_plate = None
                             is_valid = False
                             ptype = "UNKNOWN"
+                            yolo_success = False
 
+                            # 1. ALWAYS TRY YOLO CHARACTER ENGINE FIRST (PRIORITY #1)
                             if char_engine:
-                                raw_cand, norm_res, avg_c, valid_res, _ = char_engine.read_plate(crop)
-                                combined_raw = raw_cand or ""
-                                norm_plate = norm_res
-                                is_valid = valid_res
-                                ptype = "YOLO_CHARACTERS"
-                            elif ocr_reader:
-                                ocr_res = ocr_reader.readtext(crop, allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ", paragraph=False)
-                                if ocr_res:
-                                    combined_raw = "".join([c for c in "".join([r[1].upper() for r in ocr_res]) if c.isalnum()])
-                                    norm_plate, is_valid, ptype = IndianPlateNormalizer.validate_and_normalize(combined_raw)
+                                try:
+                                    raw_cand, norm_res, avg_c, valid_res, _ = char_engine.read_plate(crop)
+                                    if raw_cand and len(raw_cand) >= 4:
+                                        combined_raw = raw_cand
+                                        norm_plate = norm_res
+                                        is_valid = valid_res
+                                        ptype = "YOLO_CHARACTERS [PRIORITY #1]"
+                                        yolo_success = True
+                                except Exception:
+                                    # Temporary failure on this crop - do NOT quit trying YOLO!
+                                    yolo_success = False
+
+                            # 2. STANDBY FALLBACK TO EASYOCR: ONLY IF YOLO DETECTED NOTHING OR ERRORED
+                            # If YOLO succeeded in detecting characters, EasyOCR will NEVER override it!
+                            if not yolo_success and ocr_reader:
+                                try:
+                                    ocr_res = ocr_reader.readtext(crop, allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ ", paragraph=False)
+                                    if ocr_res:
+                                        ocr_raw = "".join([c for c in "".join([r[1].upper() for r in ocr_res]) if c.isalnum()])
+                                        if ocr_raw and len(ocr_raw) >= 4:
+                                            ocr_norm, ocr_valid, ocr_ptype = IndianPlateNormalizer.validate_and_normalize(ocr_raw)
+                                            combined_raw = ocr_raw
+                                            norm_plate = ocr_norm
+                                            is_valid = ocr_valid
+                                            ptype = "EASYOCR [STANDBY FALLBACK]"
+                                except Exception:
+                                    pass
 
                             if combined_raw and len(combined_raw) >= 4:
-                                candidate = norm_plate if is_valid else (norm_plate or combined_raw)
-                                p_info["reads"].append(candidate)
-                                if len(p_info["reads"]) > 7:
-                                    p_info["reads"].pop(0)
+                                engine_tag = "YOLO" if yolo_success else "EASYOCR"
+                                conf_val = avg_c if yolo_success else 0.80
+                                # Add reading into the Bayesian multi-frame positional aggregator
+                                p_info["aggregator"].add_reading(
+                                    raw_text=combined_raw,
+                                    confidence=conf_val,
+                                    quality_score=0.90,
+                                    engine_source=engine_tag
+                                )
 
-                                # Rolling consensus for THIS specific plate
-                                counts = {}
-                                for r in p_info["reads"]:
-                                    counts[r] = counts.get(r, 0) + 1
-                                top_res, count = max(counts.items(), key=lambda x: x[1])
+                                # Get consensus (or locked latch if quorum is satisfied)
+                                top_res, c_conf, c_valid = p_info["aggregator"].get_consensus()
+                                p_info["is_latched"] = p_info["aggregator"].is_latched
 
-                                if is_valid or count >= 2:
+                                if top_res and (c_valid or len(p_info["aggregator"].readings) >= 2):
                                     if top_res != p_info["resolved_plate"]:
-                                        print(f"[✓] Plate #{pid} Resolved: {top_res} (Raw: '{combined_raw}' -> {ptype})")
+                                        latch_str = " [LOCKED LATCH]" if p_info["is_latched"] else ""
+                                        print(f"[✓] Plate #{pid} Resolved: {top_res}{latch_str} (Source: {ptype})")
                                     p_info["resolved_plate"] = top_res
-                                    p_info["is_valid"] = is_valid
+                                    p_info["is_valid"] = c_valid
                         except Exception as e:
                             pass
 
@@ -372,15 +415,17 @@ def main():
                 resolved = p_info["resolved_plate"]
 
                 if resolved:
-                    plate_label = f"PLATE #{pid}: {resolved}"
+                    latch_tag = " [LOCKED]" if p_info.get("is_latched") else f" [{len(p_info['aggregator'].readings)}/3]"
+                    plate_label = f"PLATE #{pid}: {resolved}{latch_tag}"
                     active_plates_list.append((pid, resolved))
                 else:
-                    plate_label = f"PLATE #{pid}: {p_info['conf']:.2f}"
+                    plate_label = f"PLATE #{pid}: {p_info['conf']:.2f} (READING...)"
                     active_plates_list.append((pid, "READING..."))
 
-                cv2.rectangle(frame, (px1, py1), (px2, py2), (0, 255, 0), 2)
+                box_color = (0, 255, 0) if p_info.get("is_latched") else (0, 200, 255)
+                cv2.rectangle(frame, (px1, py1), (px2, py2), box_color, 2)
                 cv2.putText(frame, plate_label, (px1, max(18, py1 - 6)),
-                            cv2.FONT_HERSHEY_SIMPLEX, 0.58, (0, 255, 0), 2, cv2.LINE_AA)
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.58, box_color, 2, cv2.LINE_AA)
 
             # 8. Bottom Status Banner: Summarize all detected plates independently
             if active_plates_list:
@@ -415,8 +460,10 @@ def main():
             cv2.rectangle(frame, (0, 0), (w, 54), (10, 14, 23), -1)
             cv2.putText(frame, f"CAMPUS GATE AI LIVE FEED | FPS: {fps_display}", (18, 22),
                         cv2.FONT_HERSHEY_SIMPLEX, 0.55, (255, 255, 255), 1, cv2.LINE_AA)
-            cv2.putText(frame, "CAMERA: Built-in Laptop Webcam (Node Gate-01)", (18, 42),
-                        cv2.FONT_HERSHEY_SIMPLEX, 0.45, (148, 163, 184), 1, cv2.LINE_AA)
+            engine_str = "ANPR: YOLO CHARACTER DETECTOR [PRIORITY #1]" if char_engine is not None else "ANPR: EASYOCR [STANDBY - RETRYING YOLO]"
+            engine_col = (0, 255, 200) if char_engine is not None else (0, 200, 255)
+            cv2.putText(frame, f"CAMERA: Laptop Webcam | {engine_str}", (18, 42),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.43, engine_col, 1, cv2.LINE_AA)
 
             # Live Status Pill
             cv2.circle(frame, (w - 110, 26), 5, (0, 255, 0), -1)
