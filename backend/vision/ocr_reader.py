@@ -43,11 +43,23 @@ class IndianPlateNormalizer:
         if len(cleaned) < 5:
             return cleaned if cleaned else None, False, "UNKNOWN"
 
-        # Check direct match first
+        # Direct match check
         if STANDARD_PLATE_REGEX.match(cleaned) and cleaned[:2] in INDIAN_STATE_CODES:
             return cleaned, True, "STANDARD"
         if BHARAT_SERIES_REGEX.match(cleaned):
             return cleaned, True, "BHARAT"
+
+        # Bharat Series contextual correction: Year (2 digits) + BH (or 8H/BM/8M/8B/BB) + Number (4 digits) + Letters (1-2 letters)
+        # Handles noisy / lookalike reads: e.g. "228H6517N", "22BM6517A", "22BH65171", "EZ22BH6517K", "228A"
+        bh_match = re.search(r"([0-9ZSOBI]{2})([8B][HM8B])([0-9OQDIZLTSBGA]{4})([A-Z0-9]{1,2})", cleaned)
+        if bh_match:
+            raw_yr, raw_code, raw_digits, raw_suffix = bh_match.groups()
+            norm_yr = "".join(CHAR_TO_DIGIT.get(c, c) for c in raw_yr)
+            norm_dig = "".join(CHAR_TO_DIGIT.get(c, c) for c in raw_digits)
+            norm_suf = "".join(DIGIT_TO_CHAR.get(c, c) for c in raw_suffix)
+            bh_candidate = f"{norm_yr}BH{norm_dig}{norm_suf}"
+            if BHARAT_SERIES_REGEX.match(bh_candidate):
+                return bh_candidate, True, "BHARAT_CORRECTED"
 
         # Strip prefixes like IND, 1ND, ID, ROM, 7D by locating state code
         start_idx = -1
@@ -166,8 +178,9 @@ class PlateReadingAggregator:
         if not self.readings:
             return None, 0.0, False
 
-        # Filter valid or high-probability candidates (standard Indian plates are 9 or 10 alphanumeric chars)
-        candidates = [r for r in self.readings if r.get("normalized") and len(r["normalized"]) in (9, 10)]
+        # Filter valid or high-probability candidates (standard & Bharat plates are 9 or 10 alphanumeric chars)
+        valid_candidates = [r for r in self.readings if r.get("is_valid") and r.get("normalized")]
+        candidates = valid_candidates if valid_candidates else [r for r in self.readings if r.get("normalized") and len(r["normalized"]) in (8, 9, 10, 11)]
 
         if candidates:
             # Determine dominant length (e.g., 10 characters for standard private/commercial, 9 for early series)

@@ -40,12 +40,86 @@ class YOLOCharacterEngine:
         print(f"[✓] YOLO Character Recognizer loaded with {len(self.model.names)} character classes!")
 
     @staticmethod
-    def rectify_perspective_and_deskew(crop: np.ndarray) -> np.ndarray:
+    def compute_tilt_angle_hough(img: np.ndarray) -> float:
+        """
+        Calculates plate planar roll tilt angle using Hough Transform on dominant edge lines.
+        Returns angle in degrees (negative for counter-clockwise / left-side down, positive for clockwise).
+        """
+        if img is None or img.size == 0:
+            return 0.0
+        h, w = img.shape[:2]
+        gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY) if len(img.shape) == 3 else img.copy()
+
+        blurred = cv2.GaussianBlur(gray, (5, 5), 0)
+        edges = cv2.Canny(blurred, 40, 160)
+
+        min_line_len = max(20, int(w * 0.22))
+        lines = cv2.HoughLinesP(edges, 1, np.pi / 180, threshold=25, minLineLength=min_line_len, maxLineGap=12)
+        if lines is None or len(lines) == 0:
+            return 0.0
+
+        angles = []
+        weights = []
+        for line in lines:
+            line_pts = line.ravel()
+            if len(line_pts) < 4:
+                continue
+            x1, y1, x2, y2 = line_pts[:4]
+            dx = float(x2 - x1)
+            dy = float(y2 - y1)
+            length = float(np.hypot(dx, dy))
+            if length < min_line_len:
+                continue
+            angle_deg = float(np.degrees(np.arctan2(dy, dx)))
+            while angle_deg > 90.0:
+                angle_deg -= 180.0
+            while angle_deg < -90.0:
+                angle_deg += 180.0
+
+            if abs(angle_deg) <= 42.0:
+                angles.append(angle_deg)
+                weights.append(length)
+
+        if not angles:
+            return 0.0
+
+        sorted_pairs = sorted(zip(angles, weights), key=lambda x: x[0])
+        total_w = sum(weights)
+        acc = 0.0
+        median_angle = sorted_pairs[0][0]
+        for ang, wt in sorted_pairs:
+            acc += wt
+            if acc >= total_w / 2.0:
+                median_angle = ang
+                break
+        return float(median_angle)
+
+    @staticmethod
+    def rotate_image_unbound(image: np.ndarray, angle_deg: float) -> np.ndarray:
+        """
+        Rotates image by angle_deg while expanding canvas to prevent clipping corners.
+        """
+        if abs(angle_deg) < 0.8:
+            return image
+        h, w = image.shape[:2]
+        center = (w / 2.0, h / 2.0)
+        M = cv2.getRotationMatrix2D(center, angle_deg, 1.0)
+        cos = abs(M[0, 0])
+        sin = abs(M[0, 1])
+        new_w = int((h * sin) + (w * cos))
+        new_h = int((h * cos) + (w * sin))
+        M[0, 2] += (new_w / 2.0) - center[0]
+        M[1, 2] += (new_h / 2.0) - center[1]
+        return cv2.warpAffine(image, M, (new_w, new_h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
+
+    @classmethod
+    def rectify_perspective_and_deskew(cls, crop: np.ndarray) -> np.ndarray:
         """
         Omni-Angle Rectification:
         1. 4-Point Trapezoidal Perspective Warp: Detects quad corners of angled gate cameras
            (rectifies yaw & pitch trapezoids).
-        2. Planar Roll Angle Deskewing: Uses minAreaRect to rotate upright (up to +-35 deg).
+        2. Planar Roll Angle Deskewing: Uses Hough Line Transform to detect tilt angle and
+           unbound rotation to prevent corner clipping (up to +-42 deg).
         """
         if crop is None or crop.size == 0:
             return crop
@@ -75,7 +149,6 @@ class YOLOCharacterEngine:
 
             if best_quad is not None:
                 pts = best_quad.reshape(4, 2).astype("float32")
-                # Order points: top-left, top-right, bottom-right, bottom-left
                 s = pts.sum(axis=1)
                 tl = pts[np.argmin(s)]
                 br = pts[np.argmax(s)]
@@ -98,28 +171,12 @@ class YOLOCharacterEngine:
         except Exception:
             pass
 
-        # 2. Planar Roll Deskewing Fallback
+        # 2. Planar Roll Deskewing via Hough Line Transform
         try:
-            _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY_INV + cv2.THRESH_OTSU)
-            y_indices, x_indices = np.where(thresh > 0)
-            if len(x_indices) >= 50:
-                coords = np.column_stack((x_indices, y_indices))
-                rect = cv2.minAreaRect(coords)
-                (center_x, center_y), (width, height), angle = rect
-
-                if width < height:
-                    angle = angle + 90.0 if angle < 0 else angle - 90.0
-
-                while angle < -45.0:
-                    angle += 90.0
-                while angle > 45.0:
-                    angle -= 90.0
-
-                if 2.0 < abs(angle) < 35.0:
-                    center = (w // 2, h // 2)
-                    M = cv2.getRotationMatrix2D(center, angle, 1.0)
-                    rotated = cv2.warpAffine(crop, M, (w, h), flags=cv2.INTER_CUBIC, borderMode=cv2.BORDER_REPLICATE)
-                    return rotated
+            tilt_angle = cls.compute_tilt_angle_hough(crop)
+            if 1.5 <= abs(tilt_angle) <= 42.0:
+                rotated = cls.rotate_image_unbound(crop, tilt_angle)
+                return rotated
         except Exception:
             pass
 
@@ -190,7 +247,7 @@ class YOLOCharacterEngine:
             return raw_string
 
         # Bharat Series: 2 digits + BH + 4 digits + 1-2 letters
-        if "BH" in cleaned[1:4]:
+        if any(code in cleaned[1:4] for code in ("BH", "8H", "BM", "8M", "8B", "BB")):
             return cleaned
 
         chars = list(cleaned)
@@ -212,20 +269,20 @@ class YOLOCharacterEngine:
         return "".join(chars)
 
     @staticmethod
-    def _dedup_row_characters(char_list: List[Dict]) -> List[Dict]:
-        """Horizontal NMS deduplication within a single row."""
+    def _dedup_characters_along_axis(char_list: List[Dict]) -> List[Dict]:
+        """Horizontal / baseline axis deduplication."""
         if not char_list:
             return []
-        sorted_x = sorted(char_list, key=lambda c: c["x1"])
+        sorted_u = sorted(char_list, key=lambda c: c.get("u", c["x1"]))
         deduped = []
-        for c in sorted_x:
+        for c in sorted_u:
             if not deduped:
                 deduped.append(c)
                 continue
             prev = deduped[-1]
-            x_overlap = min(c["x2"], prev["x2"]) - max(c["x1"], prev["x1"])
-            min_w = min(c["x2"] - c["x1"], prev["x2"] - prev["x1"])
-            if min_w > 0 and x_overlap > 0.48 * min_w:
+            u_dist = c.get("u", c["x1"]) - prev.get("u", prev["x1"])
+            avg_w = float(((c["x2"] - c["x1"]) + (prev["x2"] - prev["x1"])) / 2.0)
+            if avg_w > 0 and u_dist < 0.45 * avg_w:
                 if c["conf"] > prev["conf"]:
                     deduped[-1] = c
             else:
@@ -235,7 +292,7 @@ class YOLOCharacterEngine:
     def assemble_characters_2d(self, detected_chars: List[Dict], plate_width: int, plate_height: int) -> str:
         """
         Assembles characters in reading order across ALL plate types:
-          - Single-Row Long Plates (Private white, Commercial yellow, EV green)
+          - Single-Row Long Plates (even when tilted/rotated up to 45 deg)
           - Two-Row Stacked Plates (Motorcycles, Scooters, Autos, Cabs, Square mounts)
           - Bharat Series (BH)
         """
@@ -256,21 +313,55 @@ class YOLOCharacterEngine:
         if not filtered:
             filtered = detected_chars
 
-        # Determine if plate is Two-Row (vertical spread of centers > 25% of plate height)
-        y_centers = [(c["y1"] + c["y2"]) / 2.0 for c in filtered]
-        min_y, max_y = min(y_centers), max(y_centers)
-        vertical_spread = max_y - min_y
+        # Compute character centroid coordinates
+        centers = np.array([((c["x1"] + c["x2"]) / 2.0, (c["y1"] + c["y2"]) / 2.0) for c in filtered])
+        xs = centers[:, 0]
+        ys = centers[:, 1]
 
-        if vertical_spread > 0.25 * plate_height and len(filtered) >= 4:
-            mid_y = (min_y + max_y) / 2.0
-            row1_raw = [c for c in filtered if (c["y1"] + c["y2"]) / 2.0 < mid_y]
-            row2_raw = [c for c in filtered if (c["y1"] + c["y2"]) / 2.0 >= mid_y]
+        # Calculate text baseline tilt angle theta using linear regression on centroids
+        theta = 0.0
+        if len(filtered) >= 3 and float(np.std(xs)) > 10.0:
+            cov = np.cov(xs, ys)
+            if cov[0, 0] > 1e-4:
+                slope = float(cov[0, 1] / cov[0, 0])
+                theta = float(np.arctan(np.clip(slope, -1.0, 1.0)))
 
-            row1 = self._dedup_row_characters(row1_raw)
-            row2 = self._dedup_row_characters(row2_raw)
+        # Project coordinates onto baseline axis (u: along line from left to right, v: perpendicular)
+        cos_t = float(np.cos(theta))
+        sin_t = float(np.sin(theta))
+        for i, c in enumerate(filtered):
+            cx, cy = centers[i]
+            c["u"] = float(cx * cos_t + cy * sin_t)
+            c["v"] = float(-cx * sin_t + cy * cos_t)
+
+        v_vals = [c["v"] for c in filtered]
+        min_v, max_v = min(v_vals), max(v_vals)
+        v_spread = max_v - min_v
+
+        is_two_row = False
+        if v_spread > 0.28 * plate_height and len(filtered) >= 4:
+            mid_v = (min_v + max_v) / 2.0
+            row1_cand = [c for c in filtered if c["v"] < mid_v]
+            row2_cand = [c for c in filtered if c["v"] >= mid_v]
+            if len(row1_cand) >= 2 and len(row2_cand) >= 2:
+                u1_min, u1_max = min(c["u"] for c in row1_cand), max(c["u"] for c in row1_cand)
+                u2_min, u2_max = min(c["u"] for c in row2_cand), max(c["u"] for c in row2_cand)
+                overlap = min(u1_max, u2_max) - max(u1_min, u2_min)
+                span = max(u1_max, u2_max) - min(u1_min, u2_min)
+                # True two-row plates have significant horizontal overlap (>22% of total span)
+                if span > 0 and (overlap / span) > 0.22:
+                    is_two_row = True
+
+        if is_two_row:
+            mid_v = (min_v + max_v) / 2.0
+            row1_raw = [c for c in filtered if c["v"] < mid_v]
+            row2_raw = [c for c in filtered if c["v"] >= mid_v]
+            row1 = self._dedup_characters_along_axis(row1_raw)
+            row2 = self._dedup_characters_along_axis(row2_raw)
             raw = "".join(c["char"] for c in row1) + "".join(c["char"] for c in row2)
         else:
-            cleaned = self._dedup_row_characters(filtered)
+            # Single-row plate (whether level or tilted): sorted strictly along baseline u
+            cleaned = self._dedup_characters_along_axis(filtered)
             raw = "".join(c["char"] for c in cleaned)
 
         return self.apply_syntax_position_priors(raw)
@@ -325,32 +416,49 @@ class YOLOCharacterEngine:
         Omni-Plate Recognition Pipeline:
         Captures any type of plate, in every angle and any shade of light.
         - Multi-angle 4-point perspective warp & tilt deskewing
+        - Residual tilt detection via character centroids & second-stage fine deskewing
         - Adaptive shadow, glare, and inverted contrast compensation
-        - Two-row and single-row spatial reading
-        - Multi-pass resilience: tries alternate lighting representation if primary pass is unverified
+        - Two-row and single-row spatial reading along baseline axis
+        - Multi-pass resilience: tries alternate lighting and angle representations
         """
         if crop is None or crop.size == 0:
             return None, None, 0.0, False, []
 
         try:
-            # 1. Perspective & Angle Rectification
+            # 1. Perspective & Angle Rectification via Hough Edge Detection
             rectified = self.rectify_perspective_and_deskew(crop)
 
-            # 2. Pass 1: Standard Adaptive Lighting
+            # 2. Pass 1: Standard Adaptive Lighting on Rectified crop
             pass1_img = self.apply_lighting_invariant_enhancements(rectified, mode="STANDARD")
             raw1, norm1, conf1, valid1, chars1 = self._predict_single_image(pass1_img, conf_threshold)
 
             # If Pass 1 gave a verified format or long high-confidence string, return it immediately
-            if valid1 or (raw1 and len(raw1) >= 8 and conf1 >= 0.65):
+            if valid1 or (raw1 and len(raw1) >= 8 and conf1 >= 0.70):
                 return raw1, norm1, conf1, valid1, chars1
 
-            # 3. Pass 2 (Challenging Shade / EV / Rental / Shadow Fallback):
-            # Inspect image characteristics to choose optimal complementary mode
+            # 3. Residual Tilt Fine-Deskewing (when characters were detected at an angle)
+            if chars1 and len(chars1) >= 4 and not valid1:
+                c_xs = np.array([(c["x1"] + c["x2"]) / 2.0 for c in chars1])
+                c_ys = np.array([(c["y1"] + c["y2"]) / 2.0 for c in chars1])
+                if float(np.std(c_xs)) > 15.0:
+                    cov = np.cov(c_xs, c_ys)
+                    if cov[0, 0] > 1e-4:
+                        res_slope = float(cov[0, 1] / cov[0, 0])
+                        res_angle = float(np.degrees(np.arctan(np.clip(res_slope, -1.0, 1.0))))
+                        if abs(res_angle) >= 2.5:
+                            fine_rectified = self.rotate_image_unbound(rectified, res_angle)
+                            fine_img = self.apply_lighting_invariant_enhancements(fine_rectified, mode="STANDARD")
+                            fine_raw, fine_norm, fine_conf, fine_valid, fine_chars = self._predict_single_image(fine_img, conf_threshold)
+                            if fine_valid or (fine_raw and len(fine_raw) > len(raw1 or "")):
+                                raw1, norm1, conf1, valid1, chars1 = fine_raw, fine_norm, fine_conf, fine_valid, fine_chars
+                                if valid1:
+                                    return raw1, norm1, conf1, valid1, chars1
+
+            # 4. Pass 2 (Challenging Shade / EV / Rental / Shadow Fallback):
             gray = cv2.cvtColor(crop, cv2.COLOR_BGR2GRAY) if len(crop.shape) == 3 else crop
             mean_b = float(np.mean(gray))
 
             if mean_b < 110:
-                # Dark background: Inverts white-on-dark (Green EV, Black Rental, Night shadow) into crisp black-on-white
                 alt_mode = "INVERTED"
             elif mean_b > 185:
                 alt_mode = "ANTI_GLARE"

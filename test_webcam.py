@@ -204,8 +204,11 @@ def main():
                 cv2.putText(frame, "VIRTUAL ENTRY SENSOR LINE (GATE 1) [Press 'l' to toggle]", (20, line_y - 8),
                             cv2.FONT_HERSHEY_SIMPLEX, 0.45, (0, 255, 128), 1, cv2.LINE_AA)
 
-            # 1. Run YOLO Detection at native high resolution
-            results = model.predict(frame, conf=args.conf, imgsz=args.imgsz, verbose=False)[0]
+            # 1. Run YOLO Tracking (ByteTrack) at native high resolution
+            try:
+                results = model.track(frame, conf=args.conf, imgsz=args.imgsz, persist=True, tracker="bytetrack.yaml", verbose=False)[0]
+            except Exception:
+                results = model.predict(frame, conf=args.conf, imgsz=args.imgsz, verbose=False)[0]
 
             raw_detected_plates = []
             raw_detected_vehicles = []
@@ -220,8 +223,9 @@ def main():
                     if cls_id == 1 or "plate" in cls_name.lower():
                         raw_detected_plates.append({"box": [x1, y1, x2, y2], "conf": conf})
                     else:
+                        v_track_id = int(box.id[0]) if (box.id is not None) else (len(raw_detected_vehicles) + 1)
                         raw_detected_vehicles.append({
-                            "track_id": len(raw_detected_vehicles) + 1,
+                            "track_id": v_track_id,
                             "box": [x1, y1, x2, y2],
                             "conf": conf,
                             "name": cls_name
@@ -243,28 +247,56 @@ def main():
                             gx1, gy1, gx2, gy2 = zx1 + bx1, zy1 + by1, zx1 + bx2, zy1 + by2
                             raw_detected_plates.append({"box": [gx1, gy1, gx2, gy2], "conf": zconf, "source": "ZOOM"})
 
-            # 3. Associate detected plates with persistent Plate Tracks (Distance-based Tracking)
+            # 3. Associate detected plates with persistent Plate Tracks (Velocity-Predicted & IoU Motion Tracking)
             visible_plate_ids = set()
             for rpl in raw_detected_plates:
                 pbx = rpl["box"]
                 pcx = (pbx[0] + pbx[2]) / 2.0
                 pcy = (pbx[1] + pbx[3]) / 2.0
+                pw = max(1, pbx[2] - pbx[0])
+                ph = max(1, pbx[3] - pbx[1])
 
-                # Match to closest active plate track
                 best_pid = None
-                best_dist = 110.0  # Max pixel jump between frames
+                best_score = float("inf")
                 for pid, t in tracked_plates.items():
-                    dist = math.hypot(pcx - t["center"][0], pcy - t["center"][1])
-                    if dist < best_dist:
-                        best_dist = dist
-                        best_pid = pid
+                    dt = max(0.001, now - t["last_seen"])
+                    # Velocity-predicted position (anticipates moving cars across frames)
+                    pred_cx = t["center"][0] + t["velocity"][0] * dt
+                    pred_cy = t["center"][1] + t["velocity"][1] * dt
+                    dist = math.hypot(pcx - pred_cx, pcy - pred_cy)
+
+                    # Bounding Box IoU matching
+                    tb = t["box"]
+                    ix1 = max(pbx[0], tb[0])
+                    iy1 = max(pbx[1], tb[1])
+                    ix2 = min(pbx[2], tb[2])
+                    iy2 = min(pbx[3], tb[3])
+                    inter_area = max(0, ix2 - ix1) * max(0, iy2 - iy1)
+                    union_area = (pw * ph) + ((tb[2] - tb[0]) * (tb[3] - tb[1])) - inter_area
+                    iou = inter_area / union_area if union_area > 0 else 0.0
+
+                    # Dynamic threshold adapting to plate size and motion
+                    max_allowed_dist = max(175.0, 3.2 * pw)
+                    if iou > 0.15 or dist < max_allowed_dist:
+                        match_cost = dist - (iou * 120.0)
+                        if match_cost < best_score:
+                            best_score = match_cost
+                            best_pid = pid
 
                 if best_pid is not None:
-                    # Update existing track
-                    tracked_plates[best_pid]["box"] = pbx
-                    tracked_plates[best_pid]["center"] = (pcx, pcy)
-                    tracked_plates[best_pid]["conf"] = rpl["conf"]
-                    tracked_plates[best_pid]["last_seen"] = now
+                    # Update existing track with velocity smoothing
+                    t = tracked_plates[best_pid]
+                    dt = max(0.001, now - t["last_seen"])
+                    inst_vx = (pcx - t["center"][0]) / dt
+                    inst_vy = (pcy - t["center"][1]) / dt
+                    t["velocity"] = (
+                        0.65 * t["velocity"][0] + 0.35 * inst_vx,
+                        0.65 * t["velocity"][1] + 0.35 * inst_vy
+                    )
+                    t["box"] = pbx
+                    t["center"] = (pcx, pcy)
+                    t["conf"] = rpl["conf"]
+                    t["last_seen"] = now
                     visible_plate_ids.add(best_pid)
                 else:
                     # Register new plate track
@@ -274,6 +306,7 @@ def main():
                         "id": pid,
                         "box": pbx,
                         "center": (pcx, pcy),
+                        "velocity": (0.0, 0.0),
                         "conf": rpl["conf"],
                         "aggregator": PlateReadingAggregator(str(pid), quorum_threshold=3, dominance_ratio=1.8),
                         "reads": [],
@@ -285,8 +318,8 @@ def main():
                     }
                     visible_plate_ids.add(pid)
 
-            # Purge dead plate tracks older than 1.5 seconds
-            stale_pids = [pid for pid, t in tracked_plates.items() if now - t["last_seen"] > 1.5]
+            # Purge dead plate tracks older than 2.5 seconds
+            stale_pids = [pid for pid, t in tracked_plates.items() if now - t["last_seen"] > 2.5]
             for pid in stale_pids:
                 del tracked_plates[pid]
 
@@ -296,7 +329,13 @@ def main():
                 if (char_engine or ocr_reader) and (now - p_info["last_ocr_time"] > 0.18):
                     p_info["last_ocr_time"] = now
                     px1, py1, px2, py2 = p_info["box"]
-                    crop = frame[max(0, py1):min(h, py2), max(0, px1):min(w, px2)]
+                    pw = max(1, px2 - px1)
+                    ph = max(1, py2 - py1)
+
+                    # Contextual padding margin around crop to preserve tilted plate corners and edges
+                    pad_x = int(pw * 0.12)
+                    pad_y = int(ph * 0.18)
+                    crop = frame[max(0, py1 - pad_y):min(h, py2 + pad_y), max(0, px1 - pad_x):min(w, px2 + pad_x)]
 
                     if crop.size > 0:
                         # Super-resolution upscaling for small/distant crops
