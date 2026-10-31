@@ -1,0 +1,19 @@
+{
+  "settings_version": "0.0.8",
+  "datasets_dir": "D:\\datasets",
+  "weights_dir": "D:\\CampusGate\\weights",
+  "runs_dir": "D:\\CampusGate\\runs",
+  "uuid": "74a35db8a648feb0e5ed80ade640dcf70f5590b9ca4ca758091f9597b3f7345c",
+  "sync": true,
+  "api_key": "",
+  "openai_api_key": "",
+  "clearml": true,
+  "comet": true,
+  "dvc": true,
+  "mlflow": true,
+  "raytune": true,
+  "tensorboard": false,
+  "wandb": false,
+  "vscode_msg": true,
+  "openvino_msg": true
+}

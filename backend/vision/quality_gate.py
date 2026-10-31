@@ -10,6 +10,16 @@ class PlateQualityGate:
       - Anti-glare headlight & reflection detection
       - Speed-bump sweetspot bonus (grants high confidence during deceleration / stopped state)
       - H.264 compression noise tolerance
+      - ALL plate types: single-row cars, two-row square bike/auto plates,
+        long strip plates, HSRP, Bharat (BH), EV green, commercial black.
+
+    Two-tier OCR trigger:
+      - should_trigger_char_reader: strict gate (sweetspot/close-up + sharp).
+        Kept for backward compatibility.
+      - should_attempt_ocr: permissive gate used by snapshot post-processing.
+        Any crop that passes basic quality gets an OCR attempt, including
+        FAR-zone plates (upscaled + enhanced before reading). Focal zone and
+        quality score only weight the reading, never block it outright.
     """
 
     def __init__(
@@ -18,11 +28,11 @@ class PlateQualityGate:
         min_height: int = 10,
         focal_min_height: int = 12,        # Relaxed for distant plates
         focal_min_width: int = 28,         # Relaxed for distant plates
-        min_aspect_ratio: float = 0.85,    # Supports two-row square motorcycle & auto plates
-        max_aspect_ratio: float = 6.8,     # Supports long horizontal strip plates
-        blur_threshold: float = 24.0,      # Relaxed for low-light & high-speed exposure
+        min_aspect_ratio: float = 0.75,    # Supports square two-row bike/auto plates
+        max_aspect_ratio: float = 7.5,     # Supports long horizontal strip plates
+        blur_threshold: float = 20.0,      # Relaxed for low-light & high-speed exposure
         contrast_threshold: float = 14.0,
-        passing_score_threshold: float = 0.28  # Allows harsh lighting & night plates through
+        passing_score_threshold: float = 0.22  # Allows harsh lighting & night plates through
     ):
         self.min_width = min_width
         self.min_height = min_height
@@ -39,7 +49,7 @@ class PlateQualityGate:
         Determines the optical focal zone based on plate bounding box dimensions.
         """
         if h < self.focal_min_height or w < self.focal_min_width:
-            return "ZONE_FAR"  # Distant approach: track only, wait until closer
+            return "ZONE_FAR"  # Distant approach: upscale + enhance, still attempt OCR
         elif w > 520:
             return "ZONE_CLOSE_UP"  # Vehicle right at gate / close camera view: ideal for OCR!
         else:
@@ -53,22 +63,23 @@ class PlateQualityGate:
     ) -> Tuple[bool, float, Dict[str, Any]]:
         """
         Evaluates a BGR plate image crop from a normal camera feed.
-        
+
         Args:
             crop: BGR plate image array
             detector_conf: YOLO detection confidence score
             vehicle_speed: Optional pixel speed (px/frame) from spatio-temporal tracker
-            
+
         Returns:
             passed (bool): Whether crop passes basic quality requirements
             quality_score (float): Normalized score between 0.0 and 1.0
-            metrics (dict): Diagnostic metrics including focal_zone and should_trigger_char_reader
+            metrics (dict): Diagnostic metrics including focal_zone and OCR triggers
         """
         if crop is None or crop.size == 0:
             return False, 0.0, {
                 "error": "Empty crop",
                 "focal_zone": "INVALID",
                 "should_trigger_char_reader": False,
+                "should_attempt_ocr": False,
                 "glare_detected": False
             }
 
@@ -81,7 +92,7 @@ class PlateQualityGate:
         height_score = min(h / 32.0, 1.0)
         dim_score = (width_score + height_score) / 2.0
 
-        # 2. Aspect ratio validity
+        # 2. Aspect ratio validity (covers square two-row through long strip)
         aspect_valid = self.min_aspect_ratio <= aspect_ratio <= self.max_aspect_ratio
         aspect_score = 1.0 if aspect_valid else 0.3
 
@@ -128,10 +139,23 @@ class PlateQualityGate:
             quality_score >= self.passing_score_threshold
         )
 
+        # Strict gate (legacy): sweetspot/close-up + sharp only.
         should_trigger_char_reader = (
             passed and
             focal_zone in ("ZONE_FOCAL_SWEETSPOT", "ZONE_CLOSE_UP") and
             laplacian_var >= effective_blur_thresh
+        )
+
+        # Permissive gate (snapshot post-processing): every passed crop gets an
+        # OCR attempt. FAR-zone plates are upscaled/enhanced first; detector
+        # confidence rescues borderline distant reads.
+        should_attempt_ocr = bool(passed) or bool(
+            aspect_valid
+            and w >= self.min_width
+            and h >= self.min_height
+            and focal_zone == "ZONE_FAR"
+            and float(detector_conf) >= 0.35
+            and quality_score >= 0.15
         )
 
         metrics = {
@@ -147,6 +171,7 @@ class PlateQualityGate:
             "quality_score": quality_score,
             "focal_zone": focal_zone,
             "should_trigger_char_reader": should_trigger_char_reader,
+            "should_attempt_ocr": should_attempt_ocr,
             "passed": passed
         }
 

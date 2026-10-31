@@ -110,9 +110,11 @@ def process_split(split_name: str, zip_path: Path, out_split_dir: Path, max_samp
                 label_lines = []
 
                 # 1. Add detected vehicles (Class 0: vehicle)
+                use_campus_classes = getattr(detector, "is_campus_model", False)
                 for box in res.boxes:
                     cls_id = int(box.cls[0])
-                    if cls_id in COCO_VEHICLE_CLASSES:
+                    is_vehicle = (cls_id == 0) if use_campus_classes else (cls_id in COCO_VEHICLE_CLASSES)
+                    if is_vehicle:
                         x1, y1, x2, y2 = box.xyxy[0].tolist()
                         cx = ((x1 + x2) / 2.0) / orig_w
                         cy = ((y1 + y2) / 2.0) / orig_h
@@ -141,7 +143,7 @@ def process_split(split_name: str, zip_path: Path, out_split_dir: Path, max_samp
             if (i + len(batch_meta)) % 100 == 0 or (i + len(batch_meta)) >= total:
                 print(f"    Progress: {min(i + len(batch_meta), total)}/{total} images processed")
 
-    print(f"[✓] Finished split: {split_name} ({len(list(images_dir.glob('*.jpg')))} images saved)")
+    print(f"[OK] Finished split: {split_name} ({len(list(images_dir.glob('*.jpg')))} images saved)")
 
 def main():
     args = parse_args()
@@ -156,10 +158,24 @@ def main():
     print(f"Inference device : {args.device}")
     print(f"Max samples      : train={args.max_train}, val={args.max_val}, test={args.max_test}")
 
-    # Load pretrained baseline for vehicle auto-annotation
-    print("[*] Loading pretrained YOLO11n for vehicle detection auto-annotation...")
+    # Load detector for vehicle auto-annotation. Prefer the local Campus Gate
+    # weights (already knows the 'vehicle' class) so preparation works offline;
+    # fall back to a cached COCO baseline only if present (no downloads).
+    local_best = script_dir / "weights" / "best.pt"
     base_model_path = script_dir / "yolo11n.pt"
-    detector = YOLO(str(base_model_path) if base_model_path.exists() else "yolo11n.pt")
+    if local_best.exists():
+        print(f"[*] Loading local Campus Gate weights for auto-annotation: {local_best}")
+        detector = YOLO(str(local_best))
+        detector.is_campus_model = True
+    elif base_model_path.exists():
+        print("[*] Loading cached YOLO11n for vehicle detection auto-annotation...")
+        detector = YOLO(str(base_model_path))
+        detector.is_campus_model = False
+    else:
+        raise FileNotFoundError(
+            "No local detector weights found (checked ml_training/weights/best.pt "
+            "and ml_training/yolo11n.pt). Place weights locally; downloads are disabled."
+        )
 
     # Download splits
     test_zip = download_zip("test", cache_dir)
@@ -192,7 +208,7 @@ names:
     with open(target_config, "w", encoding="utf-8") as f:
         f.write(yaml_content)
 
-    print(f"\n[✓] Generated data configuration at:")
+    print(f"\n[OK] Generated data configuration at:")
     print(f"    - {yaml_path}")
     print(f"    - {target_config}")
     print("\nDataset preparation completed successfully!")

@@ -1,5 +1,5 @@
 # Campus Gate Unified Vehicle & License Plate Detection Dataset
-path: D:/Campus Gate/ml_training/datasets/campus_gate_det
+path: D:/CampusGate/ml_training/datasets/campus_gate_det
 train: train/images
 val: val/images
 test: test/images

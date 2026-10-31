@@ -11,6 +11,7 @@ import os
 import argparse
 from pathlib import Path
 import torch
+os.environ.setdefault("YOLO_CONFIG_DIR", str(Path(__file__).resolve().parent / ".ultralytics_cfg"))
 from ultralytics import YOLO
 
 def parse_args():
@@ -62,7 +63,7 @@ def main():
         device=args.device,
         project=str(project_dir),
         name=f"eval_{args.split}",
-        plots=True,
+        plots=False,
         save_json=True
     )
 

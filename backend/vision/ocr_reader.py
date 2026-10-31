@@ -102,8 +102,13 @@ class PlateReadingAggregator:
     """
     Accumulates multi-frame readings for a single vehicle track session.
     Prevents single-frame jitter or misreads from determining vehicle identity.
+
+    Lock policy (2-3 snapshot frames):
+      - FAST latch: 2 consecutive identical VALID reads latch immediately.
+      - QUORUM latch: >= quorum_threshold readings (default 2) with the top
+        candidate dominating the runner-up by dominance_ratio (default 1.5).
     """
-    def __init__(self, track_session_id: str, quorum_threshold: int = 3, dominance_ratio: float = 1.8):
+    def __init__(self, track_session_id: str, quorum_threshold: int = 2, dominance_ratio: float = 1.5):
         self.track_session_id = track_session_id
         self.readings: List[Dict] = []
         self.plate_scores = defaultdict(float)
@@ -161,10 +166,22 @@ class PlateReadingAggregator:
                 runner_up_score = score
                 break
 
-        # If top candidate dominates runner-up by dominance ratio and has >= quorum_threshold readings
-        matching_count = sum(1 for r in self.readings if r.get("normalized") == top_plate or is_valid)
+        # Count readings that actually voted for the top plate (exact match only).
+        matching_count = sum(1 for r in self.readings if r.get("normalized") == top_plate)
         margin = (top_score / runner_up_score) if runner_up_score > 0 else 999.0
 
+        # FAST PATH: 2 consecutive identical VALID reads latch immediately so
+        # clean plates lock in 2 snapshot frames.
+        if len(self.readings) >= 2:
+            last_two = self.readings[-2:]
+            if (all(r.get("normalized") == top_plate and r.get("is_valid") for r in last_two)
+                    and top_plate is not None):
+                self.is_latched = True
+                self.latched_plate = top_plate
+                self.latched_conf = avg_conf
+                return
+
+        # If top candidate dominates runner-up by dominance ratio and has >= quorum_threshold readings
         if matching_count >= self.quorum_threshold and margin >= self.dominance_ratio:
             self.is_latched = True
             self.latched_plate = top_plate
@@ -238,6 +255,23 @@ class EasyOCRPlateEngine:
         logger.info(f"Initializing EasyOCR reader (GPU: {gpu_available})...")
         self.reader = easyocr.Reader(['en'], gpu=gpu_available, verbose=False)
 
+    @staticmethod
+    def enhance_tiny_crop(crop: np.ndarray) -> np.ndarray:
+        """Super-resolves tiny/distant crops: 3x cubic upscale to a minimum
+        90px height, LAB-space CLAHE local contrast, and unsharp masking.
+        Gives the standby OCR engine realistic glyph strokes to read."""
+        h, w = crop.shape[:2]
+        scale = max(3.0, 90.0 / max(h, 1))
+        img = cv2.resize(crop, (int(w * scale), int(h * scale)),
+                         interpolation=cv2.INTER_CUBIC)
+        if len(img.shape) == 3:
+            lab = cv2.cvtColor(img, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            cl = cv2.createCLAHE(clipLimit=2.6, tileGridSize=(8, 8)).apply(l)
+            img = cv2.cvtColor(cv2.merge((cl, a, b)), cv2.COLOR_LAB2BGR)
+        g = cv2.GaussianBlur(img, (0, 0), 2.0)
+        return cv2.addWeighted(img, 1.45, g, -0.45, 0)
+
     def preprocess_crop(self, crop: np.ndarray) -> np.ndarray:
         """Applies grayscale conversion, bilateral filter, and adaptive contrast."""
         if crop is None or crop.size == 0:
@@ -292,10 +326,73 @@ class EasyOCRPlateEngine:
                 texts.append(text)
                 confidences.append(float(conf))
 
+        # Sensitive retry for small/distant plates: tiny glyphs often detect
+        # below default thresholds. Retry once with lowered detection
+        # barriers before giving up on the crop.
+        if not texts:
+            try:
+                sensitive = self.reader.readtext(
+                    processed,
+                    allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ -",
+                    paragraph=False,
+                    text_threshold=0.5,
+                    low_text=0.3,
+                    link_threshold=0.3,
+                    contrast_ths=0.05,
+                    adjust_contrast=0.7,
+                )
+            except Exception:
+                sensitive = []
+            for bbox, text, conf in sensitive:
+                if conf > 0.20:
+                    texts.append(text)
+                    confidences.append(float(conf))
+
         raw_text = " ".join(texts).strip()
         avg_conf = sum(confidences) / max(len(confidences), 1) if confidences else 0.0
 
         normalized, is_valid, ptype = IndianPlateNormalizer.validate_and_normalize(raw_text)
+
+        # Tiny-text enhanced retry: small/distant crops often yield fragments
+        # below confidence. Retry once on a CLAHE-enhanced 3x upscale with
+        # sensitive detection barriers; keep the better result (valid beats
+        # invalid, longer beats shorter, then higher confidence).
+        h0, w0 = crop.shape[:2]
+        alnum_len = sum(c.isalnum() for c in raw_text)
+        if (h0 < 160 and w0 < 500) and (not is_valid or alnum_len < 9):
+            try:
+                tiny = self.enhance_tiny_crop(crop)
+                tiny_res = self.reader.readtext(
+                    tiny,
+                    allowlist="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ -",
+                    paragraph=False,
+                    text_threshold=0.5,
+                    low_text=0.3,
+                    link_threshold=0.3,
+                    contrast_ths=0.05,
+                    adjust_contrast=0.7,
+                )
+            except Exception:
+                tiny_res = []
+            t_texts, t_confs = [], []
+            for _, t_text, t_conf in tiny_res:
+                if t_conf > 0.20:
+                    t_texts.append(t_text)
+                    t_confs.append(float(t_conf))
+            if t_texts:
+                t_raw = " ".join(t_texts).strip()
+                t_conf_avg = sum(t_confs) / len(t_confs)
+                _, t_valid, _ = IndianPlateNormalizer.validate_and_normalize(t_raw)
+                t_alnum = sum(c.isalnum() for c in t_raw)
+                better = (
+                    (t_valid and not is_valid)
+                    or (t_valid == is_valid and t_alnum > alnum_len)
+                    or (t_valid == is_valid and t_alnum == alnum_len and t_conf_avg > avg_conf)
+                )
+                if better:
+                    raw_text, avg_conf = t_raw, t_conf_avg
+                    normalized, is_valid, ptype = IndianPlateNormalizer.validate_and_normalize(raw_text)
+
         return raw_text, normalized, round(avg_conf, 3), is_valid
 
 # Singleton pattern for OCR engine
