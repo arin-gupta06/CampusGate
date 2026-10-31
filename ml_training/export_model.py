@@ -47,22 +47,22 @@ def main():
     print(f"[*] Found trained model checkpoint: {src_pt}")
     if src_pt.resolve() != dest_pt.resolve():
         shutil.copy2(src_pt, dest_pt)
-    print(f"[✓] Copied to production weights path: {dest_pt}")
+    print(f"[OK] Copied to production weights path: {dest_pt}")
 
     # Copy to backend directory as well if backend exists
     backend_weights = project_root / "backend" / "vision" / "weights"
     backend_weights.mkdir(parents=True, exist_ok=True)
     if src_pt.resolve() != (backend_weights / "best.pt").resolve():
         shutil.copy2(src_pt, backend_weights / "best.pt")
-    print(f"[✓] Synced to backend vision weights: {backend_weights / 'best.pt'}")
+    print(f"[OK] Synced to backend vision weights: {backend_weights / 'best.pt'}")
 
     if args.export_onnx:
         print("[*] Exporting model to ONNX format (opset 17, dynamic=False, imgsz=640)...")
         model = YOLO(str(dest_pt))
         onnx_file = model.export(format="onnx", imgsz=640, dynamic=False)
-        print(f"[✓] ONNX model exported: {onnx_file}")
+        print(f"[OK] ONNX model exported: {onnx_file}")
 
-    print("\n[✓] Export completed successfully!")
+    print("\n[OK] Export completed successfully!")
 
 if __name__ == "__main__":
     main()

@@ -114,7 +114,7 @@ def main():
         cv2.imwrite(str(save_path), img)
         print(f"  [{idx+1}/{len(image_files)}] {img_path.name} -> {veh_count} vehicles, {plate_count} plates -> Saved: {save_path.name}")
 
-    print(f"\n[✓] Inference complete! Results saved in {out_dir}")
+    print(f"\n[OK] Inference complete! Results saved in {out_dir}")
 
 if __name__ == "__main__":
     main()

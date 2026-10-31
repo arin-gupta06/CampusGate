@@ -175,6 +175,9 @@ class YOLOCharacterEngine:
         try:
             tilt_angle = cls.compute_tilt_angle_hough(crop)
             if 1.5 <= abs(tilt_angle) <= 42.0:
+                # getRotationMatrix2D(+a) is visually counter-clockwise and
+                # Hough reports such lines at -a, so rotating by the measured
+                # angle itself (+tilt_angle) levels them back to horizontal.
                 rotated = cls.rotate_image_unbound(crop, tilt_angle)
                 return rotated
         except Exception:
@@ -446,6 +449,8 @@ class YOLOCharacterEngine:
                         res_slope = float(cov[0, 1] / cov[0, 0])
                         res_angle = float(np.degrees(np.arctan(np.clip(res_slope, -1.0, 1.0))))
                         if abs(res_angle) >= 2.5:
+                            # Same convention as Hough deskew: rotate by the
+                            # measured angle to level the character baseline.
                             fine_rectified = self.rotate_image_unbound(rectified, res_angle)
                             fine_img = self.apply_lighting_invariant_enhancements(fine_rectified, mode="STANDARD")
                             fine_raw, fine_norm, fine_conf, fine_valid, fine_chars = self._predict_single_image(fine_img, conf_threshold)

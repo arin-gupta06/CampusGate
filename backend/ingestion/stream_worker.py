@@ -14,14 +14,26 @@ from backend.models.entry import VehicleEntryEvent
 from backend.models.authorized import AuthorizedVehicle
 from backend.reconciliation.engine import ReconciliationEngine
 from backend.vision.tracker import CameraVisionTracker, VirtualEntryLine
+from backend.vision.frame_snapshot import capture_frame_snapshot
 
 logger = logging.getLogger("campusgate.ingestion")
+
+
+def _resolve_device() -> str:
+    try:
+        if cv2.cuda.getCudaEnabledDeviceCount() > 0:
+            return "cuda:0"
+    except Exception:
+        pass
+    return "cpu"
+
 
 class StreamIngestionWorker:
     """
     Tier-2 Stream Ingestion Worker adhering to Blueprint §3.
-    Reads RTSP streams or video files, samples frames, runs tracking + OCR,
-    and reliably records observations, crossings, and cross-camera events in Postgres.
+    Reads RTSP streams or video files, freezes sampled frames into immutable
+    snapshots, post-processes ONLY the snapshots (core rule), and reliably
+    records observations, crossings, and cross-camera events in Postgres.
     """
     def __init__(
         self,
@@ -43,13 +55,13 @@ class StreamIngestionWorker:
         if entry_line:
             vline = VirtualEntryLine(entry_line[0], entry_line[1], "INBOUND")
 
-        # Initialize vision tracker
+        # Initialize vision tracker (snapshot-first post-processing engine)
         self.tracker = CameraVisionTracker(
             camera_id=camera_id,
             weights_path=settings.WEIGHTS_PATH,
             entry_line=vline,
             conf_threshold=settings.DETECTION_CONF_THRESHOLD,
-            device="cuda:0" if cv2.cuda.getCudaEnabledDeviceCount() > 0 else "cpu",
+            device=_resolve_device(),
             enable_ocr=True
         )
 
@@ -58,7 +70,7 @@ class StreamIngestionWorker:
         self.crops_dir.mkdir(parents=True, exist_ok=True)
 
     def run(self, max_frames: Optional[int] = None):
-        """Main capture and ingestion loop."""
+        """Main capture and ingestion loop (capture -> snapshot -> post-process)."""
         self.is_running = True
         logger.info(f"Starting stream worker for [{self.camera_id}] from: {self.stream_source}")
 
@@ -74,7 +86,7 @@ class StreamIngestionWorker:
 
         try:
             while self.is_running and cap.isOpened():
-                ret, frame = cap.read()
+                ret, live_frame = cap.read()
                 if not ret:
                     logger.info(f"End of stream reached for [{self.camera_id}].")
                     break
@@ -88,9 +100,16 @@ class StreamIngestionWorker:
                 last_frame_time = now
                 frame_idx += 1
 
-                # Process frame through vision tracker
-                results = self.tracker.process_frame(frame, frame_idx=frame_idx)
-                self._handle_tracker_results(results, frame)
+                # CORE RULE: freeze the live frame into an immutable snapshot,
+                # then post-process ONLY the snapshot copy.
+                try:
+                    snapshot = capture_frame_snapshot(
+                        live_frame, self.camera_id, frame_idx, source="live"
+                    )
+                except ValueError:
+                    continue
+                results = self.tracker.process_snapshot(snapshot)
+                self._handle_tracker_results(results)
 
                 if max_frames and frame_idx >= max_frames:
                     break
@@ -100,7 +119,7 @@ class StreamIngestionWorker:
             self.is_running = False
             logger.info(f"Stopped stream worker for [{self.camera_id}].")
 
-    def _handle_tracker_results(self, results: dict, frame):
+    def _handle_tracker_results(self, results: dict):
         """Persists observations and entry events to PostgreSQL."""
         db = SessionLocal()
         try:
@@ -129,24 +148,29 @@ class StreamIngestionWorker:
                     local_track_id=obs_info["track_id"],
                     captured_at=now,
                     plate_crop_path=crop_path_str,
-                    vehicle_conf=obs_info["vehicle_conf"],
-                    direction=obs_info["direction"],
-                    crossing_status="CROSSED" if obs_info["has_crossed"] else "APPROACHING"
+                    vehicle_conf=obs_info.get("vehicle_conf", 0.0),
+                    plate_conf=(plate_crop_info.get("conf") if plate_crop_info else None),
+                    direction=obs_info.get("direction"),
+                    crossing_status="CROSSED" if obs_info.get("has_crossed") else "APPROACHING"
                 )
                 db.add(obs)
                 db.flush()
                 obs_dict[obs_info["track_id"]] = obs
 
-                # Add plate reading if OCR found text
+                # Add plate reading if OCR produced text this snapshot, or a
+                # locked consensus exists from earlier snapshots in the track.
                 plate_reading = None
-                if plate_crop_info and plate_crop_info.get("raw_ocr"):
+                raw_text = None
+                if plate_crop_info:
+                    raw_text = plate_crop_info.get("raw_ocr") or plate_crop_info.get("normalized_plate")
+                if plate_crop_info and raw_text:
                     plate_reading = PlateReading(
                         observation_id=obs.id,
-                        raw_text=plate_crop_info["raw_ocr"],
-                        normalized_text=plate_crop_info["normalized_plate"],
-                        confidence=plate_crop_info["ocr_conf"],
-                        crop_quality_score=plate_crop_info["quality_score"],
-                        is_valid_format=plate_crop_info["is_valid_format"]
+                        raw_text=raw_text,
+                        normalized_text=plate_crop_info.get("normalized_plate"),
+                        confidence=plate_crop_info.get("ocr_conf", 0.0),
+                        crop_quality_score=plate_crop_info.get("quality_score", 0.0),
+                        is_valid_format=plate_crop_info.get("is_valid_format", False)
                     )
                     db.add(plate_reading)
                     db.flush()

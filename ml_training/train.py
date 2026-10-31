@@ -29,6 +29,9 @@ def parse_args():
                         help="Device to train on (cuda:0 or cpu)")
     parser.add_argument("--workers", type=int, default=4,
                         help="DataLoader worker threads")
+    parser.add_argument("--lr0", type=float, default=0.01, help="Initial LR (use ~0.002 to fine-tune)")
+    parser.add_argument("--freeze", type=int, default=0, help="Freeze first N layers (10=backbone, faster CPU)")
+    parser.add_argument("--no-amp", action="store_true", help="Disable mixed precision (recommended on CPU)")
     parser.add_argument("--patience", type=int, default=10,
                         help="Early stopping patience (epochs)")
     parser.add_argument("--project", type=str, default=None,
@@ -55,6 +58,7 @@ def main():
         print(f"GPU Name      : {torch.cuda.get_device_name(0)}")
     print(f"Epochs        : {args.epochs} (Patience: {args.patience})")
     print(f"Batch Size    : {args.batch} @ {args.imgsz}x{args.imgsz}")
+    print(f"LR0 / Freeze  : {args.lr0} / {args.freeze} (AMP: {not args.no_amp})")
     print("=" * 65)
 
     if not data_yaml.exists():
@@ -76,7 +80,9 @@ def main():
         project=str(project_dir),
         name=args.name,
         exist_ok=True,
-        amp=True,
+        amp=not args.no_amp,
+        lr0=args.lr0,
+        freeze=args.freeze if args.freeze > 0 else None,
         plots=True,
         save=True,
         verbose=True
@@ -90,9 +96,9 @@ def main():
     if best_pt.exists():
         shutil.copy2(best_pt, target_best_pt)
         print("\n" + "=" * 65)
-        print(f"[✓] Training successfully completed!")
-        print(f"[✓] Saved best weights to: {target_best_pt}")
-        print(f"[✓] Full run artifacts: {run_dir}")
+        print(f"[OK] Training successfully completed!")
+        print(f"[OK] Saved best weights to: {target_best_pt}")
+        print(f"[OK] Full run artifacts: {run_dir}")
         print("=" * 65)
     else:
         print("[!] Training completed, but best.pt was not found in the run directory.")
