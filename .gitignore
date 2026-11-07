@@ -29,6 +29,23 @@ ml_training/cache/
 *.tar
 *.tar.gz
 
+# Video files & datasets (Never track video assets or test footage)
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.webm
+test_videos/
+videos/
+*.pt
+
+# Kaggle credentials & local configs
+kaggle.json
+.kaggle/
+
+# Test suites & benchmark logs
+tests/
+
 # Dataset images and annotations
 ml_training/datasets/
 datasets/

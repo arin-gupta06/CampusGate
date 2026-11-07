@@ -95,6 +95,11 @@ def main():
 
     if best_pt.exists():
         shutil.copy2(best_pt, target_best_pt)
+        # Also deploy to active backend serving directory
+        backend_weights = script_dir.parent / "backend" / "vision" / "weights" / "best.pt"
+        if backend_weights.parent.exists():
+            shutil.copy2(best_pt, backend_weights)
+            print(f"[OK] Deployed best weights to backend: {backend_weights}")
         print("\n" + "=" * 65)
         print(f"[OK] Training successfully completed!")
         print(f"[OK] Saved best weights to: {target_best_pt}")

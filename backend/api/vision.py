@@ -1,10 +1,11 @@
 import uuid
 from datetime import datetime
 from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
+from backend.core.config import settings
 from backend.core.database import get_db
 from backend.models.camera import Camera
 from backend.models.observation import VehicleObservation, PlateReading
@@ -12,6 +13,7 @@ from backend.models.entry import VehicleEntryEvent
 from backend.models.authorized import AuthorizedVehicle
 from backend.reconciliation.engine import ReconciliationEngine
 from backend.vision.ocr_reader import IndianPlateNormalizer
+from backend.ingestion.crop_manager import crop_manager
 
 router = APIRouter(prefix="/api/vision", tags=["Vision Ingestion Pipeline"])
 
@@ -128,3 +130,25 @@ def ingest_observation(payload: ObservationIngestPayload, db: Session = Depends(
 
     db.commit()
     return {"status": "observation_recorded", "observation_id": obs.id}
+
+@router.get("/crops/{crop_ref:path}")
+def get_plate_crop(crop_ref: str):
+    """
+    Serves cropped plate images directly from Redis / Memory cache,
+    or falls back to static disk files if archived for audit.
+    """
+    # 1. Try fetching from Redis / Hybrid Crop Manager
+    data = crop_manager.get_crop_bytes(crop_ref)
+    if data:
+        return Response(content=data, media_type="image/jpeg")
+
+    # 2. Check if it's a file on disk (e.g. static/crops/review_*.jpg)
+    clean_ref = crop_ref.replace("\\", "/")
+    if clean_ref.startswith("static/"):
+        disk_path = settings.BASE_DIR / "backend" / clean_ref
+        if disk_path.exists() and disk_path.is_file():
+            with open(disk_path, "rb") as f:
+                return Response(content=f.read(), media_type="image/jpeg")
+
+    raise HTTPException(status_code=404, detail="Crop image expired or not found")
+

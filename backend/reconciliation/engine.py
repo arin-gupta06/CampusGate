@@ -104,6 +104,7 @@ class ReconciliationEngine:
             entry.identity_status = "ASSOCIATED"
             entry.resolution_method = "CROSS_CAMERA_HANDOFF"
             target_handoff.status = "MATCHED"
+            target_handoff.matched_camera_id = observation.camera_id
             target_handoff.matched_observation_id = observation.id
             target_handoff.resolution_reason = f"Matched plate {plate_reading.normalized_text} at downstream camera {observation.camera_id}"
             
@@ -122,6 +123,7 @@ class ReconciliationEngine:
             return {
                 "matched": True,
                 "entry_id": entry.id,
+                "matched_camera_id": observation.camera_id,
                 "plate": plate_reading.normalized_text,
                 "authorization": entry.authorization_state
             }

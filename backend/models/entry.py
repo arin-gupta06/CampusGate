@@ -1,15 +1,18 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import Column, String, DateTime, ForeignKey, Text
+from sqlalchemy import Column, String, DateTime, ForeignKey, Text, Index
 from sqlalchemy.orm import relationship
 from backend.core.database import Base
 
 class VehicleEntryEvent(Base):
     __tablename__ = "vehicle_entry_events"
+    __table_args__ = (
+        Index("ix_status_first_observed", "identity_status", "first_observed_at"),
+    )
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     registration_number = Column(String(30), nullable=True, index=True)
-    first_observed_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+    first_observed_at = Column(DateTime, default=datetime.utcnow, nullable=False, index=True)
     entry_confirmed_at = Column(DateTime, nullable=True)
     
     # State flags conforming strictly to Blueprint Section 9
@@ -40,7 +43,7 @@ class HandoffEvent(Base):
 
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     entry_event_id = Column(String(36), ForeignKey("vehicle_entry_events.id"), nullable=False, index=True)
-    source_camera_id = Column(String(50), nullable=False)
+    source_camera_id = Column(String(50), ForeignKey("cameras.id"), nullable=False)
     source_observation_id = Column(String(36), nullable=False)
     candidate_camera_ids = Column(String(255), nullable=False)  # Comma-separated list of downstream cameras
     
@@ -48,6 +51,7 @@ class HandoffEvent(Base):
     window_end = Column(DateTime, nullable=False)
     
     status = Column(String(30), default="PENDING")             # PENDING, MATCHED, EXPIRED, AMBIGUOUS
+    matched_camera_id = Column(String(50), ForeignKey("cameras.id"), nullable=True)
     matched_observation_id = Column(String(36), nullable=True)
     resolution_reason = Column(Text, nullable=True)
     created_at = Column(DateTime, default=datetime.utcnow)

@@ -10,6 +10,7 @@ from backend.models.authorized import AuthorizedVehicle
 from backend.schemas.entry import EntryEventResponse, ReviewResolvePayload, AuditSummaryResponse
 from backend.reconciliation.engine import ReconciliationEngine
 from backend.vision.ocr_reader import IndianPlateNormalizer
+from backend.core.cache import cache
 
 router = APIRouter(prefix="/api/entries", tags=["Vehicle Entries & Audit"])
 
@@ -33,21 +34,33 @@ def list_entries(
 
 @router.get("/summary", response_model=AuditSummaryResponse)
 def get_audit_summary(db: Session = Depends(get_db)):
-    total = db.query(VehicleEntryEvent).count()
-    auth_cnt = db.query(VehicleEntryEvent).filter(VehicleEntryEvent.authorization_state == "AUTHORIZED").count()
-    unauth_cnt = db.query(VehicleEntryEvent).filter(VehicleEntryEvent.authorization_state == "NOT_MATCHED").count()
-    rev_cnt = db.query(VehicleEntryEvent).filter(VehicleEntryEvent.identity_status == "REVIEW_REQUIRED").count()
-    unres_cnt = db.query(VehicleEntryEvent).filter(VehicleEntryEvent.identity_status == "UNRESOLVED").count()
-    handoff_cnt = db.query(VehicleEntryEvent).filter(VehicleEntryEvent.identity_status == "HANDOFF_PENDING").count()
+    # 1. Check resilient Redis / In-Memory cache (sub-millisecond, bypasses DB)
+    cached_summary = cache.get_json("cache:audit_summary")
+    if cached_summary:
+        return AuditSummaryResponse(**cached_summary)
 
-    return AuditSummaryResponse(
-        total_entries=total,
-        authorized_count=auth_cnt,
-        unauthorized_count=unauth_cnt,
-        review_required_count=rev_cnt,
-        unresolved_count=unres_cnt,
-        handoff_pending_count=handoff_cnt
-    )
+    # 2. Cache miss: Execute single aggregated SQL query
+    row = db.query(
+        func.count().label("total"),
+        func.count().filter(VehicleEntryEvent.authorization_state == "AUTHORIZED").label("auth_cnt"),
+        func.count().filter(VehicleEntryEvent.authorization_state == "NOT_MATCHED").label("unauth_cnt"),
+        func.count().filter(VehicleEntryEvent.identity_status == "REVIEW_REQUIRED").label("rev_cnt"),
+        func.count().filter(VehicleEntryEvent.identity_status == "UNRESOLVED").label("unres_cnt"),
+        func.count().filter(VehicleEntryEvent.identity_status == "HANDOFF_PENDING").label("handoff_cnt"),
+    ).first()
+
+    summary_data = {
+        "total_entries": row.total or 0,
+        "authorized_count": row.auth_cnt or 0,
+        "unauthorized_count": row.unauth_cnt or 0,
+        "review_required_count": row.rev_cnt or 0,
+        "unresolved_count": row.unres_cnt or 0,
+        "handoff_pending_count": row.handoff_cnt or 0,
+    }
+
+    # 3. Store in cache with 15-second TTL
+    cache.set_json("cache:audit_summary", summary_data, ttl_seconds=15)
+    return AuditSummaryResponse(**summary_data)
 
 @router.get("/reviews", response_model=List[EntryEventResponse])
 def get_pending_reviews(db: Session = Depends(get_db)):
@@ -88,10 +101,13 @@ def resolve_review_case(
     entry.updated_at = datetime.utcnow()
     db.commit()
     db.refresh(entry)
+    cache.delete("cache:audit_summary")
     return entry
 
 @router.post("/handoffs/expire")
 def trigger_handoff_expiry(db: Session = Depends(get_db)):
     engine = ReconciliationEngine(db)
     expired_count = engine.expire_stale_handoffs()
+    if expired_count > 0:
+        cache.delete("cache:audit_summary")
     return {"status": "ok", "expired_handoffs_count": expired_count}

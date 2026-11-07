@@ -7,6 +7,7 @@ from backend.core.config import settings
 from backend.core.database import init_db, engine
 from backend.core.ws_manager import ws_manager
 from backend.api import cameras, authorized, entries, vision
+from backend.reconciliation.sweeper import handoff_sweeper
 
 app = FastAPI(
     title="Campus Gate - Central Vehicle Auditing Server",
@@ -49,6 +50,11 @@ async def websocket_live_feed(websocket: WebSocket):
 @app.on_event("startup")
 def on_startup():
     init_db()
+    handoff_sweeper.start()
+
+@app.on_event("shutdown")
+def on_shutdown():
+    handoff_sweeper.stop()
 
 from fastapi.responses import FileResponse
 

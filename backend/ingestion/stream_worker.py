@@ -2,6 +2,8 @@ import time
 import cv2
 import logging
 import uuid
+import queue
+import threading
 from pathlib import Path
 from typing import Optional, Tuple, Callable
 from datetime import datetime
@@ -15,6 +17,10 @@ from backend.models.authorized import AuthorizedVehicle
 from backend.reconciliation.engine import ReconciliationEngine
 from backend.vision.tracker import CameraVisionTracker, VirtualEntryLine
 from backend.vision.frame_snapshot import capture_frame_snapshot
+from backend.ingestion.grabber import GrabberFactory
+from backend.ingestion.crop_manager import crop_manager
+from backend.ingestion.motion_filter import MotionPreFilter
+from backend.core.cache import cache
 
 logger = logging.getLogger("campusgate.ingestion")
 
@@ -69,36 +75,55 @@ class StreamIngestionWorker:
         self.crops_dir = settings.BASE_DIR / "backend" / "static" / "crops"
         self.crops_dir.mkdir(parents=True, exist_ok=True)
 
+        # Decoupled Producer-Consumer queue for non-blocking database writes
+        self.db_queue: queue.Queue = queue.Queue(maxsize=1000)
+        self._db_thread: Optional[threading.Thread] = None
+
+        # Lightweight motion pre-filter to skip YOLO on empty roads (P-03)
+        self.motion_filter = MotionPreFilter()
+
     def run(self, max_frames: Optional[int] = None):
         """Main capture and ingestion loop (capture -> snapshot -> post-process)."""
         self.is_running = True
         logger.info(f"Starting stream worker for [{self.camera_id}] from: {self.stream_source}")
 
-        # Convert numeric string (e.g. "0") or int to device index for laptop webcam testing
-        source = int(self.stream_source) if str(self.stream_source).strip().isdigit() else self.stream_source
-        cap = cv2.VideoCapture(source)
-        if not cap.isOpened():
+        # Start background DB writer thread (Producer-Consumer pattern)
+        self._db_thread = threading.Thread(target=self._db_consumer_loop, daemon=True)
+        self._db_thread.start()
+
+        # Initialize grabber adapter (Threaded RTSP grabber or Direct webcam/file grabber)
+        grabber = GrabberFactory.create(self.stream_source)
+        if not grabber.start():
             logger.error(f"Failed to open video source: {self.stream_source}")
+            self.is_running = False
             return
 
         frame_idx = 0
         last_frame_time = time.time()
 
         try:
-            while self.is_running and cap.isOpened():
-                ret, live_frame = cap.read()
-                if not ret:
-                    logger.info(f"End of stream reached for [{self.camera_id}].")
-                    break
+            while self.is_running and grabber.is_opened():
+                ret, live_frame, frame_time = grabber.read()
+                if not ret or live_frame is None:
+                    # Brief yield if waiting for stream packets
+                    time.sleep(0.01)
+                    continue
 
                 now = time.time()
                 elapsed = now - last_frame_time
                 if elapsed < self.frame_interval:
-                    # Skip frame to maintain target processing FPS
+                    # Yield CPU slice to prevent 100% busy-wait core spinning
+                    time.sleep(0.005)
                     continue
 
                 last_frame_time = now
                 frame_idx += 1
+
+                # Motion pre-filter check: skip heavy YOLO on empty roads (P-03)
+                has_active_tracks = bool(self.tracker.tracks) if hasattr(self.tracker, "tracks") else False
+                if not self.motion_filter.evaluate_motion(live_frame, has_active_tracks=has_active_tracks):
+                    time.sleep(0.005)
+                    continue
 
                 # CORE RULE: freeze the live frame into an immutable snapshot,
                 # then post-process ONLY the snapshot copy.
@@ -109,15 +134,42 @@ class StreamIngestionWorker:
                 except ValueError:
                     continue
                 results = self.tracker.process_snapshot(snapshot)
-                self._handle_tracker_results(results)
+
+                # Non-blocking handoff: push to DB consumer queue immediately
+                try:
+                    self.db_queue.put_nowait(results)
+                except queue.Full:
+                    logger.warning(f"Database write queue full for [{self.camera_id}]. Dropping backlogged frame.")
 
                 if max_frames and frame_idx >= max_frames:
                     break
 
         finally:
-            cap.release()
+            grabber.stop()
             self.is_running = False
+            if self._db_thread and self._db_thread.is_alive():
+                self._db_thread.join(timeout=2.0)
             logger.info(f"Stopped stream worker for [{self.camera_id}].")
+
+    def _db_consumer_loop(self):
+        """
+        Background Consumer Thread:
+        Drains tracker results from db_queue and commits them to PostgreSQL.
+        Completely isolates the real-time frame ingestion loop from database latency.
+        """
+        logger.info(f"Database async consumer thread started for [{self.camera_id}].")
+        while self.is_running or not self.db_queue.empty():
+            try:
+                results = self.db_queue.get(timeout=0.2)
+            except queue.Empty:
+                continue
+
+            try:
+                self._handle_tracker_results(results)
+            except Exception as e:
+                logger.error(f"Error persisting tracker results in consumer thread: {e}", exc_info=True)
+            finally:
+                self.db_queue.task_done()
 
     def _handle_tracker_results(self, results: dict):
         """Persists observations and entry events to PostgreSQL."""
@@ -136,11 +188,12 @@ class StreamIngestionWorker:
                 crop_path_str = None
 
                 if plate_crop_info and plate_crop_info.get("crop") is not None:
-                    # Save plate crop to file storage
-                    crop_filename = f"crop_{self.camera_id}_{obs_info['track_id']}_{uuid.uuid4().hex[:6]}.jpg"
-                    crop_full_path = self.crops_dir / crop_filename
-                    cv2.imwrite(str(crop_full_path), plate_crop_info["crop"])
-                    crop_path_str = f"static/crops/{crop_filename}"
+                    # Retains ONLY the single best-accuracy crop in Redis/Memory
+                    crop_path_str = crop_manager.update_best_crop(
+                        camera_id=self.camera_id,
+                        track_id=obs_info["track_id"],
+                        plate_crop_info=plate_crop_info
+                    )
 
                 obs = VehicleObservation(
                     camera_id=self.camera_id,
@@ -203,6 +256,13 @@ class StreamIngestionWorker:
                         ).first()
                         authorization_state = "AUTHORIZED" if auth_rec else "NOT_MATCHED"
 
+                    # If case requires operator review or is unauthorized, persist best crop to disk for audit
+                    if (identity_status == "REVIEW_REQUIRED" or authorization_state != "AUTHORIZED") and obs and obs.plate_crop_path:
+                        audit_filename = f"review_{self.camera_id}_{event['track_id']}_{uuid.uuid4().hex[:6]}.jpg"
+                        disk_path = crop_manager.persist_to_disk_for_audit(obs.plate_crop_path, audit_filename)
+                        if disk_path:
+                            obs.plate_crop_path = disk_path
+
                     entry = VehicleEntryEvent(
                         registration_number=plate if is_valid else None,
                         first_observed_at=now,
@@ -222,6 +282,9 @@ class StreamIngestionWorker:
                         reconcile_engine = ReconciliationEngine(db)
                         reconcile_engine.create_pending_handoff(entry, self.camera_id, obs.id if obs else "")
 
+                    # Invalidate summary cache so dashboard reflects new entry immediately
+                    cache.delete("cache:audit_summary")
+
                     # Broadcast event
                     if self.event_callback:
                         self.event_callback({
@@ -239,3 +302,18 @@ class StreamIngestionWorker:
             db.rollback()
         finally:
             db.close()
+
+if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Campus Gate - Camera Stream Ingestion Worker")
+    parser.add_argument("--camera-id", required=True, help="Camera ID (e.g. CAM-GATE-01)")
+    parser.add_argument("--source", required=True, help="RTSP URL, device index (0), or video file")
+    parser.add_argument("--fps", type=float, default=6.0, help="Target processing FPS (default: 6.0)")
+    args = parser.parse_args()
+
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s [%(levelname)s] %(name)s: %(message)s")
+    worker = StreamIngestionWorker(camera_id=args.camera_id, stream_source=args.source, target_fps=args.fps)
+    try:
+        worker.run()
+    except KeyboardInterrupt:
+        logger.info(f"Worker for [{args.camera_id}] stopped by user.")
