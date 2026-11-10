@@ -589,6 +589,10 @@ export default function DashboardView({
                     <img
                       src={entry.image_url}
                       alt={entry.plate_number}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/assets/ChatGPT Image Sep 27, 2026, 11_19_50 AM.png";
+                      }}
                       style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                     />
                   </div>

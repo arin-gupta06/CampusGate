@@ -1,8 +1,13 @@
 import os
 from pathlib import Path
+from dotenv import load_dotenv
+
+# Load .env file from project root
+_BASE_DIR = Path(__file__).resolve().parent.parent.parent
+load_dotenv(_BASE_DIR / ".env")
 
 class Settings:
-    BASE_DIR: Path = Path(__file__).resolve().parent.parent.parent
+    BASE_DIR: Path = _BASE_DIR
     
     # Database
     raw_db_url = os.getenv(
@@ -28,5 +33,18 @@ class Settings:
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     API_PORT: int = int(os.getenv("API_PORT", "8000"))
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
+
+    # Official Google OAuth & Superadmin Whitelist
+    GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")
+    GOOGLE_CLIENT_SECRET: str = os.getenv("GOOGLE_CLIENT_SECRET", "")
+    JWT_SECRET_KEY: str = os.getenv("JWT_SECRET_KEY", "campusgate_super_secret_jwt_key_2026_ai")
+    
+    # Project Contributors permanently elevated to Superadmin
+    SUPERADMIN_EMAILS: list = [
+        email.strip().lower() for email in os.getenv(
+            "SUPERADMIN_EMAILS",
+            "24cd10ar15@mitsgwl.ac.in,vivekchaurasiya943@gmail.com,sarveshsingh8462@gmail.com,arin.gupta@mits.ac.in,admin@campusgate.edu"
+        ).split(",") if email.strip()
+    ]
 
 settings = Settings()

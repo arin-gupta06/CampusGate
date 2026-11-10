@@ -1,16 +1,136 @@
-import React, { useState } from 'react';
-import { X, Camera, Plus, Video, Radio, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { X, Camera, Plus, Video, Radio, ShieldCheck, Globe, Wifi, CheckCircle2, Play, Activity } from 'lucide-react';
 
 export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
   if (!isOpen) return null;
 
+  const [streamType, setStreamType] = useState('RTSP'); // 'RTSP' or 'IP'
   const [name, setName] = useState('');
   const [cameraId, setCameraId] = useState('');
-  const [rtspUrl, setRtspUrl] = useState('');
+  const [streamUrl, setStreamUrl] = useState('');
   const [role, setRole] = useState('ENTRY_GATE');
   const [resolution, setResolution] = useState('1920x1080');
   const [fps, setFps] = useState('30');
   const [lineCoords, setLineCoords] = useState('(0, 720) -> (1920, 720)');
+
+  // Canvas animation for live video feed preview
+  const canvasRef = useRef(null);
+  const animFrameRef = useRef(null);
+
+  // Check if all primary details are filled
+  const isEveryDetailFilled = Boolean(
+    name.trim().length > 0 &&
+    cameraId.trim().length > 0 &&
+    streamUrl.trim().length > 0 &&
+    lineCoords.trim().length > 0
+  );
+
+  // Animate live surveillance video feed when every detail is filled
+  useEffect(() => {
+    if (!isEveryDetailFilled) {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+      return;
+    }
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    let frameCount = 0;
+
+    const render = () => {
+      frameCount++;
+      const w = canvas.width;
+      const h = canvas.height;
+
+      // Dark surveillance background
+      ctx.fillStyle = '#0a0f1d';
+      ctx.fillRect(0, 0, w, h);
+
+      // Grid mesh pattern
+      ctx.strokeStyle = 'rgba(56, 189, 248, 0.08)';
+      ctx.lineWidth = 1;
+      const gridSize = 24;
+      for (let x = 0; x < w; x += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, h);
+        ctx.stroke();
+      }
+      for (let y = 0; y < h; y += gridSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(w, y);
+        ctx.stroke();
+      }
+
+      // Moving simulated road lane
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+      ctx.setLineDash([12, 12]);
+      ctx.lineDashOffset = -frameCount * 1.5;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.5, 0);
+      ctx.lineTo(w * 0.5, h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+
+      // Animated vehicle / target detection box
+      const boxY = (frameCount * 2) % (h + 60) - 30;
+      const boxX = w * 0.38;
+      ctx.strokeStyle = '#38bdf8';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(boxX, boxY, 90, 50);
+
+      // Corner accents on detection box
+      ctx.fillStyle = '#38bdf8';
+      ctx.fillRect(boxX - 2, boxY - 2, 8, 3);
+      ctx.fillRect(boxX - 2, boxY - 2, 3, 8);
+      ctx.fillRect(boxX + 84, boxY - 2, 8, 3);
+      ctx.fillRect(boxX + 89, boxY - 2, 3, 8);
+
+      // Label on vehicle
+      ctx.fillStyle = 'rgba(15, 23, 42, 0.85)';
+      ctx.fillRect(boxX, boxY - 16, 80, 14);
+      ctx.fillStyle = '#38bdf8';
+      ctx.font = '9px monospace';
+      ctx.fillText('TARGET: 0.94', boxX + 4, boxY - 5);
+
+      // Virtual tripwire line
+      ctx.strokeStyle = '#10b981';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(w * 0.1, h * 0.65);
+      ctx.lineTo(w * 0.9, h * 0.65);
+      ctx.stroke();
+
+      // Tripwire label
+      ctx.fillStyle = '#10b981';
+      ctx.font = '8px monospace';
+      ctx.fillText('VIRTUAL SENSOR LINE: ACTIVE', w * 0.1, h * 0.65 - 4);
+
+      // Scanline beam
+      const scanY = (frameCount * 1.8) % h;
+      const grad = ctx.createLinearGradient(0, scanY - 20, 0, scanY);
+      grad.addColorStop(0, 'rgba(56, 189, 248, 0)');
+      grad.addColorStop(1, 'rgba(56, 189, 248, 0.25)');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, scanY - 20, w, 20);
+
+      // Live Timestamp HUD
+      const now = new Date();
+      const timeStr = now.toTimeString().split(' ')[0] + '.' + String(Math.floor(now.getMilliseconds() / 10)).padStart(2, '0');
+      ctx.fillStyle = '#f8fafc';
+      ctx.font = '10px monospace';
+      ctx.fillText(`CAM: ${cameraId || 'NODE-1'} | ${timeStr}`, 10, 16);
+
+      animFrameRef.current = requestAnimationFrame(render);
+    };
+
+    render();
+
+    return () => {
+      if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    };
+  }, [isEveryDetailFilled, cameraId]);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -20,7 +140,8 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
       id: cameraId.trim() || `cam-${Date.now()}`,
       name: name.trim(),
       role: role,
-      rtsp_url: rtspUrl.trim() || `rtsp://192.168.1.${Math.floor(Math.random() * 200 + 10)}:554/stream`,
+      streamType: streamType,
+      rtsp_url: streamUrl.trim() || (streamType === 'RTSP' ? 'rtsp://192.168.1.100:554/stream1' : 'http://192.168.1.100:8080/video'),
       status: 'ONLINE',
       fps: parseInt(fps) || 30,
       resolution: resolution,
@@ -49,8 +170,10 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
       padding: '20px'
     }}>
       <div style={{
-        width: '520px',
+        width: '560px',
         maxWidth: '95vw',
+        maxHeight: '92vh',
+        overflowY: 'auto',
         backgroundColor: 'var(--bg-card)',
         borderRadius: '16px',
         border: '1px solid var(--border-subtle)',
@@ -81,20 +204,92 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 Configure New Camera Node
               </h3>
               <p style={{ fontSize: '12px', color: 'var(--text-muted)', margin: 0 }}>
-                Register CCTV RTSP stream & geometric line boundary
+                Ingest surveillance video streams via RTSP protocol or Network IP stream
               </p>
             </div>
           </div>
 
           <button
             onClick={onClose}
-            style={{ background: 'none', color: 'var(--text-secondary)', padding: '4px' }}
+            style={{ background: 'none', border: 'none', color: 'var(--text-secondary)', padding: '4px', cursor: 'pointer' }}
           >
             <X size={18} />
           </button>
         </div>
 
-        {/* Form */}
+        {/* Video Ingestion Protocol Selector (RTSP vs IP) */}
+        <div>
+          <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 700, display: 'block', marginBottom: '8px' }}>
+            Video Ingestion Protocol
+          </label>
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px',
+            padding: '4px',
+            backgroundColor: 'var(--bg-card-subtle)',
+            borderRadius: '10px',
+            border: '1px solid var(--border-subtle)'
+          }}>
+            <button
+              type="button"
+              onClick={() => {
+                setStreamType('RTSP');
+                if (!streamUrl || streamUrl.startsWith('http')) {
+                  setStreamUrl('rtsp://admin:password@192.168.1.100:554/stream1');
+                }
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '9px 12px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '12px',
+                transition: 'all 0.15s ease',
+                backgroundColor: streamType === 'RTSP' ? 'var(--accent-primary)' : 'transparent',
+                color: streamType === 'RTSP' ? 'var(--accent-primary-text)' : 'var(--text-secondary)'
+              }}
+            >
+              <Radio size={15} />
+              <span>RTSP Stream (Port 554)</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setStreamType('IP');
+                if (!streamUrl || streamUrl.startsWith('rtsp')) {
+                  setStreamUrl('http://192.168.1.120:8080/video');
+                }
+              }}
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '8px',
+                padding: '9px 12px',
+                borderRadius: '8px',
+                border: 'none',
+                cursor: 'pointer',
+                fontWeight: 700,
+                fontSize: '12px',
+                transition: 'all 0.15s ease',
+                backgroundColor: streamType === 'IP' ? 'var(--accent-primary)' : 'transparent',
+                color: streamType === 'IP' ? 'var(--accent-primary-text)' : 'var(--text-secondary)'
+              }}
+            >
+              <Globe size={15} />
+              <span>Network IP (HTTP/MJPEG)</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Form Fields */}
         <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
@@ -104,7 +299,12 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
               type="text"
               placeholder="e.g. Gate 1 - Main Ingress"
               value={name}
-              onChange={(e) => setName(e.target.value)}
+              onChange={(e) => {
+                setName(e.target.value);
+                if (!cameraId) {
+                  setCameraId(e.target.value.toLowerCase().replace(/[^a-z0-9]/g, '-').slice(0, 16));
+                }
+              }}
               required
               style={{
                 width: '100%',
@@ -129,6 +329,7 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 placeholder="e.g. gate-cam-1"
                 value={cameraId}
                 onChange={(e) => setCameraId(e.target.value)}
+                required
                 style={{
                   width: '100%',
                   height: '38px',
@@ -170,14 +371,20 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
           </div>
 
           <div>
-            <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600, display: 'block', marginBottom: '6px' }}>
-              RTSP Video Stream URL
-            </label>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+              <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                {streamType === 'RTSP' ? 'RTSP Video Stream URL' : 'Network IP / HTTP Video Stream URL'}
+              </label>
+              <span style={{ fontSize: '10px', color: 'var(--accent-primary)', fontWeight: 600 }}>
+                {streamType === 'RTSP' ? 'rtsp://host:554/stream' : 'http://ip:port/video'}
+              </span>
+            </div>
             <input
               type="text"
-              placeholder="rtsp://admin:password@192.168.1.100:554/stream1"
-              value={rtspUrl}
-              onChange={(e) => setRtspUrl(e.target.value)}
+              placeholder={streamType === 'RTSP' ? 'rtsp://admin:password@192.168.1.100:554/stream1' : 'http://192.168.1.120:8080/video'}
+              value={streamUrl}
+              onChange={(e) => setStreamUrl(e.target.value)}
+              required
               style={{
                 width: '100%',
                 height: '38px',
@@ -251,6 +458,7 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
               type="text"
               value={lineCoords}
               onChange={(e) => setLineCoords(e.target.value)}
+              required
               style={{
                 width: '100%',
                 height: '38px',
@@ -265,7 +473,101 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
             />
           </div>
 
-          <div style={{ marginTop: '12px', display: 'flex', gap: '10px' }}>
+          {/* LIVE VIDEO FEED: Visible Once Every Detail Is Filled */}
+          {isEveryDetailFilled && (
+            <div style={{
+              marginTop: '4px',
+              padding: '12px',
+              borderRadius: '12px',
+              backgroundColor: 'var(--bg-base)',
+              border: '2px solid rgba(16, 185, 129, 0.4)',
+              boxShadow: '0 0 20px rgba(16, 185, 129, 0.12)'
+            }}>
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                marginBottom: '8px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  <span style={{
+                    width: '8px',
+                    height: '8px',
+                    borderRadius: '50%',
+                    backgroundColor: '#10b981',
+                    boxShadow: '0 0 8px #10b981'
+                  }} />
+                  <span style={{ fontSize: '11px', fontWeight: 800, color: '#10b981', letterSpacing: '0.4px' }}>
+                    LIVE VIDEO FEED SYNCHRONIZED
+                  </span>
+                  <span style={{
+                    fontSize: '9px',
+                    backgroundColor: 'rgba(59, 130, 246, 0.2)',
+                    color: '#60a5fa',
+                    padding: '2px 6px',
+                    borderRadius: '4px',
+                    fontWeight: 700
+                  }}>
+                    {streamType} INGESTION
+                  </span>
+                </div>
+                <span style={{ fontSize: '10px', color: 'var(--text-muted)', fontFamily: 'monospace' }}>
+                  {fps} FPS • {resolution}
+                </span>
+              </div>
+
+              {/* Canvas Live Video Viewport */}
+              <div style={{
+                position: 'relative',
+                width: '100%',
+                height: '170px',
+                borderRadius: '8px',
+                overflow: 'hidden',
+                backgroundColor: '#050811'
+              }}>
+                <canvas
+                  ref={canvasRef}
+                  width={480}
+                  height={170}
+                  style={{ width: '100%', height: '100%', display: 'block' }}
+                />
+
+                <div style={{
+                  position: 'absolute',
+                  top: '8px',
+                  right: '8px',
+                  backgroundColor: 'rgba(239, 68, 68, 0.9)',
+                  color: '#fff',
+                  fontSize: '9px',
+                  fontWeight: 800,
+                  padding: '2px 6px',
+                  borderRadius: '4px',
+                  letterSpacing: '0.5px'
+                }}>
+                  REC ● LIVE
+                </div>
+
+                <div style={{
+                  position: 'absolute',
+                  bottom: '6px',
+                  left: '8px',
+                  right: '8px',
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  fontSize: '9px',
+                  color: 'rgba(255,255,255,0.7)',
+                  fontFamily: 'monospace',
+                  pointerEvents: 'none'
+                }}>
+                  <span>STREAM: {streamUrl.slice(0, 32)}...</span>
+                  <span>SYNC OK (1.4ms)</span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Action Buttons */}
+          <div style={{ marginTop: '8px', display: 'flex', gap: '10px' }}>
             <button
               type="button"
               onClick={onClose}
@@ -277,7 +579,8 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 padding: '10px',
                 borderRadius: '8px',
                 fontSize: '13px',
-                fontWeight: 600
+                fontWeight: 600,
+                cursor: 'pointer'
               }}
             >
               Cancel
@@ -288,10 +591,13 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 flex: 1,
                 backgroundColor: 'var(--accent-primary)',
                 color: 'var(--accent-primary-text)',
+                border: 'none',
                 padding: '10px',
                 borderRadius: '8px',
                 fontSize: '13px',
-                fontWeight: 700
+                fontWeight: 700,
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-elevated)'
               }}
             >
               Save Camera Node

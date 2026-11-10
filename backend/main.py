@@ -1,4 +1,11 @@
+import sys
 from pathlib import Path
+
+# Ensure project root is always in sys.path regardless of current working directory
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -6,7 +13,7 @@ from fastapi.staticfiles import StaticFiles
 from backend.core.config import settings
 from backend.core.database import init_db, engine
 from backend.core.ws_manager import ws_manager
-from backend.api import cameras, authorized, entries, vision
+from backend.api import cameras, authorized, entries, vision, auth, gate
 from backend.reconciliation.sweeper import handoff_sweeper
 
 app = FastAPI(
@@ -24,16 +31,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Static crops directory
+# Static crops and frontend distribution directories
 static_dir = settings.BASE_DIR / "backend" / "static"
 static_dir.mkdir(parents=True, exist_ok=True)
 app.mount("/static", StaticFiles(directory=str(static_dir)), name="static")
 
+frontend_dist = settings.BASE_DIR / "frontend" / "dist"
+if (frontend_dist / "assets").exists():
+    app.mount("/assets", StaticFiles(directory=str(frontend_dist / "assets")), name="frontend_assets")
+
 # Include Routers
+app.include_router(auth.router)
 app.include_router(cameras.router)
 app.include_router(authorized.router)
 app.include_router(entries.router)
 app.include_router(vision.router)
+app.include_router(gate.router)
 
 @app.websocket("/ws/live-feed")
 async def websocket_live_feed(websocket: WebSocket):
@@ -76,10 +89,16 @@ def health_check():
 
 @app.get("/", response_class=FileResponse, tags=["Dashboard"])
 def get_dashboard():
+    dist_index = frontend_dist / "index.html"
+    if dist_index.exists():
+        return FileResponse(str(dist_index))
     return FileResponse(str(static_dir / "index.html"))
 
 @app.get("/dashboard", response_class=FileResponse, tags=["Dashboard"])
 def get_dashboard_alias():
+    dist_index = frontend_dist / "index.html"
+    if dist_index.exists():
+        return FileResponse(str(dist_index))
     return FileResponse(str(static_dir / "index.html"))
 
 @app.get("/api", tags=["System"])

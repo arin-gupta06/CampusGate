@@ -58,7 +58,11 @@ class HandoffSweeper:
         if self._is_running:
             return
         self._is_running = True
-        self._task = asyncio.create_task(self._sweep_loop())
+        try:
+            loop = asyncio.get_running_loop()
+            self._task = loop.create_task(self._sweep_loop())
+        except RuntimeError:
+            pass
 
     def stop(self) -> None:
         """Stops and cancels the background sweeper task."""

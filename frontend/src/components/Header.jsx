@@ -1,18 +1,32 @@
 import React, { useState, useEffect } from 'react';
-import { Search, Bell, Sparkles, ChevronDown, Shield, Wifi, WifiOff, User, Sun, Moon } from 'lucide-react';
+import Avatar from './Avatar';
+import {
+  Search,
+  Sparkles,
+  Shield,
+  Wifi,
+  WifiOff,
+  Sun,
+  Moon,
+  ShieldCheck,
+  UserCheck,
+  User,
+  LogOut,
+  ChevronDown
+} from 'lucide-react';
 
 export default function Header({
   onSearch,
   onTriggerSimulation,
   wsStatus,
-  userRole,
-  setUserRole,
+  currentUser,
+  onOpenAuthModal,
+  onSignOut,
   theme,
   toggleTheme
 }) {
   const [currentTime, setCurrentTime] = useState('');
   const [searchValue, setSearchValue] = useState('');
-  const [showRoleMenu, setShowRoleMenu] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -22,15 +36,12 @@ export default function Header({
       const day = days[now.getDay()];
       const date = now.getDate();
       const month = months[now.getMonth()];
-      const year = now.getFullYear();
       let hours = now.getHours();
       const minutes = String(now.getMinutes()).padStart(2, '0');
       const seconds = String(now.getSeconds()).padStart(2, '0');
       const ampm = hours >= 12 ? 'PM' : 'AM';
-      hours = hours % 12;
-      hours = hours ? hours : 12;
-      const formatted = `${day}, ${date} ${month} ${year} ${String(hours).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`;
-      setCurrentTime(formatted);
+      hours = hours % 12 || 12;
+      setCurrentTime(`${day}, ${date} ${month} • ${String(hours).padStart(2, '0')}:${minutes}:${seconds} ${ampm}`);
     };
 
     updateTime();
@@ -43,6 +54,19 @@ export default function Header({
     if (onSearch) onSearch(searchValue);
   };
 
+  const role = currentUser?.role || 'user';
+  const isSuper = currentUser?.is_superadmin || ['24cd10ar15@mitsgwl.ac.in', 'vivekchaurasiya943@gmail.com', 'sarveshsingh8462@gmail.com', 'arin.gupta@mits.ac.in'].includes(currentUser?.email?.toLowerCase());
+
+  const roleBadgeMeta = isSuper
+    ? { label: '👑 Superadmin', color: '#d97706', bg: 'rgba(217, 119, 6, 0.12)', border: 'rgba(217, 119, 6, 0.4)', icon: Shield }
+    : ({
+        admin: { label: 'Security Admin', color: 'var(--color-crimson)', bg: 'var(--color-crimson-bg)', border: 'var(--color-crimson-border)', icon: Shield },
+        guard: { label: 'Gate Officer', color: 'var(--color-amber)', bg: 'var(--color-amber-bg)', border: 'var(--color-amber-border)', icon: ShieldCheck },
+        user: { label: 'Campus Resident', color: 'var(--color-emerald)', bg: 'var(--color-emerald-bg)', border: 'var(--color-emerald-border)', icon: UserCheck }
+      }[role] || { label: 'Member', color: 'var(--text-secondary)', bg: 'var(--bg-card-subtle)', border: 'var(--border-subtle)', icon: User });
+
+  const RoleIcon = roleBadgeMeta.icon;
+
   return (
     <header style={{
       height: '74px',
@@ -52,46 +76,54 @@ export default function Header({
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'space-between',
+      gap: '20px',
       position: 'sticky',
       top: 0,
       zIndex: 30
     }}>
-      {/* Title & Greeting */}
-      <div>
-        <h2 style={{
-          fontSize: '18px',
-          fontWeight: 700,
-          color: 'var(--text-main)',
-          letterSpacing: '-0.2px',
-          margin: 0
-        }}>
-          {userRole === 'guard' ? 'Good Morning, Gate Guard' : 'Good Morning, Admin'}
-        </h2>
-        <p style={{
-          fontSize: '12px',
-          color: 'var(--text-muted)',
-          marginTop: '2px',
-          fontWeight: 500
-        }}>
-          {userRole === 'guard' ? 'Gate 1 & Gate 2 Vehicle Ingress Station' : 'Live monitoring of campus vehicles & gate barriers'}
-        </p>
+      {/* Brand & Live Operational Clock */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '220px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.3px' }}>
+              CampusGate AI
+            </span>
+            <span style={{
+              fontSize: '10px',
+              fontWeight: 800,
+              padding: '2px 6px',
+              borderRadius: '4px',
+              backgroundColor: 'var(--accent-primary)',
+              color: 'var(--accent-primary-text)',
+              letterSpacing: '0.4px'
+            }}>
+              v2.4
+            </span>
+          </div>
+          <p style={{
+            fontSize: '11px',
+            color: 'var(--text-muted)',
+            margin: '2px 0 0',
+            fontFamily: 'var(--font-mono)',
+            fontWeight: 500
+          }}>
+            {currentTime}
+          </p>
+        </div>
       </div>
 
-      {/* Search Bar */}
-      <form onSubmit={handleSearchSubmit} style={{
-        position: 'relative',
-        width: '360px'
-      }}>
-        <Search size={16} style={{
+      {/* Global Search Bar */}
+      <form onSubmit={handleSearchSubmit} style={{ position: 'relative', width: '320px' }}>
+        <Search size={14} style={{
           position: 'absolute',
-          left: '14px',
+          left: '12px',
           top: '50%',
           transform: 'translateY(-50%)',
           color: 'var(--text-muted)'
         }} />
         <input
           type="text"
-          placeholder="Search vehicle, person, camera..."
+          placeholder="Search registered vehicle, pass, resident..."
           value={searchValue}
           onChange={(e) => {
             setSearchValue(e.target.value);
@@ -99,229 +131,138 @@ export default function Header({
           }}
           style={{
             width: '100%',
-            height: '40px',
-            backgroundColor: 'var(--bg-input)',
+            padding: '8px 12px 8px 34px',
+            backgroundColor: 'var(--bg-card-subtle)',
             border: '1px solid var(--border-subtle)',
             borderRadius: '10px',
-            padding: '0 16px 0 40px',
-            fontSize: '13px',
             color: 'var(--text-main)',
-            transition: 'border-color 0.2s',
+            fontSize: '12px',
+            outline: 'none',
+            fontFamily: 'inherit'
           }}
-          onFocus={(e) => e.target.style.borderColor = 'var(--accent-primary)'}
-          onBlur={(e) => e.target.style.borderColor = 'var(--border-subtle)'}
         />
       </form>
 
-      {/* Right Controls */}
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: '16px'
-      }}>
-        {/* White & Black Theme Toggle Button */}
+      {/* Right Actions: Authenticated Profile & Role Extras Indicator */}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        {/* Real-time Ingress Simulation Trigger */}
+        <button
+          onClick={onTriggerSimulation}
+          title="Simulate Vehicle Arrival (Auto OCR Latch)"
+          style={{
+            padding: '8px 12px',
+            borderRadius: '10px',
+            backgroundColor: 'var(--bg-card-hover)',
+            border: '1px solid var(--border-medium)',
+            color: 'var(--text-main)',
+            fontSize: '12px',
+            fontWeight: 700,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '6px',
+            cursor: 'pointer',
+            whiteSpace: 'nowrap'
+          }}
+        >
+          <Sparkles size={14} color="#d97706" />
+          <span>Simulate Arrival</span>
+        </button>
+
+        {/* WebSocket Stream Heartbeat Status */}
+        <div style={{
+          padding: '6px 10px',
+          borderRadius: '8px',
+          backgroundColor: wsStatus === 'CONNECTED' ? 'var(--color-emerald-bg)' : 'var(--color-crimson-bg)',
+          border: `1px solid ${wsStatus === 'CONNECTED' ? 'var(--color-emerald-border)' : 'var(--color-crimson-border)'}`,
+          color: wsStatus === 'CONNECTED' ? 'var(--color-emerald)' : 'var(--color-crimson)',
+          fontSize: '11px',
+          fontWeight: 700,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '6px'
+        }}>
+          {wsStatus === 'CONNECTED' ? <Wifi size={13} /> : <WifiOff size={13} />}
+          <span style={{ textTransform: 'uppercase', letterSpacing: '0.3px' }}>
+            {wsStatus === 'CONNECTED' ? 'Live Stream' : 'Offline'}
+          </span>
+        </div>
+
+        {/* Theme Toggle */}
         <button
           onClick={toggleTheme}
-          title={`Switch to ${theme === 'light' ? 'Black (Dark Mode)' : 'White (Light Mode)'}`}
+          title={`Switch to ${theme === 'light' ? 'Dark' : 'Light'} Mode`}
+          style={{
+            width: '36px',
+            height: '36px',
+            borderRadius: '10px',
+            backgroundColor: 'var(--bg-card-subtle)',
+            border: '1px solid var(--border-subtle)',
+            color: 'var(--text-main)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer'
+          }}
+        >
+          {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
+        </button>
+
+        {/* User Account / OAuth Switcher Pill */}
+        <button
+          onClick={onOpenAuthModal}
           style={{
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            backgroundColor: 'var(--bg-card)',
-            color: 'var(--text-main)',
-            border: '1px solid var(--border-medium)',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            fontWeight: 600,
+            gap: '10px',
+            padding: '5px 12px 5px 6px',
+            borderRadius: '12px',
+            backgroundColor: 'var(--bg-card-subtle)',
+            border: '1px solid var(--border-subtle)',
             cursor: 'pointer',
             boxShadow: 'var(--shadow-card)'
           }}
         >
-          {theme === 'light' ? <Moon size={15} /> : <Sun size={15} />}
-          <span>{theme === 'light' ? 'Black Theme' : 'White Theme'}</span>
-        </button>
-
-        {/* Simulate Live Event Button */}
-        <button
-          onClick={onTriggerSimulation}
-          title="Simulate a vehicle passing through Gate 1 with OCR detection"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            backgroundColor: 'var(--bg-card-subtle)',
-            color: 'var(--text-main)',
-            border: '1px solid var(--border-subtle)',
-            padding: '8px 14px',
-            borderRadius: '8px',
-            fontSize: '12px',
-            fontWeight: 600,
-            cursor: 'pointer'
-          }}
-        >
-          <Sparkles size={15} />
-          <span>Simulate Entry</span>
-        </button>
-
-        {/* Live Status + Clock */}
-        <div style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: '10px',
-          backgroundColor: 'var(--bg-card)',
-          padding: '6px 14px',
-          borderRadius: '8px',
-          border: '1px solid var(--border-subtle)'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <span style={{
-              width: '8px',
-              height: '8px',
-              borderRadius: '50%',
-              backgroundColor: '#ef4444',
-              animation: 'pulse-dot 2s infinite'
-            }} />
-            <span style={{
-              fontSize: '11px',
-              fontWeight: 700,
-              color: '#ef4444',
-              letterSpacing: '0.6px'
-            }}>
-              LIVE
-            </span>
-          </div>
-
-          <span style={{
-            color: 'var(--border-medium)',
-            fontSize: '12px'
-          }}>|</span>
-
-          <span style={{
-            fontSize: '12px',
-            fontFamily: 'var(--font-mono)',
-            color: 'var(--text-secondary)',
-            fontWeight: 500
-          }}>
-            {currentTime}
-          </span>
-        </div>
-
-        {/* WebSocket Connection Status */}
-        <div title={wsStatus === 'CONNECTED' ? 'WebSocket Live Stream Online' : 'WebSocket Reconnecting...'} style={{
-          display: 'flex',
-          alignItems: 'center',
-          color: wsStatus === 'CONNECTED' ? '#10b981' : '#f59e0b',
-          fontSize: '12px'
-        }}>
-          {wsStatus === 'CONNECTED' ? <Wifi size={17} /> : <WifiOff size={17} />}
-        </div>
-
-        {/* User Profile Avatar & Role Menu */}
-        <div style={{ position: 'relative' }}>
-          <div
-            onClick={() => setShowRoleMenu(!showRoleMenu)}
-            style={{
+          <Avatar user={currentUser} size={28} borderRadius={7} />
+          <div style={{ textAlign: 'left' }}>
+            <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.2 }}>
+              {currentUser?.name || 'Arin Gupta'}
+            </div>
+            <div style={{
+              fontSize: '10px',
+              fontWeight: 800,
+              color: roleBadgeMeta.color,
               display: 'flex',
               alignItems: 'center',
-              gap: '10px',
-              paddingLeft: '6px',
-              cursor: 'pointer'
-            }}
-          >
-            <div style={{
+              gap: '3px'
+            }}>
+              <RoleIcon size={10} />
+              {roleBadgeMeta.label}
+            </div>
+          </div>
+          <ChevronDown size={14} style={{ color: 'var(--text-muted)', marginLeft: '2px' }} />
+        </button>
+
+        {/* Sign Out Button */}
+        {onSignOut && (
+          <button
+            onClick={onSignOut}
+            title="Sign Out of CampusGate"
+            style={{
               width: '36px',
               height: '36px',
-              borderRadius: '50%',
+              borderRadius: '10px',
               backgroundColor: 'var(--bg-card-subtle)',
-              border: `2px solid ${userRole === 'admin' ? '#3b82f6' : userRole === 'guard' ? '#10b981' : 'var(--accent-primary)'}`,
+              border: '1px solid var(--border-subtle)',
+              color: 'var(--text-muted)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              fontSize: '12px',
-              fontWeight: 700,
-              color: 'var(--text-main)'
-            }}>
-              {userRole === 'guard' ? 'GD' : 'AG'}
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ fontSize: '13px', fontWeight: 600, color: 'var(--text-main)', textTransform: 'capitalize' }}>
-                {userRole}
-              </span>
-              <ChevronDown size={14} color="var(--text-muted)" />
-            </div>
-          </div>
-
-          {showRoleMenu && (
-            <div style={{
-              position: 'absolute',
-              top: '46px',
-              right: 0,
-              width: '180px',
-              backgroundColor: 'var(--bg-card)',
-              border: '1px solid var(--border-subtle)',
-              borderRadius: '10px',
-              padding: '6px',
-              boxShadow: 'var(--shadow-elevated)',
-              zIndex: 100,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '2px'
-            }}>
-              <button
-                onClick={() => {
-                  setUserRole('admin');
-                  setShowRoleMenu(false);
-                }}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  backgroundColor: userRole === 'admin' ? 'var(--bg-card-subtle)' : 'transparent',
-                  color: userRole === 'admin' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                  textAlign: 'left',
-                  fontSize: '12px',
-                  fontWeight: 600
-                }}
-              >
-                Switch to Admin
-              </button>
-              <button
-                onClick={() => {
-                  setUserRole('guard');
-                  setShowRoleMenu(false);
-                }}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  backgroundColor: userRole === 'guard' ? 'var(--bg-card-subtle)' : 'transparent',
-                  color: userRole === 'guard' ? '#10b981' : 'var(--text-secondary)',
-                  textAlign: 'left',
-                  fontSize: '12px',
-                  fontWeight: 600
-                }}
-              >
-                Switch to Guard
-              </button>
-              <button
-                onClick={() => {
-                  setUserRole('public');
-                  setShowRoleMenu(false);
-                }}
-                style={{
-                  padding: '8px 12px',
-                  borderRadius: '6px',
-                  backgroundColor: userRole === 'public' ? 'var(--bg-card-subtle)' : 'transparent',
-                  color: userRole === 'public' ? 'var(--accent-primary)' : 'var(--text-secondary)',
-                  textAlign: 'left',
-                  fontSize: '12px',
-                  fontWeight: 600
-                }}
-              >
-                Switch to Public Portal
-              </button>
-            </div>
-          )}
-        </div>
+              cursor: 'pointer'
+            }}
+          >
+            <LogOut size={16} />
+          </button>
+        )}
       </div>
     </header>
   );

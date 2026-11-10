@@ -635,6 +635,16 @@ export default function LiveMonitoringView({
                       }}>
                         {cam.role}
                       </span>
+                      <span style={{
+                        backgroundColor: cam.streamType === 'IP' ? 'rgba(16, 185, 129, 0.15)' : 'rgba(59, 130, 246, 0.15)',
+                        color: cam.streamType === 'IP' ? '#10b981' : '#3b82f6',
+                        fontSize: '9px',
+                        fontWeight: 800,
+                        padding: '2px 5px',
+                        borderRadius: '4px'
+                      }}>
+                        {cam.streamType === 'IP' ? 'IP CAM' : 'RTSP'}
+                      </span>
                     </div>
 
                     <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>

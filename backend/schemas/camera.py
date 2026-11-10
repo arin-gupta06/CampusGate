@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel
+from pydantic import BaseModel, model_validator
 from datetime import datetime
 
 class CameraBase(BaseModel):
@@ -9,6 +9,24 @@ class CameraBase(BaseModel):
     physical_role: str = "ENTRY"
     location_description: Optional[str] = None
     is_active: bool = True
+
+    @model_validator(mode="before")
+    @classmethod
+    def resolve_aliases(cls, values):
+        if isinstance(values, dict):
+            # Map rtsp_url to stream_url
+            if not values.get("stream_url") and values.get("rtsp_url"):
+                values["stream_url"] = values.get("rtsp_url")
+            # Map role to physical_role (e.g. ENTRY_GATE -> ENTRY, INTERNAL_CORRIDOR -> DOWNSTREAM)
+            if values.get("role"):
+                r = str(values.get("role")).upper()
+                if "ENTRY" in r:
+                    values["physical_role"] = "ENTRY"
+                elif "EXIT" in r:
+                    values["physical_role"] = "EXIT"
+                else:
+                    values["physical_role"] = "DOWNSTREAM"
+        return values
 
 class CameraCreate(CameraBase):
     pass

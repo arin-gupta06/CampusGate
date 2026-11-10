@@ -123,6 +123,10 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
               <img
                 src={vehicle.image_url}
                 alt={vehicle.plate_number}
+                onError={(e) => {
+                  e.currentTarget.onerror = null;
+                  e.currentTarget.src = "/assets/ChatGPT Image Sep 27, 2026, 11_19_50 AM.png";
+                }}
                 style={{
                   width: '100%',
                   height: '100%',
@@ -188,7 +192,15 @@ export default function VehicleDetailsModal({ vehicle, onClose, onTrackOnMap }) 
                     overflow: 'hidden',
                     border: '1px solid var(--border-subtle)'
                   }}>
-                    <img src={snap.image} alt={snap.camera} style={{ width: '100%', height: '70px', objectFit: 'cover' }} />
+                    <img
+                      src={snap.image}
+                      alt={snap.camera}
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = "/assets/ChatGPT Image Sep 27, 2026, 11_19_50 AM.png";
+                      }}
+                      style={{ width: '100%', height: '70px', objectFit: 'cover' }}
+                    />
                     <div style={{ padding: '6px 8px', fontSize: '11px' }}>
                       <div style={{ color: 'var(--text-main)', fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                         {snap.camera}

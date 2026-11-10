@@ -40,6 +40,6 @@ def get_db():
         db.close()
 
 def init_db():
-    from backend.models import camera, observation, entry, authorized
+    from backend.models import camera, observation, entry, authorized, user
     Base.metadata.create_all(bind=engine)
     logger.info("Database schemas verified / initialized.")

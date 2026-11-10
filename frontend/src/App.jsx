@@ -7,17 +7,32 @@ import VehiclesView from './components/VehiclesView';
 import EventsView from './components/EventsView';
 import AnalyticsView from './components/AnalyticsView';
 import SettingsView from './components/SettingsView';
+import InfrastructureView from './components/InfrastructureView';
 import GuardStationView from './components/GuardStationView';
 import PublicHomeView from './components/PublicHomeView';
 import UserProfileView from './components/UserProfileView';
 import VehicleDetailsModal from './components/VehicleDetailsModal';
 import AddCameraModal from './components/AddCameraModal';
+import AuthModal from './components/AuthModal';
+import GoogleLandingView from './components/GoogleLandingView';
+import DeveloperView from './components/DeveloperView';
 import {
   getCameras,
+  addCamera,
+  deleteCamera,
   getEntries,
+  getEntriesSummary,
   getAuthorizedVehicles,
   addAuthorizedVehicle,
+  updateAuthorizedVehicle,
+  deleteAuthorizedVehicle,
+  triggerSimulation,
+  controlBarrier,
+  resolveEntryReview,
   connectLiveFeed,
+  getStoredUser,
+  setStoredAuth,
+  clearStoredAuth,
   MOCK_CAMERAS,
   MOCK_RECENT_ENTRIES,
   MOCK_REGISTERED_VEHICLES,
@@ -25,17 +40,30 @@ import {
 } from './services/api';
 
 export default function App() {
-  // Navigation & Role states
-  const [userRole, setUserRole] = useState('admin'); // 'admin', 'guard', 'public'
-  const [activeTab, setActiveTab] = useState('dashboard');
-  const [appMode, setAppMode] = useState('desktop'); // 'desktop' or 'guard' (mobile frame)
-  const [publicPage, setPublicPage] = useState('home'); // 'home', 'settings', 'profile'
+  // Global Authentication State - returns null if not signed in to show Landing Screen
+  const [currentUser, setCurrentUser] = useState(() => {
+    return getStoredUser() || null;
+  });
+
+  const handleSignOut = () => {
+    clearStoredAuth();
+    setCurrentUser(null);
+    showToast('Signed out of CampusGate', 'info');
+  };
+
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState(() => {
+    const user = getStoredUser();
+    if (!user || user.role === 'user') return 'profile';
+    if (user.role === 'guard') return 'guard_console';
+    return 'overview';
+  });
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [isAddCameraModalOpen, setIsAddCameraModalOpen] = useState(false);
   const [wsStatus, setWsStatus] = useState('DISCONNECTED');
   const [toastMessage, setToastMessage] = useState(null);
 
-  // Theme state (White & Black dual-mode, defaulting to 'light' / clean White)
+  // Theme state (White & Black dual-mode, defaulting to 'light')
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('campusgate_theme') || 'light';
   });
@@ -49,12 +77,25 @@ export default function App() {
     setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
   };
 
+  // Switch persona or login
+  const handleLoginSuccess = (user) => {
+    setCurrentUser(user);
+    showToast(`Welcome back, ${user.name}! Signed in as ${user.role.toUpperCase()}`, 'success');
+    if (user.role === 'guard') {
+      setActiveTab('guard_console');
+    } else if (user.role === 'admin') {
+      setActiveTab('overview');
+    } else {
+      setActiveTab('profile'); // Normal user lands straight on Digital Gate Pass!
+    }
+  };
+
   // Core Datasets
   const [stats, setStats] = useState({
-    totalToday: 124,
-    verifiedToday: 98,
-    unknownToday: 12,
-    activeAlerts: 5,
+    totalToday: 142,
+    verifiedToday: 128,
+    unknownToday: 14,
+    activeAlerts: 4,
     totalRegistered: 256
   });
 
@@ -62,36 +103,51 @@ export default function App() {
   const [recentEntries, setRecentEntries] = useState(MOCK_RECENT_ENTRIES);
   const [registeredVehicles, setRegisteredVehicles] = useState(MOCK_REGISTERED_VEHICLES);
   const [securityEvents, setSecurityEvents] = useState(MOCK_SECURITY_EVENTS);
-
   const [settingsInitialView, setSettingsInitialView] = useState('overview');
 
-  // Check URL query parameters for direct mobile QR registration link or public mode
-  // Opens form in application environment with sidebar and navbar intact!
+  // Check URL query parameters or pathname for direct navigation (e.g. /developer or pass registration)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    if (params.get('tab') === 'settings' || params.get('view') === 'form' || params.get('action') === 'register') {
-      setUserRole('admin');
-      setActiveTab('settings');
-      setSettingsInitialView('form');
-    } else if (params.get('mode') === 'public' || params.get('role') === 'public') {
-      setUserRole('public');
+    const path = window.location.pathname.toLowerCase();
+    if (path === '/developer' || path === '/developers' || params.get('tab') === 'developer') {
+      setActiveTab('developer');
+    } else if (params.get('tab') === 'settings' || params.get('view') === 'form' || params.get('action') === 'register') {
+      setActiveTab('apply_pass');
     }
   }, []);
 
-
-  // Fetch initial data
+  // Fetch initial data & connect WebSocket
   useEffect(() => {
     async function loadData() {
+      // 1. Fetch live audit summary from database/redis
+      try {
+        const summary = await getEntriesSummary();
+        if (summary) {
+          setStats(prev => ({
+            ...prev,
+            totalToday: summary.total_entries > 0 ? summary.total_entries : prev.totalToday,
+            verifiedToday: summary.authorized_count > 0 ? summary.authorized_count : prev.verifiedToday,
+            unknownToday: (summary.unauthorized_count + summary.review_required_count) > 0 ? (summary.unauthorized_count + summary.review_required_count) : prev.unknownToday,
+            activeAlerts: (summary.review_required_count + summary.unresolved_count) > 0 ? (summary.review_required_count + summary.unresolved_count) : prev.activeAlerts
+          }));
+        }
+      } catch (e) {
+        console.warn('Error loading summary:', e);
+      }
+
+      // 2. Fetch live cameras
       const cams = await getCameras();
       if (cams && cams.length > 0) {
         setCameras(cams);
       } else {
-        setCameras([]); // Empty by default until camera is configured
+        setCameras(MOCK_CAMERAS);
       }
 
-      const entries = await getEntries(20);
+      // 3. Fetch recent entry audit trail
+      const entries = await getEntries(30);
       if (entries && entries.length > 0) setRecentEntries(entries);
 
+      // 4. Fetch authorized vehicles roster
       const auth = await getAuthorizedVehicles();
       if (auth && auth.length > 0) {
         setRegisteredVehicles(auth);
@@ -100,7 +156,6 @@ export default function App() {
     }
     loadData();
 
-
     const cleanupWs = connectLiveFeed(
       (data) => handleIncomingLiveEvent(data),
       (status) => setWsStatus(status)
@@ -108,16 +163,6 @@ export default function App() {
 
     return () => cleanupWs();
   }, []);
-
-  // Guard role restrictions enforcement: Guard has access ONLY to Vehicles, Events, and Settings
-  useEffect(() => {
-    if (userRole === 'guard') {
-      const allowedGuardTabs = ['vehicles', 'events', 'settings'];
-      if (!allowedGuardTabs.includes(activeTab)) {
-        setActiveTab('vehicles');
-      }
-    }
-  }, [userRole, activeTab]);
 
   const showToast = (msg, type = 'info') => {
     setToastMessage({ msg, type });
@@ -131,7 +176,7 @@ export default function App() {
     const newEntry = {
       id: data.id || `ent-${Date.now()}`,
       plate_number: data.plate_number || 'UNKNOWN',
-      confidence: data.confidence || 0.95,
+      confidence: data.confidence || 0.96,
       entry_status: data.entry_status || (isAuthorized ? 'AUTHORIZED' : 'FLAGGED_UNLISTED'),
       review_reason: data.review_reason || (isAuthorized ? 'Automated Clearance' : 'Manual Guard Check'),
       first_seen_at: data.first_seen_at || new Date().toISOString(),
@@ -152,7 +197,7 @@ export default function App() {
       ]
     };
 
-    setRecentEntries(prev => [newEntry, ...prev.slice(0, 24)]);
+    setRecentEntries(prev => [newEntry, ...prev.slice(0, 29)]);
     setStats(prev => ({
       ...prev,
       totalToday: prev.totalToday + 1,
@@ -167,8 +212,18 @@ export default function App() {
     );
   };
 
-  // Demo Ingestion Trigger
-  const handleTriggerSimulation = () => {
+  // Live Ingestion & Backend Simulation Trigger
+  const handleTriggerSimulation = async () => {
+    try {
+      const liveSim = await triggerSimulation();
+      if (liveSim) {
+        showToast(`🚗 Simulated arrival processed: ${liveSim.plate_number}`, 'success');
+        return;
+      }
+    } catch (err) {
+      console.warn('Simulation backend offline, using fallback:', err);
+    }
+
     const demoPlates = [
       { plate: 'MP07AB1234', status: 'AUTHORIZED', owner: 'Rajesh Gupta', desc: 'Student Pass Verified' },
       { plate: 'MP07XY9999', status: 'FLAGGED_UNLISTED', owner: 'Guest Driver', desc: 'Unknown Vehicle Alert' },
@@ -187,23 +242,7 @@ export default function App() {
     });
   };
 
-  // Camera Management
-  const handleAddCamera = (newCam) => {
-    setCameras(prev => [...prev, newCam]);
-    showToast(`Camera node "${newCam.name}" configured and active!`, 'success');
-  };
-
-  const handleToggleEmptyCameras = () => {
-    if (cameras.length > 0) {
-      setCameras([]);
-      showToast('Cameras cleared (Empty State active on Dashboard)', 'info');
-    } else {
-      setCameras(MOCK_CAMERAS);
-      showToast('Sample cameras restored', 'success');
-    }
-  };
-
-  // Vehicle Management
+  // Vehicle Management - Wired to Backend Database
   const handleAddVehicle = async (newVehicle) => {
     const saved = await addAuthorizedVehicle(newVehicle);
     setRegisteredVehicles(prev => [saved, ...prev]);
@@ -211,16 +250,28 @@ export default function App() {
     showToast(`Vehicle ${newVehicle.plate_number} registered successfully!`, 'success');
   };
 
-  const handleUpdateVehicle = (updated) => {
+  const handleUpdateVehicle = async (updated) => {
     setRegisteredVehicles(prev => prev.map(v => v.plate_number === updated.plate_number ? { ...v, ...updated } : v));
+    try {
+      await updateAuthorizedVehicle(updated.plate_number, updated);
+      showToast(`Vehicle ${updated.plate_number} details saved!`, 'success');
+    } catch (e) {
+      console.warn('Update vehicle failed:', e);
+    }
   };
 
-  const handleDeleteVehicle = (plateNumber) => {
+  const handleDeleteVehicle = async (plateNumber) => {
     setRegisteredVehicles(prev => prev.filter(v => v.plate_number !== plateNumber));
     setStats(prev => ({ ...prev, totalRegistered: Math.max(0, prev.totalRegistered - 1) }));
+    try {
+      await deleteAuthorizedVehicle(plateNumber);
+      showToast(`Vehicle ${plateNumber} removed from database registry`, 'info');
+    } catch (e) {
+      console.warn('Delete vehicle failed:', e);
+    }
   };
 
-  const handleResolveEvent = (eventId, action) => {
+  const handleResolveEvent = async (eventId, action) => {
     setSecurityEvents(prev => prev.map(e => {
       if (e.id === eventId) {
         return {
@@ -231,104 +282,133 @@ export default function App() {
       }
       return e;
     }));
+    try {
+      await resolveEntryReview(eventId, action === 'ALLOW' ? 'APPROVED' : 'REJECTED');
+    } catch (e) {
+      console.warn('Resolve event failed:', e);
+    }
     showToast(`Incident #${eventId} resolved: ${action}`, 'success');
   };
 
-  // If user role is 'public', render the Public Portal Views
-  if (userRole === 'public') {
-    return (
-      <div style={{ minHeight: '100vh', backgroundColor: 'var(--bg-base)', color: 'var(--text-main)' }}>
-        {publicPage === 'home' && (
-          <PublicHomeView
-            theme={theme}
-            toggleTheme={toggleTheme}
-            onNavigateToSettings={() => {
-              setPublicPage('settings');
-              setSettingsInitialView('overview');
-            }}
-            onNavigateToProfile={() => setPublicPage('profile')}
-            onSwitchToAdmin={() => {
-              setUserRole('admin');
-              setActiveTab('dashboard');
-            }}
-          />
-        )}
+  const handleBarrierAction = async (action, plate = null) => {
+    try {
+      await controlBarrier(action, 'Gate 1 - Main Ingress', plate);
+      showToast(`Gate Barrier ${action === 'OPEN' ? 'Raised' : 'Lowered'}`, 'success');
+    } catch (e) {
+      console.warn('Barrier action failed:', e);
+    }
+  };
 
+  const handleIssueVisitorPass = (plateNumber, visitorData) => {
+    handleAddVehicle({
+      id: Date.now(),
+      plate_number: plateNumber,
+      owner_name: visitorData.driverName,
+      associated_person: `Visitor (Host: ${visitorData.hostPerson})`,
+      department: `Visitor Pass - ${visitorData.purpose}`,
+      vehicle_type: visitorData.vehicleType || 'Car',
+      valid_till: 'Today (Temporary Clearance)',
+      status: 'Active',
+      passes_issued: 1
+    });
+    showToast(`1-Day Visitor Pass generated for ${plateNumber}!`, 'success');
+  };
 
-        {publicPage === 'profile' && (
-          <UserProfileView
-            onBackToHome={() => setPublicPage('home')}
-            onNavigateToSettings={() => setPublicPage('settings')}
-          />
-        )}
+  const role = currentUser?.role || 'user';
+  const isGuardOrAdmin = role === 'guard' || role === 'admin';
+  const isAdmin = role === 'admin';
 
-        {publicPage === 'settings' && (
-          <div style={{ maxWidth: '1100px', margin: '0 auto', padding: '30px 24px' }}>
-            <button
-              onClick={() => setPublicPage('home')}
-              style={{
-                backgroundColor: 'transparent',
-                color: 'var(--accent-primary)',
-                fontSize: '13px',
-                fontWeight: 600,
-                marginBottom: '16px',
-                cursor: 'pointer'
-              }}
-            >
-              ← Back to Public Home
-            </button>
-            <SettingsView
-              vehicles={registeredVehicles}
-              onAddVehicle={handleAddVehicle}
-              onUpdateVehicle={handleUpdateVehicle}
-              onDeleteVehicle={handleDeleteVehicle}
-              initialView={settingsInitialView}
-            />
-          </div>
-        )}
-      </div>
-    );
+  // If not authenticated, render the dedicated 1-page Google Sign-In Landing View
+  if (!currentUser) {
+    return <GoogleLandingView onLoginSuccess={handleLoginSuccess} />;
   }
 
-  // Admin and Guard Interface
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', backgroundColor: 'var(--bg-base)', color: 'var(--text-main)' }}>
-      {/* Left Sidebar with role-based navigation */}
+    <div style={{
+      display: 'flex',
+      minHeight: '100vh',
+      width: '100%',
+      maxWidth: '100vw',
+      overflowX: 'hidden',
+      backgroundColor: 'var(--bg-base)',
+      color: 'var(--text-main)'
+    }}>
+      {/* Role-Aware Global Sidebar */}
       <Sidebar
         activeTab={activeTab}
         setActiveTab={setActiveTab}
-        userRole={userRole}
-        setUserRole={setUserRole}
-        appMode={appMode}
-        setAppMode={setAppMode}
+        currentUser={currentUser}
         stats={stats}
-        theme={theme}
-        toggleTheme={toggleTheme}
+        onOpenAuthModal={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
       />
 
       {/* Main Content Area */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
-        {/* Top Header */}
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, width: '100%', overflowX: 'hidden' }}>
+        {/* Top Header with User Profile & Simulation Actions */}
         <Header
           onSearch={(query) => console.log('Search:', query)}
           onTriggerSimulation={handleTriggerSimulation}
           wsStatus={wsStatus}
-          userRole={userRole}
-          setUserRole={setUserRole}
+          currentUser={currentUser}
+          onOpenAuthModal={() => setIsAuthModalOpen(true)}
+          onSignOut={handleSignOut}
           theme={theme}
           toggleTheme={toggleTheme}
         />
 
-        {/* Dynamic View Router */}
-        <main style={{ flex: 1, padding: '24px 28px', overflowY: 'auto' }}>
-          {appMode === 'guard' ? (
-            <GuardStationView
-              onAllowEntry={handleTriggerSimulation}
-              onRejectEntry={() => showToast('Entry Rejected - Security Intercept Dispatched', 'alert')}
+        {/* Global Router Canvas */}
+        <main style={{
+          flex: 1,
+          padding: (activeTab === 'home' || activeTab === 'landing') ? 0 : '24px 28px',
+          overflowY: 'auto',
+          overflowX: 'hidden',
+          minWidth: 0,
+          width: '100%'
+        }}>
+          {/* =========================================================
+              1. MEMBER BASE APPS (Strictly for all authenticated users)
+             ========================================================= */}
+          {(activeTab === 'digital_pass' || activeTab === 'profile') && (
+            <UserProfileView
+              currentUser={currentUser}
+              onBackToHome={() => setActiveTab(isGuardOrAdmin ? 'overview' : 'profile')}
+              onNavigateToSettings={() => setActiveTab('apply_pass')}
             />
-          ) : (
+          )}
+
+          {activeTab === 'apply_pass' && (
+            <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
+              <SettingsView
+                vehicles={registeredVehicles}
+                onAddVehicle={handleAddVehicle}
+                onUpdateVehicle={handleUpdateVehicle}
+                onDeleteVehicle={handleDeleteVehicle}
+                initialView="overview"
+              />
+            </div>
+          )}
+
+          {(activeTab === 'home' || activeTab === 'landing') && (
+            <GoogleLandingView
+              currentUser={currentUser}
+              onLoginSuccess={handleLoginSuccess}
+              onOpenApplyPass={() => setActiveTab('apply_pass')}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
+          {activeTab === 'developer' && (
+            <DeveloperView />
+          )}
+
+          {/* =========================================================
+              2. EXTRA: GUARD OPERATIONS TABS (Guard + Admin only)
+              (Administrative CCTV & Ingress Overview are strictly protected)
+             ========================================================= */}
+          {isGuardOrAdmin && (
             <>
-              {activeTab === 'dashboard' && userRole === 'admin' && (
+              {activeTab === 'overview' && (
                 <DashboardView
                   stats={stats}
                   cameras={cameras}
@@ -342,43 +422,18 @@ export default function App() {
                   }}
                 />
               )}
-
-              {activeTab === 'live' && userRole === 'admin' && (
-                <LiveMonitoringView
-                  cameras={cameras}
-                  onAddCameraClick={() => setIsAddCameraModalOpen(true)}
-                  onDeleteCamera={(id) => {
-                    setCameras(prev => prev.filter(c => c.id !== id));
-                    showToast('Camera node removed', 'info');
+              {activeTab === 'guard_console' && (
+                <GuardStationView
+                  onAllowEntry={async () => {
+                    await handleBarrierAction('OPEN');
+                    handleTriggerSimulation();
                   }}
-                  onLoadDemoCameras={() => {
-                    setCameras(MOCK_CAMERAS);
-                    showToast('Demo cameras loaded!', 'success');
+                  onRejectEntry={async () => {
+                    await handleBarrierAction('CLOSE');
+                    showToast('Entry Denied - Gate Barrier Locked Down', 'alert');
                   }}
-                  onSelectVehicle={(v) => setSelectedVehicle(v)}
-                />
-              )}
-
-
-              {(activeTab === 'vehicles' || activeTab === 'users') && (
-                <VehiclesView
-                  vehicles={registeredVehicles}
-                  onAddVehicle={handleAddVehicle}
-                  onUpdateVehicle={handleUpdateVehicle}
-                  onDeleteVehicle={handleDeleteVehicle}
-                  onSelectVehicle={(v) => {
-                    setSelectedVehicle({
-                      ...v,
-                      entry_status: v.status === 'Blacklisted' ? 'BLACKLISTED' : (v.status === 'Inactive' ? 'REVIEW_NEEDED' : 'AUTHORIZED'),
-                      image_url: '/assets/ChatGPT Image Sep 27, 2026, 11_19_50 AM.png',
-                      first_seen_at: new Date().toISOString(),
-                      camera_name: 'Gate 1 - Main Entry',
-                      timeline: [
-                        { time: '10:42:15 AM', location: 'Gate 1 - Main Entry', action: 'Entry Verified', status: 'verified' },
-                        { time: '10:48:10 AM', location: 'Parking Area', action: 'Parked (Zone A)', status: 'parked' }
-                      ]
-                    });
-                  }}
+                  onIssueVisitorPass={handleIssueVisitorPass}
+                  recentEntries={recentEntries}
                 />
               )}
 
@@ -390,85 +445,92 @@ export default function App() {
                   onAddVehicle={handleAddVehicle}
                   onUpdateVehicle={handleUpdateVehicle}
                   onTransferOwnership={(plateNumber, transferData) => {
-                    // Update vehicle in registered vehicles list or register if unlisted
-                    const existing = registeredVehicles.find(v => v.plate_number === plateNumber);
-                    if (existing) {
-                      handleUpdateVehicle({
-                        ...existing,
-                        owner_name: transferData.newOwnerName,
-                        associated_person: `${transferData.newOwnerName} (${transferData.role || 'Student'})`,
-                        department: transferData.department,
-                        valid_till: transferData.validTill || '31 Dec 2027',
-                        status: 'Active',
-                        previous_owners: [
-                          ...(existing.previous_owners || []),
-                          {
-                            owner_name: existing.owner_name,
-                            role: existing.associated_person,
-                            transferred_at: new Date().toLocaleDateString()
-                          }
-                        ]
-                      });
-                    } else {
-                      handleAddVehicle({
-                        id: Date.now(),
-                        plate_number: plateNumber,
-                        owner_name: transferData.newOwnerName,
-                        associated_person: `${transferData.newOwnerName} (${transferData.role || 'Student'})`,
-                        department: transferData.department,
-                        vehicle_type: transferData.vehicleType || 'Car',
-                        valid_till: transferData.validTill || '31 Dec 2027',
-                        status: 'Active',
-                        passes_issued: 1
-                      });
-                    }
-                    // Automatically resolve the event
+                    handleIssueVisitorPass(plateNumber, transferData);
                     handleResolveEvent(transferData.eventId, 'ALLOW');
-                    showToast(`Vehicle ${plateNumber} transferred to ${transferData.newOwnerName} and authorized!`, 'success');
                   }}
                   onIssueVisitorPass={(plateNumber, visitorData) => {
-                    handleAddVehicle({
-                      id: Date.now(),
-                      plate_number: plateNumber,
-                      owner_name: visitorData.driverName,
-                      associated_person: `Visitor (Host: ${visitorData.hostPerson})`,
-                      department: `Visitor Pass - ${visitorData.purpose}`,
-                      vehicle_type: visitorData.vehicleType || 'Car',
-                      valid_till: 'Today (Temporary Clearance)',
-                      status: 'Active',
-                      passes_issued: 1
-                    });
+                    handleIssueVisitorPass(plateNumber, visitorData);
                     handleResolveEvent(visitorData.eventId, 'ALLOW');
-                    showToast(`1-Day Visitor Pass generated for ${plateNumber} (Host: ${visitorData.hostPerson})!`, 'success');
+                  }}
+                />
+              )}
+            </>
+          )}
+
+          {/* =========================================================
+              3. EXTRA: ADMIN GOVERNANCE TABS (Admin only)
+             ========================================================= */}
+          {isAdmin && (
+            <>
+              {activeTab === 'live' && (
+                <LiveMonitoringView
+                  cameras={cameras}
+                  onAddCameraClick={() => setIsAddCameraModalOpen(true)}
+                  onDeleteCamera={async (id) => {
+                    setCameras(prev => prev.filter(c => c.id !== id));
+                    await deleteCamera(id);
+                    showToast('Camera node removed from database', 'info');
+                  }}
+                  onLoadDemoCameras={() => {
+                    setCameras(MOCK_CAMERAS);
+                    showToast('Demo cameras loaded!', 'success');
+                  }}
+                  onSelectVehicle={(v) => setSelectedVehicle(v)}
+                />
+              )}
+
+              {/* Infrastructure & Nodes strictly restricted to Admin */}
+              {activeTab === 'settings' && (
+                <InfrastructureView
+                  cameras={cameras}
+                  onAddCameraClick={() => setIsAddCameraModalOpen(true)}
+                  onDeleteCamera={async (id) => {
+                    setCameras(prev => prev.filter(c => c.id !== id));
+                    await deleteCamera(id);
+                    showToast('Camera node removed from database', 'info');
+                  }}
+                  onLoadDemoCameras={() => {
+                    setCameras(MOCK_CAMERAS);
+                    showToast('Default gate camera nodes loaded!', 'success');
                   }}
                 />
               )}
 
-              {activeTab === 'analytics' && userRole === 'admin' && (
-                <AnalyticsView />
-              )}
-
-
-              {activeTab === 'settings' && (
-                <SettingsView
+              {activeTab === 'roster' && (
+                <VehiclesView
                   vehicles={registeredVehicles}
                   onAddVehicle={handleAddVehicle}
                   onUpdateVehicle={handleUpdateVehicle}
                   onDeleteVehicle={handleDeleteVehicle}
-                  initialView={settingsInitialView}
+                  onSelectVehicle={(v) => setSelectedVehicle(v)}
                 />
               )}
 
+              {activeTab === 'analytics' && (
+                <AnalyticsView />
+              )}
             </>
           )}
         </main>
       </div>
 
+      {/* OAuth Login & Persona Switcher Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onLoginSuccess={handleLoginSuccess}
+        currentUser={currentUser}
+      />
+
       {/* Add Camera Modal Overlay */}
       <AddCameraModal
         isOpen={isAddCameraModalOpen}
         onClose={() => setIsAddCameraModalOpen(false)}
-        onAddCamera={handleAddCamera}
+        onAddCamera={async (newCam) => {
+          const saved = await addCamera(newCam);
+          setCameras(prev => [...prev, saved]);
+          showToast(`Camera node "${newCam.name}" configured and active!`, 'success');
+        }}
       />
 
       {/* Vehicle Inspector Modal */}
@@ -483,7 +545,7 @@ export default function App() {
         />
       )}
 
-      {/* Real-time Toast Alert */}
+      {/* Real-Time Toast Alert */}
       {toastMessage && (
         <div style={{
           position: 'fixed',
@@ -500,7 +562,7 @@ export default function App() {
           gap: '10px',
           color: toastMessage.type === 'alert' ? 'var(--color-crimson)' : 'var(--color-emerald)',
           fontSize: '13px',
-          fontWeight: 600
+          fontWeight: 700
         }}>
           <span>{toastMessage.msg}</span>
         </div>

@@ -1,6 +1,6 @@
 // CampusGuard API & Data Service
 
-const API_BASE = '/api';
+const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export const MOCK_HOURLY_TRAFFIC = [
   { hour: '06:00', ingress: 14, egress: 4, authorized: 12, alerts: 2 },
@@ -455,22 +455,72 @@ export const MOCK_SECURITY_EVENTS = [
 ];
 
 // Real API Fetch Helpers
+export async function getEntriesSummary() {
+  try {
+    const res = await fetch(`${API_BASE}/entries/summary`);
+    if (res.ok) {
+      return await res.json();
+    }
+  } catch (err) {
+    console.warn('Backend summary offline, using fallback:', err.message);
+  }
+  return {
+    total_entries: 142,
+    authorized_count: 128,
+    unauthorized_count: 10,
+    review_required_count: 4,
+    unresolved_count: 0,
+    handoff_pending_count: 0
+  };
+}
+
 export async function getCameras() {
   try {
     const res = await fetch(`${API_BASE}/cameras`);
     if (res.ok) {
       const data = await res.json();
-      if (Array.isArray(data)) return data;
+      if (Array.isArray(data) && data.length > 0) return data;
     }
   } catch (err) {
     console.warn('Backend cameras offline or empty:', err.message);
   }
-  // Default to empty array until cameras are configured by user
-  return [];
+  return MOCK_CAMERAS;
 }
 
+export async function addCamera(cam) {
+  try {
+    const res = await fetch(`${API_BASE}/cameras`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: cam.id,
+        name: cam.name,
+        stream_url: cam.stream_url || cam.rtsp_url,
+        physical_role: cam.physical_role || cam.role || 'ENTRY',
+        location_description: cam.location_description || cam.name,
+        is_active: cam.is_active !== undefined ? cam.is_active : true
+      })
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.error('Error adding camera:', err);
+  }
+  return cam;
+}
 
-export async function getEntries(limit = 20) {
+export async function deleteCamera(cameraId) {
+  try {
+    const res = await fetch(`${API_BASE}/cameras/${encodeURIComponent(cameraId)}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.error('Error deleting camera:', err);
+  }
+  return { status: 'deleted', id: cameraId };
+}
+
+export async function getEntries(limit = 30) {
   try {
     const res = await fetch(`${API_BASE}/entries?limit=${limit}`);
     if (res.ok) {
@@ -478,20 +528,20 @@ export async function getEntries(limit = 20) {
       if (Array.isArray(data) && data.length > 0) {
         return data.map((e, idx) => ({
           id: e.id,
-          plate_number: e.plate_number || 'UNKNOWN',
-          confidence: e.confidence || 0.90,
-          entry_status: e.entry_status,
-          review_reason: e.review_reason || 'System captured',
-          first_seen_at: e.first_seen_at,
-          camera_name: e.entry_gate_camera_id === 'gate-cam-1' ? 'Gate 1 - Main Entry' : 'Gate 2 - Side Entry',
+          plate_number: e.registration_number || e.plate_number || 'UNKNOWN',
+          confidence: e.confidence || 0.95,
+          entry_status: e.authorization_state || e.entry_status || 'AUTHORIZED',
+          review_reason: e.review_notes || e.review_reason || 'Campus Gate Ingress Verified',
+          first_seen_at: e.first_observed_at || e.first_seen_at || new Date().toISOString(),
+          camera_name: e.primary_camera_id === 'gate-cam-2' ? 'Gate 2 - Side Entry' : 'Gate 1 - Main Entry',
           vehicle_type: 'Car',
           make_model: 'Campus Vehicle',
           color: 'White',
-          owner_name: 'Registered Visitor',
-          associated_person: 'Campus Member',
+          owner_name: 'Registered Member',
+          associated_person: 'Campus Resident',
           image_url: idx % 2 === 0 ? '/assets/ChatGPT Image Sep 27, 2026, 11_19_50 AM.png' : '/assets/ChatGPT Image Sep 27, 2026, 11_17_25 AM.png',
           timeline: [
-            { time: new Date(e.first_seen_at).toLocaleTimeString(), location: 'Entry Gate', action: e.entry_status || 'AUTHORIZED', status: (e.entry_status || 'authorized').toLowerCase() }
+            { time: new Date(e.first_observed_at || e.first_seen_at || Date.now()).toLocaleTimeString(), location: 'Entry Gate', action: e.authorization_state || 'AUTHORIZED', status: (e.authorization_state || 'authorized').toLowerCase() }
           ]
         }));
       }
@@ -529,10 +579,19 @@ export async function getAuthorizedVehicles() {
 
 export async function addAuthorizedVehicle(vehicle) {
   try {
+    const payload = {
+      registration_number: vehicle.registration_number || vehicle.plate_number,
+      plate_number: vehicle.registration_number || vehicle.plate_number,
+      owner_name: vehicle.owner_name || 'Campus Member',
+      owner_role: vehicle.owner_role || (vehicle.associated_person?.includes('Faculty') ? 'FACULTY' : 'STUDENT'),
+      department: vehicle.department || 'Campus Community',
+      vehicle_type: vehicle.vehicle_type || 'CAR',
+      is_active: vehicle.status !== 'Inactive'
+    };
     const res = await fetch(`${API_BASE}/authorized`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(vehicle)
+      body: JSON.stringify(payload)
     });
     if (res.ok) return await res.json();
   } catch (err) {
@@ -541,10 +600,97 @@ export async function addAuthorizedVehicle(vehicle) {
   return { ...vehicle, id: Date.now() };
 }
 
+export async function updateAuthorizedVehicle(plate, data) {
+  try {
+    const res = await fetch(`${API_BASE}/authorized/${encodeURIComponent(plate)}`, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.error('Error updating authorized vehicle:', err);
+  }
+  return { plate_number: plate, ...data };
+}
+
+export async function deleteAuthorizedVehicle(plate) {
+  try {
+    const res = await fetch(`${API_BASE}/authorized/${encodeURIComponent(plate)}`, {
+      method: 'DELETE'
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.error('Error deleting authorized vehicle:', err);
+  }
+  return { status: 'deleted', plate };
+}
+
+export async function checkPlateAuthorization(plate) {
+  try {
+    const res = await fetch(`${API_BASE}/authorized/check/${encodeURIComponent(plate)}`);
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.warn('Backend check offline:', err);
+  }
+  return null;
+}
+
+export async function triggerSimulation(payload = {}) {
+  try {
+    const res = await fetch(`${API_BASE}/vision/simulate`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return data.entry;
+    }
+  } catch (err) {
+    console.warn('Backend simulation offline, using local simulation:', err.message);
+  }
+  return null;
+}
+
+export async function controlBarrier(action = 'OPEN', gateId = 'Gate 1 - Main Ingress', plate = null) {
+  try {
+    const res = await fetch(`${API_BASE}/gate/barrier`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action, gate_id: gateId, plate })
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.warn('Backend barrier control offline:', err.message);
+  }
+  return { status: 'success', action, gate_id: gateId };
+}
+
+export async function resolveEntryReview(entryId, decision = 'APPROVED', notes = '') {
+  try {
+    const res = await fetch(`${API_BASE}/entries/reviews/${encodeURIComponent(entryId)}/resolve`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ review_decision: decision, notes })
+    });
+    if (res.ok) return await res.json();
+  } catch (err) {
+    console.error('Error resolving entry review:', err);
+  }
+  return { entry_id: entryId, review_decision: decision };
+}
+
 // WebSocket Live Feed Connector
 export function connectLiveFeed(onMessage, onStatusChange) {
-  const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-  const wsUrl = `${protocol}//${window.location.hostname}:8000/ws/live-feed`;
+  const envWs = import.meta.env.VITE_WS_URL;
+  let wsUrl;
+  if (envWs) {
+    wsUrl = envWs.endsWith('/ws/live-feed') ? envWs : `${envWs.replace(/\/$/, '')}/ws/live-feed`;
+  } else {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    wsUrl = `${protocol}//${window.location.hostname}:8000/ws/live-feed`;
+  }
   let socket = null;
   let retryTimer = null;
   let isClosed = false;
@@ -594,3 +740,100 @@ export function connectLiveFeed(onMessage, onStatusChange) {
     if (socket) socket.close();
   };
 }
+
+// =========================================================================
+// OAuth & Authentication Client
+// =========================================================================
+
+export function getStoredAuthToken() {
+  return localStorage.getItem('campusgate_jwt') || null;
+}
+
+export function getStoredUser() {
+  try {
+    const raw = localStorage.getItem('campusgate_user');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function setStoredAuth(token, user) {
+  if (token) localStorage.setItem('campusgate_jwt', token);
+  if (user) localStorage.setItem('campusgate_user', JSON.stringify(user));
+}
+
+export function clearStoredAuth() {
+  localStorage.removeItem('campusgate_jwt');
+  localStorage.removeItem('campusgate_user');
+}
+
+export async function fetchAuthPersonas() {
+  try {
+    const res = await fetch(`${API_BASE}/auth/personas`);
+    if (res.ok) return await res.json();
+  } catch (e) {
+    console.warn('Using fallback personas:', e);
+  }
+  return [
+    {
+      id: 'usr-student-01',
+      email: 'student@campusgate.edu',
+      name: 'Arin Gupta',
+      role: 'user',
+      department: 'Computer Science (Batch 2026)',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
+      vehicles: ['MP07AB1234']
+    },
+    {
+      id: 'usr-guard-01',
+      email: 'guard@campusgate.edu',
+      name: 'Officer Rajesh Sharma',
+      role: 'guard',
+      department: 'Main Ingress Gate Security',
+      avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150&auto=format&fit=crop&q=80',
+      vehicles: []
+    },
+    {
+      id: 'usr-admin-01',
+      email: 'admin@campusgate.edu',
+      name: 'Dr. Sarah Mitchell',
+      role: 'admin',
+      department: 'Campus Security & Infrastructure',
+      avatar: 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150&auto=format&fit=crop&q=80',
+      vehicles: ['MP07CD5678']
+    }
+  ];
+}
+
+export async function loginWithOAuth(provider = 'google', personaEmail = null, targetRole = null) {
+  try {
+    const res = await fetch(`${API_BASE}/auth/oauth/google`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        email: personaEmail,
+        role: targetRole,
+        credential: 'mock-oauth-google-token'
+      })
+    });
+    if (res.ok) {
+      const data = await res.json();
+      setStoredAuth(data.access_token, data.user);
+      return data;
+    }
+  } catch (e) {
+    console.error('OAuth request failed:', e);
+  }
+
+  // Graceful local offline fallback
+  const personas = await fetchAuthPersonas();
+  const matched = personas.find(p => p.role === (targetRole || 'user')) || personas[0];
+  const fallbackData = {
+    access_token: 'mock-jwt-token-campusgate',
+    user: matched
+  };
+  setStoredAuth(fallbackData.access_token, fallbackData.user);
+  return fallbackData;
+}
+

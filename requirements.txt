@@ -7,8 +7,8 @@ psycopg2-binary>=2.9.0
 python-dotenv>=1.0.0
 redis>=5.0.0
 
-# Computer Vision & OCR (optional/for live stream & ML pipeline)
+# Computer Vision & OCR (headless for cloud deployment)
 numpy>=1.24.0
-opencv-python>=4.8.0
+opencv-python-headless>=4.8.0
 ultralytics>=8.0.0
 easyocr>=1.7.0
