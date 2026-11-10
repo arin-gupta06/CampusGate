@@ -23,8 +23,12 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY backend/ /app/backend/
 COPY ml_training/ /app/ml_training/
 
-# Create directory for runtime vehicle crop snapshots
-RUN mkdir -p /app/backend/static
+# Create directory for runtime vehicle crop snapshots and assign non-root system user
+RUN mkdir -p /app/backend/static \
+    && useradd -u 10001 -m -s /bin/bash appuser \
+    && chown -R appuser:appuser /app
+
+USER appuser
 
 EXPOSE 8000
 

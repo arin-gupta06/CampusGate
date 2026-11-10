@@ -29,10 +29,20 @@ class Settings:
     REDIS_URL: str = os.getenv("REDIS_URL", "redis://localhost:6379/0")
     CROP_RETENTION_HOURS: int = int(os.getenv("CROP_RETENTION_HOURS", "24"))
     
-    # App
+    # App & Security
     ENVIRONMENT: str = os.getenv("ENVIRONMENT", "development")
     API_PORT: int = int(os.getenv("API_PORT", "8000"))
     API_HOST: str = os.getenv("API_HOST", "0.0.0.0")
+    raw_cors = os.getenv(
+        "CORS_ORIGINS",
+        "http://localhost:3000,http://localhost:5173,http://127.0.0.1:3000,http://127.0.0.1:5173"
+    )
+    CORS_ORIGINS: list = [
+        origin.strip() for origin in raw_cors.split(",") 
+        if origin.strip() and origin.strip() != "*"
+    ]
+    if not CORS_ORIGINS:
+        CORS_ORIGINS = ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"]
 
     # Official Google OAuth & Superadmin Whitelist
     GOOGLE_CLIENT_ID: str = os.getenv("GOOGLE_CLIENT_ID", "")

@@ -655,9 +655,13 @@ export async function triggerSimulation(payload = {}) {
 
 export async function controlBarrier(action = 'OPEN', gateId = 'Gate 1 - Main Ingress', plate = null) {
   try {
+    const token = getStoredAuthToken();
+    const headers = { 'Content-Type': 'application/json' };
+    if (token) headers['Authorization'] = `Bearer ${token}`;
+
     const res = await fetch(`${API_BASE}/gate/barrier`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ action, gate_id: gateId, plate })
     });
     if (res.ok) return await res.json();

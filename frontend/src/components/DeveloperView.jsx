@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import Avatar from './Avatar';
+import sarveshPic from '../assets/sarvesh.png';
 import {
   Code2,
   Terminal,
@@ -30,6 +31,116 @@ const GitHubIcon = () => (
     <path d="M12 2A10 10 0 0 0 2 12c0 4.42 2.87 8.17 6.84 9.5.5.08.66-.23.66-.5v-1.69c-2.77.6-3.36-1.34-3.36-1.34-.46-1.16-1.11-1.47-1.11-1.47-.91-.62.07-.6.07-.6 1 .07 1.53 1.03 1.53 1.03.87 1.52 2.34 1.07 2.91.83.1-.65.35-1.09.63-1.34-2.22-.25-4.55-1.11-4.55-4.92 0-1.11.38-2 1.03-2.71-.1-.25-.45-1.29.1-2.64 0 0 .84-.27 2.75 1.02.79-.22 1.65-.33 2.5-.33.85 0 1.71.11 2.5.33 1.91-1.29 2.75-1.02 2.75-1.02.55 1.35.2 2.39.1 2.64.65.71 1.03 1.6 1.03 2.71 0 3.82-2.34 4.66-4.57 4.91.36.31.69.92.69 1.85V21c0 .27.16.59.67.5C19.14 20.16 22 16.42 22 12A10 10 0 0 0 12 2z" />
   </svg>
 );
+
+function ContributorCard({ contributor: c, copiedEmail, onCopyEmail }) {
+  const [imgFailed, setImgFailed] = useState(!c.pic);
+
+  return (
+    <article className="dev-profile-card">
+      {/* Category Badge */}
+      <div className={`card-header-badge ${c.isHighlight ? 'highlight' : ''}`}>
+        {c.isHighlight ? <Crown size={12} /> : <Code2 size={12} />}
+        <span>{c.categoryBadge}</span>
+      </div>
+
+      <div className="card-inner">
+        {/* Clean Centered Avatar with Tag Chip */}
+        <div className="card-avatar-wrap">
+          <div className="card-avatar-img-box">
+            {!imgFailed && c.pic ? (
+              <img
+                src={c.pic}
+                alt={c.name}
+                className="card-avatar-img"
+                style={c.imgStyle}
+                onError={() => setImgFailed(true)}
+              />
+            ) : (
+              <Avatar user={c} size={84} />
+            )}
+          </div>
+          <div className="card-tag-chip">
+            <span>{c.tagChip}</span>
+          </div>
+        </div>
+
+        {/* Content Details */}
+        <div className="card-content">
+          <div className="card-title-row">
+            <div>
+              <h2 className="card-name">{c.name}</h2>
+              <div className="card-role-badge">
+                <Terminal size={13} />
+                <span>{c.role}</span>
+              </div>
+            </div>
+            <div className="card-tag-pill">{c.stack}</div>
+          </div>
+
+          <p className="card-institution">{c.institution}</p>
+          <p className="card-bio">{c.bio}</p>
+
+          <div className="card-skills-list">
+            {c.skills.map((skill) => (
+              <span key={skill}>{skill}</span>
+            ))}
+          </div>
+
+          {/* Clean Action Buttons Aligned to Base */}
+          <div className="card-contact-actions">
+            {c.linkedin && (
+              <a
+                href={c.linkedin}
+                target="_blank"
+                rel="noreferrer"
+                className="card-primary-btn"
+                title={`${c.name} on LinkedIn`}
+              >
+                <LinkedInIcon />
+                <span>LinkedIn</span>
+              </a>
+            )}
+
+            {c.github && (
+              <a
+                href={c.github}
+                target="_blank"
+                rel="noreferrer"
+                className="card-secondary-btn"
+                title={`${c.name} on GitHub`}
+              >
+                <GitHubIcon />
+                <span>GitHub</span>
+              </a>
+            )}
+
+            {c.email && !c.linkedin && (
+              <>
+                <a
+                  href={`mailto:${c.email}`}
+                  className="card-primary-btn"
+                  title={`Email ${c.name}`}
+                >
+                  <Mail size={14} />
+                  <span>Contact</span>
+                </a>
+                <button
+                  type="button"
+                  className="card-secondary-btn"
+                  onClick={() => onCopyEmail(c.email)}
+                  title="Copy email address"
+                >
+                  {copiedEmail === c.email ? <Check size={14} /> : <Copy size={14} />}
+                  <span>{copiedEmail === c.email ? 'Copied' : 'Copy'}</span>
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+    </article>
+  );
+}
 
 export default function DeveloperView() {
   const [copiedEmail, setCopiedEmail] = useState(null);
@@ -81,7 +192,7 @@ export default function DeveloperView() {
       tagChip: 'Operations Lead',
       institution: 'Madhav Institute of Technology & Science (Deemed to be University), Gwalior',
       bio: 'Oversees ground dataset validation, high-stress gate ingress testing, vehicle registry reconciliation, and hardware deployment workflows across campus barriers and surveillance checkpoints.',
-      pic: '/assets/sarvesh.png',
+      pic: sarveshPic,
       stack: 'Campus Operations & IoT Deployments',
       skills: ['Ground Ingress Validation', 'Hardware Deployment', 'Edge Stress Testing', 'Operations Logistics', 'Barrier Controllers'],
       linkedin: 'https://www.linkedin.com/in/sarvesh-baghel-b3a726274/',
@@ -127,115 +238,14 @@ export default function DeveloperView() {
 
       {/* 3-Column Core Architectural Team Grid */}
       <section className="developer-team-grid">
-        {CONTRIBUTORS.map((c) => {
-          const [imgFailed, setImgFailed] = useState(!c.pic);
-
-          return (
-            <article key={c.name} className="dev-profile-card">
-              {/* Category Badge */}
-              <div className={`card-header-badge ${c.isHighlight ? 'highlight' : ''}`}>
-                {c.isHighlight ? <Crown size={12} /> : <Code2 size={12} />}
-                <span>{c.categoryBadge}</span>
-              </div>
-
-              <div className="card-inner">
-                {/* Clean Centered Avatar with Tag Chip */}
-                <div className="card-avatar-wrap">
-                  <div className="card-avatar-img-box">
-                    {!imgFailed && c.pic ? (
-                      <img
-                        src={c.pic}
-                        alt={c.name}
-                        className="card-avatar-img"
-                        style={c.imgStyle}
-                        onError={() => setImgFailed(true)}
-                      />
-                    ) : (
-                      <Avatar user={c} size={84} />
-                    )}
-                  </div>
-                  <div className="card-tag-chip">
-                    <span>{c.tagChip}</span>
-                  </div>
-                </div>
-
-                {/* Content Details */}
-                <div className="card-content">
-                  <div className="card-title-row">
-                    <div>
-                      <h2 className="card-name">{c.name}</h2>
-                      <div className="card-role-badge">
-                        <Terminal size={13} />
-                        <span>{c.role}</span>
-                      </div>
-                    </div>
-                    <div className="card-tag-pill">{c.stack}</div>
-                  </div>
-
-                  <p className="card-institution">{c.institution}</p>
-                  <p className="card-bio">{c.bio}</p>
-
-                  <div className="card-skills-list">
-                    {c.skills.map((skill) => (
-                      <span key={skill}>{skill}</span>
-                    ))}
-                  </div>
-
-                  {/* Clean Action Buttons Aligned to Base */}
-                  <div className="card-contact-actions">
-                    {c.linkedin && (
-                      <a
-                        href={c.linkedin}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="card-primary-btn"
-                        title={`${c.name} on LinkedIn`}
-                      >
-                        <LinkedInIcon />
-                        <span>LinkedIn</span>
-                      </a>
-                    )}
-
-                    {c.github && (
-                      <a
-                        href={c.github}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="card-secondary-btn"
-                        title={`${c.name} on GitHub`}
-                      >
-                        <GitHubIcon />
-                        <span>GitHub</span>
-                      </a>
-                    )}
-
-                    {c.email && !c.linkedin && (
-                      <>
-                        <a
-                          href={`mailto:${c.email}`}
-                          className="card-primary-btn"
-                          title={`Email ${c.name}`}
-                        >
-                          <Mail size={14} />
-                          <span>Contact</span>
-                        </a>
-                        <button
-                          type="button"
-                          className="card-secondary-btn"
-                          onClick={() => handleCopyEmail(c.email)}
-                          title="Copy email address"
-                        >
-                          {copiedEmail === c.email ? <Check size={14} /> : <Copy size={14} />}
-                          <span>{copiedEmail === c.email ? 'Copied' : 'Copy'}</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            </article>
-          );
-        })}
+        {CONTRIBUTORS.map((c) => (
+          <ContributorCard
+            key={c.name}
+            contributor={c}
+            copiedEmail={copiedEmail}
+            onCopyEmail={handleCopyEmail}
+          />
+        ))}
       </section>
 
       {/* Faculty Mentor & Technical Advisor Dedicated Section */}

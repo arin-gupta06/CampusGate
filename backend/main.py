@@ -22,13 +22,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
-# CORS setup
+# CORS setup - Hardened to disallow unrestricted wildcard origins with credentials
+safe_cors_origins = [o for o in settings.CORS_ORIGINS if o != "*"]
+if not safe_cors_origins:
+    safe_cors_origins = ["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000", "http://127.0.0.1:5173"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=safe_cors_origins,
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"],
+    allow_headers=["Authorization", "Content-Type", "Accept", "Origin", "X-Requested-With"],
 )
 
 # Static crops and frontend distribution directories

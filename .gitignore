@@ -43,8 +43,10 @@ videos/
 kaggle.json
 .kaggle/
 
-# Test suites & benchmark logs
-tests/
+# Benchmark test runs and temporary test logs
+tests/**/__pycache__/
+tests/.pytest_cache/
+tests/*.log
 
 # Dataset images and annotations
 ml_training/datasets/

@@ -177,16 +177,21 @@ def decode_access_token(token: str) -> Dict[str, Any]:
         )
 
 
-async def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
+def get_current_user(authorization: Optional[str] = Header(None)) -> Dict[str, Any]:
     """Dependency for securing endpoints via Bearer token."""
     if not authorization or not authorization.startswith("Bearer "):
-        # Fallback to Superadmin in development if no token provided
+        if settings.ENVIRONMENT.lower() == "production":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Authentication credentials were not provided."
+            )
+        # Fallback to Superadmin only in local development for testing convenience
         return get_or_create_user("24cd10ar15@mitsgwl.ac.in", name="Arin Gupta")
 
     token = authorization.split(" ")[1]
     payload = decode_access_token(token)
     email = payload.get("sub")
     if not email:
-        raise HTTPException(status_code=401, detail="Invalid token subject.")
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token subject.")
 
     return get_or_create_user(email)
