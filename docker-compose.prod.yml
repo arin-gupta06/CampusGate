@@ -1,0 +1,108 @@
+# ==============================================================================
+# CampusGate - Production Multi-Container Orchestration (Full Stack)
+# ==============================================================================
+# Usage:
+#   docker compose -f docker-compose.prod.yml up -d --build
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # 1. PostgreSQL Database Engine
+  # ----------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: campusgate-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-campusgate}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-campusgate_secret}
+      POSTGRES_DB: ${POSTGRES_DB:-campusgate_db}
+    volumes:
+      - campusgate_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-campusgate} -d ${POSTGRES_DB:-campusgate_db}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - campusgate-net
+
+  # ----------------------------------------------------------------------------
+  # 2. Redis In-Memory Cache & Ephemeral Vehicle Crop Buffer
+  # ----------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: campusgate-redis
+    restart: unless-stopped
+    volumes:
+      - campusgate_redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - campusgate-net
+
+  # ----------------------------------------------------------------------------
+  # 3. FastAPI Core Backend + YOLOv11 Computer Vision Pipeline
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: campusgate-backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-campusgate}:${POSTGRES_PASSWORD:-campusgate_secret}@db:5432/${POSTGRES_DB:-campusgate_db}
+      - REDIS_URL=redis://redis:6379/0
+      - ENVIRONMENT=production
+      - API_PORT=8000
+      - API_HOST=0.0.0.0
+      - DETECTION_CONF_THRESHOLD=${DETECTION_CONF_THRESHOLD:-0.35}
+      - PLATE_QUALITY_MIN_SCORE=${PLATE_QUALITY_MIN_SCORE:-0.40}
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-campusgate_super_secret_jwt_key_2026_ai}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - SUPERADMIN_EMAILS=${SUPERADMIN_EMAILS}
+    volumes:
+      - campusgate_static_crops:/app/backend/static
+    networks:
+      - campusgate-net
+
+  # ----------------------------------------------------------------------------
+  # 4. React Single Page Application (Nginx Reverse Proxy & Static Server)
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: campusgate-frontend
+    restart: unless-stopped
+    ports:
+      - "${PORT:-80}:80"
+    depends_on:
+      - backend
+    networks:
+      - campusgate-net
+
+# ------------------------------------------------------------------------------
+# Persistent Docker Volumes & Network Isolation
+# ------------------------------------------------------------------------------
+volumes:
+  campusgate_pgdata:
+    name: campusgate_postgres_data
+  campusgate_redisdata:
+    name: campusgate_redis_data
+  campusgate_static_crops:
+    name: campusgate_static_crops
+
+networks:
+  campusgate-net:
+    name: campusgate_internal_network
+    driver: bridge

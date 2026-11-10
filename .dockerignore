@@ -1,0 +1,50 @@
+# Version Control & IDEs
+.git/
+.gitignore
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Virtual Environments & Python Cache
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+
+# Node & Build Outputs
+node_modules/
+frontend/node_modules/
+frontend/dist/
+dist/
+
+# Large Datasets, Video Footages & Training Artifacts
+datasets/
+ml_training/datasets/
+ml_training/cache/
+test_videos/
+videos/
+*.mp4
+*.avi
+*.mov
+*.mkv
+*.zip
+*.tar
+*.tar.gz
+runs/
+ml_training/runs/
+ml_training/inference_outputs/
+
+# Local databases & secrets
+*.db
+*.sqlite
+*.sqlite3
+.env
+kaggle.json
+.kaggle/
