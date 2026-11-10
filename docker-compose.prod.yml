@@ -106,3 +106,4 @@ networks:
   campusgate-net:
     name: campusgate_internal_network
     driver: bridge
+
