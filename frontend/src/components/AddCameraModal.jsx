@@ -1,5 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Camera, Plus, Video, Radio, ShieldCheck, Globe, Wifi, CheckCircle2, Play, Activity } from 'lucide-react';
+import {
+  X,
+  Camera,
+  Plus,
+  Video,
+  Radio,
+  ShieldCheck,
+  Globe,
+  Wifi,
+  CheckCircle2,
+  AlertTriangle,
+  Play,
+  Activity,
+  RefreshCw,
+  Loader2
+} from 'lucide-react';
+import { testCameraConnection } from '../services/api';
 
 export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
   if (!isOpen) return null;
@@ -12,10 +28,35 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
   const [resolution, setResolution] = useState('1920x1080');
   const [fps, setFps] = useState('30');
   const [lineCoords, setLineCoords] = useState('(0, 720) -> (1920, 720)');
+  const [isTesting, setIsTesting] = useState(false);
+  const [testResult, setTestResult] = useState(null);
 
   // Canvas animation for live video feed preview
   const canvasRef = useRef(null);
   const animFrameRef = useRef(null);
+
+  const handleTestConnection = async () => {
+    if (!streamUrl.trim()) return;
+    setIsTesting(true);
+    setTestResult(null);
+    try {
+      const res = await testCameraConnection(streamUrl.trim(), 3.0);
+      setTestResult(res);
+      if (res && res.success) {
+        if (res.resolution) setResolution(res.resolution);
+        if (res.fps) setFps(String(Math.round(res.fps)));
+        if (res.normalized_url) setStreamUrl(res.normalized_url);
+      }
+    } catch (err) {
+      setTestResult({
+        success: false,
+        error: err.message || 'Stream probe failed',
+        diagnostics: ['Ensure backend server is running and camera network is reachable.']
+      });
+    } finally {
+      setIsTesting(false);
+    }
+  };
 
   // Check if all primary details are filled
   const isEveryDetailFilled = Boolean(
@@ -373,30 +414,103 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
           <div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
               <label style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 600 }}>
-                {streamType === 'RTSP' ? 'RTSP Video Stream URL' : 'Network IP / HTTP Video Stream URL'}
+                {streamType === 'RTSP' ? 'RTSP Video Stream URL or Camera IP' : 'Network IP / HTTP Video Stream URL'}
               </label>
               <span style={{ fontSize: '10px', color: 'var(--accent-primary)', fontWeight: 600 }}>
-                {streamType === 'RTSP' ? 'rtsp://host:554/stream' : 'http://ip:port/video'}
+                {streamType === 'RTSP' ? 'rtsp://user:pass@ip:554/stream or 192.168.1.x' : 'http://ip:port/video'}
               </span>
             </div>
-            <input
-              type="text"
-              placeholder={streamType === 'RTSP' ? 'rtsp://admin:password@192.168.1.100:554/stream1' : 'http://192.168.1.120:8080/video'}
-              value={streamUrl}
-              onChange={(e) => setStreamUrl(e.target.value)}
-              required
-              style={{
-                width: '100%',
-                height: '38px',
-                backgroundColor: 'var(--bg-input)',
-                border: '1px solid var(--border-subtle)',
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="text"
+                placeholder={streamType === 'RTSP' ? 'e.g. 192.168.1.100 or rtsp://admin:pass@192.168.1.100:554/stream1' : 'http://192.168.1.120:8080/video'}
+                value={streamUrl}
+                onChange={(e) => {
+                  setStreamUrl(e.target.value);
+                  setTestResult(null);
+                }}
+                required
+                style={{
+                  flex: 1,
+                  height: '38px',
+                  backgroundColor: 'var(--bg-input)',
+                  border: '1px solid var(--border-subtle)',
+                  borderRadius: '8px',
+                  padding: '0 12px',
+                  fontSize: '13px',
+                  fontFamily: 'var(--font-mono)',
+                  color: 'var(--text-main)'
+                }}
+              />
+              <button
+                type="button"
+                onClick={handleTestConnection}
+                disabled={isTesting || !streamUrl.trim()}
+                title="Verify feed connection and capture live preview"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '0 14px',
+                  height: '38px',
+                  borderRadius: '8px',
+                  border: '1px solid var(--border-subtle)',
+                  backgroundColor: isTesting ? 'var(--bg-card-subtle)' : 'var(--bg-card)',
+                  color: 'var(--text-main)',
+                  fontSize: '12px',
+                  fontWeight: 600,
+                  cursor: isTesting || !streamUrl.trim() ? 'not-allowed' : 'pointer',
+                  opacity: !streamUrl.trim() ? 0.6 : 1,
+                  whiteSpace: 'nowrap',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                {isTesting ? (
+                  <Loader2 size={14} style={{ animation: 'spin 1s linear infinite' }} />
+                ) : (
+                  <RefreshCw size={14} />
+                )}
+                <span>{isTesting ? 'Probing...' : 'Test Feed'}</span>
+              </button>
+            </div>
+
+            {/* Test Results Banner & Diagnostics */}
+            {testResult && (
+              <div style={{
+                marginTop: '8px',
+                padding: '10px 12px',
                 borderRadius: '8px',
-                padding: '0 12px',
-                fontSize: '13px',
-                fontFamily: 'var(--font-mono)',
-                color: 'var(--text-main)'
-              }}
-            />
+                backgroundColor: testResult.success ? 'rgba(16, 185, 129, 0.1)' : 'rgba(239, 68, 68, 0.1)',
+                border: `1px solid ${testResult.success ? 'rgba(16, 185, 129, 0.3)' : 'rgba(239, 68, 68, 0.3)'}`,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {testResult.success ? (
+                    <CheckCircle2 size={16} color="#10b981" />
+                  ) : (
+                    <AlertTriangle size={16} color="#ef4444" />
+                  )}
+                  <span style={{
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    color: testResult.success ? '#10b981' : '#ef4444'
+                  }}>
+                    {testResult.success
+                      ? `Camera Handshake Verified (${testResult.resolution} @ ${testResult.fps} FPS • ${testResult.latency_ms}ms)`
+                      : `Feed Connection Failed: ${testResult.error}`}
+                  </span>
+                </div>
+                {testResult.diagnostics && testResult.diagnostics.length > 0 && (
+                  <ul style={{ margin: '4px 0 0 20px', padding: 0, fontSize: '11px', color: 'var(--text-muted)' }}>
+                    {testResult.diagnostics.map((d, i) => (
+                      <li key={i}>{d}</li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            )}
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
@@ -516,7 +630,7 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 </span>
               </div>
 
-              {/* Canvas Live Video Viewport */}
+              {/* Canvas or Real Captured Snapshot Viewport */}
               <div style={{
                 position: 'relative',
                 width: '100%',
@@ -525,18 +639,26 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                 overflow: 'hidden',
                 backgroundColor: '#050811'
               }}>
-                <canvas
-                  ref={canvasRef}
-                  width={480}
-                  height={170}
-                  style={{ width: '100%', height: '100%', display: 'block' }}
-                />
+                {testResult?.preview_thumbnail ? (
+                  <img
+                    src={testResult.preview_thumbnail}
+                    alt="Verified Live Camera Snapshot"
+                    style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                  />
+                ) : (
+                  <canvas
+                    ref={canvasRef}
+                    width={480}
+                    height={170}
+                    style={{ width: '100%', height: '100%', display: 'block' }}
+                  />
+                )}
 
                 <div style={{
                   position: 'absolute',
                   top: '8px',
                   right: '8px',
-                  backgroundColor: 'rgba(239, 68, 68, 0.9)',
+                  backgroundColor: testResult?.preview_thumbnail ? 'rgba(16, 185, 129, 0.9)' : 'rgba(239, 68, 68, 0.9)',
                   color: '#fff',
                   fontSize: '9px',
                   fontWeight: 800,
@@ -544,7 +666,7 @@ export default function AddCameraModal({ isOpen, onClose, onAddCamera }) {
                   borderRadius: '4px',
                   letterSpacing: '0.5px'
                 }}>
-                  REC ● LIVE
+                  {testResult?.preview_thumbnail ? 'FEED VERIFIED ● CAPTURED' : 'REC ● LIVE'}
                 </div>
 
                 <div style={{

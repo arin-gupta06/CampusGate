@@ -1,5 +1,5 @@
 from typing import Optional
-from pydantic import BaseModel, model_validator
+from pydantic import BaseModel, ConfigDict, model_validator
 from datetime import datetime
 
 class CameraBase(BaseModel):
@@ -40,9 +40,7 @@ class CameraUpdate(BaseModel):
 
 class CameraResponse(CameraBase):
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TopologyCreate(BaseModel):
     source_camera_id: str
@@ -59,6 +57,4 @@ class TopologyUpdate(BaseModel):
 class TopologyResponse(TopologyCreate):
     id: int
     created_at: datetime
-
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)

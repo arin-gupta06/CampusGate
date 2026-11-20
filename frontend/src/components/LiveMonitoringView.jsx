@@ -680,6 +680,24 @@ export default function LiveMonitoringView({
                     alignItems: 'center',
                     justifyContent: 'center'
                   }}>
+                    {/* Live Camera Stream (MJPEG) with Radar Grid Fallback */}
+                    <img
+                      src={`/api/cameras/${cam.id}/stream`}
+                      alt={cam.name}
+                      style={{
+                        position: 'absolute',
+                        inset: 0,
+                        width: '100%',
+                        height: '100%',
+                        objectFit: 'cover',
+                        zIndex: 1,
+                        opacity: 0.92
+                      }}
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+
                     {/* Simulated High-Tech CCTV Viewport Background */}
                     <div style={{
                       position: 'absolute',

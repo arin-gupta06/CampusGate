@@ -10,8 +10,10 @@ Base = declarative_base()
 def get_engine():
     try:
         # Try primary PostgreSQL connection
+        connect_args = {"connect_timeout": 1} if "postgresql" in settings.DATABASE_URL else {}
         engine = create_engine(
             settings.DATABASE_URL,
+            connect_args=connect_args,
             pool_pre_ping=True,
             pool_recycle=3600,
             pool_size=10,

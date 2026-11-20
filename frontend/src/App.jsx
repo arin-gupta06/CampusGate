@@ -63,6 +63,13 @@ export default function App() {
   const [wsStatus, setWsStatus] = useState('DISCONNECTED');
   const [toastMessage, setToastMessage] = useState(null);
 
+  const showToast = (msg, type = 'info') => {
+    setToastMessage({ msg, type });
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4500);
+  };
+
   // Theme state (White & Black dual-mode, defaulting to 'light')
   const [theme, setTheme] = useState(() => {
     return localStorage.getItem('campusgate_theme') || 'light';
@@ -105,10 +112,41 @@ export default function App() {
   const [securityEvents, setSecurityEvents] = useState(MOCK_SECURITY_EVENTS);
   const [settingsInitialView, setSettingsInitialView] = useState('overview');
 
-  // Check URL query parameters or pathname for direct navigation (e.g. /developer or pass registration)
+  // Check URL query parameters or pathname for direct navigation or OAuth callbacks
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const path = window.location.pathname.toLowerCase();
+
+    // Check for Google OAuth redirect callback tokens
+    const token = params.get('token') || params.get('jwt') || params.get('access_token');
+    const authError = params.get('auth_error');
+
+    if (authError) {
+      showToast(`Google Sign-In failed: ${decodeURIComponent(authError)}`, 'error');
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    } else if (token) {
+      localStorage.setItem('campusgate_jwt', token);
+      fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}` }
+      })
+        .then(res => res.ok ? res.json() : null)
+        .then(data => {
+          if (data && data.user) {
+            setStoredAuth(token, data.user);
+            setCurrentUser(data.user);
+            showToast(`Welcome back, ${data.user.name}! Signed in via Google OAuth.`, 'success');
+            if (data.user.role === 'guard') setActiveTab('guard_console');
+            else if (data.user.role === 'admin') setActiveTab('overview');
+            else setActiveTab('profile');
+          }
+        })
+        .catch(err => console.warn('Could not verify OAuth token profile:', err));
+
+      const cleanUrl = window.location.origin + window.location.pathname;
+      window.history.replaceState({}, document.title, cleanUrl);
+    }
+
     if (path === '/developer' || path === '/developers' || params.get('tab') === 'developer') {
       setActiveTab('developer');
     } else if (params.get('tab') === 'settings' || params.get('view') === 'form' || params.get('action') === 'register') {
@@ -163,13 +201,6 @@ export default function App() {
 
     return () => cleanupWs();
   }, []);
-
-  const showToast = (msg, type = 'info') => {
-    setToastMessage({ msg, type });
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 4500);
-  };
 
   const handleIncomingLiveEvent = (data) => {
     const isAuthorized = data.entry_status === 'AUTHORIZED';

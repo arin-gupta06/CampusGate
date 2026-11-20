@@ -10,6 +10,7 @@ import time
 import json
 import urllib.request
 import urllib.error
+import urllib.parse
 from typing import Optional, Dict, Any, List
 import jwt
 from fastapi import HTTPException, status, Header
@@ -77,6 +78,53 @@ def verify_google_id_token(id_token: str) -> Dict[str, Any]:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Network error communicating with Google Identity service: {str(e)}"
+        )
+
+
+def exchange_google_code_for_tokens(code: str, redirect_uri: str) -> Dict[str, Any]:
+    """
+    Exchanges an authorization code from Google OAuth 2.0 redirect flow
+    with Google's token endpoint (https://oauth2.googleapis.com/token).
+    """
+    if not code:
+        raise HTTPException(status_code=400, detail="Missing Google authorization code.")
+
+    if not settings.GOOGLE_CLIENT_ID or not settings.GOOGLE_CLIENT_SECRET:
+        raise HTTPException(
+            status_code=500,
+            detail="GOOGLE_CLIENT_ID or GOOGLE_CLIENT_SECRET is not configured in backend .env"
+        )
+
+    token_url = "https://oauth2.googleapis.com/token"
+    post_data = urllib.parse.urlencode({
+        "code": code,
+        "client_id": settings.GOOGLE_CLIENT_ID,
+        "client_secret": settings.GOOGLE_CLIENT_SECRET,
+        "redirect_uri": redirect_uri,
+        "grant_type": "authorization_code",
+    }).encode("utf-8")
+
+    try:
+        req = urllib.request.Request(
+            token_url,
+            data=post_data,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "CampusGate-Auth/1.0"
+            }
+        )
+        with urllib.request.urlopen(req, timeout=10.0) as response:
+            return json.loads(response.read().decode("utf-8"))
+    except urllib.error.HTTPError as e:
+        error_body = e.read().decode("utf-8")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Google OAuth code exchange failed: {error_body}"
+        )
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to communicate with Google OAuth server: {str(e)}"
         )
 
 

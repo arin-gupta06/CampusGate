@@ -60,7 +60,7 @@ export default function Sidebar({
   // 2. MEMBER / PERSONAL PASS ITEMS
   // =========================================================================
   const personalPassItems = [
-    { id: 'profile', label: 'Digital Gate Pass (QR)', icon: QrCode },
+    { id: 'profile', label: 'My Pass & Monthly Stats', icon: BarChart3 },
     { id: 'apply_pass', label: 'Apply for Vehicle Pass', icon: FilePlus }
   ];
 

@@ -251,7 +251,17 @@ def get_plate_crop(crop_ref: str):
 
     clean_ref = crop_ref.replace("\\", "/")
     if clean_ref.startswith("static/"):
-        disk_path = settings.BASE_DIR / "backend" / clean_ref
+        static_root = (settings.BASE_DIR / "backend" / "static").resolve()
+        disk_path = (settings.BASE_DIR / "backend" / clean_ref).resolve()
+        # Security: Prevent directory traversal outside backend/static
+        try:
+            if not disk_path.is_relative_to(static_root):
+                raise HTTPException(status_code=403, detail="Access denied: path outside authorized static directory")
+        except AttributeError:
+            # Fallback for Python < 3.9 path compatibility if needed
+            if not str(disk_path).startswith(str(static_root)):
+                raise HTTPException(status_code=403, detail="Access denied: path outside authorized static directory")
+
         if disk_path.exists() and disk_path.is_file():
             with open(disk_path, "rb") as f:
                 return Response(content=f.read(), media_type="image/jpeg")

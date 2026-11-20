@@ -64,14 +64,33 @@ class ThreadedRTSPGrabber(BaseFrameGrabber):
 
     def start(self) -> bool:
         logger.info(f"Opening RTSP stream with Threaded Grabber: {self.rtsp_url}")
-        self.cap = cv2.VideoCapture(self.rtsp_url, cv2.CAP_FFMPEG)
-        
-        # Request OpenCV to keep only the latest 1 frame in internal buffer
-        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
+        # Pre-flight TCP check for network streams to fail fast without freezing
+        if self.rtsp_url.startswith(("rtsp://", "rtsps://", "http://", "https://")):
+            try:
+                import socket
+                from urllib.parse import urlparse
+                parsed = urlparse(self.rtsp_url)
+                host = parsed.hostname
+                port = parsed.port or (554 if "rtsp" in self.rtsp_url.lower() else 80)
+                if host and host not in ["localhost", "127.0.0.1"]:
+                    with socket.create_connection((host, port), timeout=1.2):
+                        pass
+            except Exception as e:
+                logger.warning(f"Pre-flight network check failed for {self.rtsp_url}: {e}")
+                return False
 
-        if not self.cap.isOpened():
+        try:
+            self.cap = cv2.VideoCapture(self.rtsp_url)
+        except Exception as e:
+            logger.error(f"Failed to initialize VideoCapture for {self.rtsp_url}: {e}")
+            return False
+
+        if not self.cap or not self.cap.isOpened():
             logger.error(f"Failed to open RTSP stream: {self.rtsp_url}")
             return False
+
+        # Request OpenCV to keep only the latest 1 frame in internal buffer
+        self.cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
 
         self._is_running = True
         self._thread = threading.Thread(target=self._drain_loop, daemon=True)
@@ -159,12 +178,14 @@ class GrabberFactory:
 
     @staticmethod
     def create(source: Union[str, int]) -> BaseFrameGrabber:
-        src_str = str(source).strip().lower()
+        from backend.ingestion.stream_pool import normalize_stream_source
+        norm_source = normalize_stream_source(source)
+        src_str = str(norm_source).strip().lower()
         
         # Network RTSP / RTSPS / HTTP streams -> Threaded buffer-draining grabber
         if src_str.startswith("rtsp://") or src_str.startswith("rtsps://") or src_str.startswith("http://") or src_str.startswith("https://"):
-            return ThreadedRTSPGrabber(str(source))
+            return ThreadedRTSPGrabber(str(norm_source))
 
         # Local webcam index or video file -> Direct synchronous grabber
-        return DirectFrameGrabber(source)
+        return DirectFrameGrabber(norm_source)
 
