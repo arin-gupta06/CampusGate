@@ -127,7 +127,7 @@ export default function GoogleLandingView({ currentUser, onLoginSuccess, onOpenA
           callback: async (tokenResponse) => {
             if (tokenResponse.error) {
               setIsLoading(false);
-              setErrorMessage(`Google Sign-In Error: ${tokenResponse.error_description || tokenResponse.error}. Check that http://localhost:8000 is added in Google Cloud Console under Authorized JavaScript Origins.`);
+              setErrorMessage(`Google Sign-In Error: ${tokenResponse.error_description || tokenResponse.error}. Please verify that your current application domain is added in Google Cloud Console under Authorized JavaScript Origins.`);
               return;
             }
             try {
@@ -1173,7 +1173,7 @@ export default function GoogleLandingView({ currentUser, onLoginSuccess, onOpenA
             alignItems: 'center'
           }}>
             <QRCodeSVG
-              value={portalUrl || 'http://localhost:8000/?tab=settings&view=form'}
+              value={portalUrl || `${window.location.origin}/?tab=settings&view=form`}
               size={180}
               level="H"
               includeMargin={false}

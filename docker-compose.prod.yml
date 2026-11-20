@@ -53,6 +53,8 @@ services:
       dockerfile: backend/Dockerfile
     container_name: campusgate-backend
     restart: unless-stopped
+    ports:
+     - "127.0.0.1:8000:8000"
     depends_on:
       db:
         condition: service_healthy
@@ -64,6 +66,7 @@ services:
       - ENVIRONMENT=production
       - API_PORT=8000
       - API_HOST=0.0.0.0
+      - CORS_ORIGINS=${CORS_ORIGINS}
       - DETECTION_CONF_THRESHOLD=${DETECTION_CONF_THRESHOLD:-0.35}
       - PLATE_QUALITY_MIN_SCORE=${PLATE_QUALITY_MIN_SCORE:-0.40}
       - JWT_SECRET_KEY=${JWT_SECRET_KEY:-campusgate_super_secret_jwt_key_2026_ai}
@@ -85,9 +88,15 @@ services:
     container_name: campusgate-frontend
     restart: unless-stopped
     ports:
-      - "${PORT:-80}:80"
+      - "127.0.0.1:8080:80"
     depends_on:
       - backend
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://127.0.0.1/ || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
     networks:
       - campusgate-net
 
@@ -104,6 +113,6 @@ volumes:
 
 networks:
   campusgate-net:
+    external: true
     name: campusgate_internal_network
-    driver: bridge
 

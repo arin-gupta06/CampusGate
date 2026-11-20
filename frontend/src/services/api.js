@@ -487,33 +487,6 @@ export async function getCameras() {
   return MOCK_CAMERAS;
 }
 
-export async function testCameraConnection(streamUrl, timeout = 3.0) {
-  try {
-    const token = getStoredAuthToken();
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
-    const res = await fetch(`${API_BASE}/cameras/test-connection`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ stream_url: streamUrl, timeout })
-    });
-    if (res.ok) return await res.json();
-    const errData = await res.json().catch(() => null);
-    return {
-      success: false,
-      error: (errData && errData.detail) || `Server error (${res.status})`,
-      diagnostics: ['Ensure camera IP or RTSP credentials are correct and port 554/HTTP is open.']
-    };
-  } catch (err) {
-    return {
-      success: false,
-      error: err.message || 'Network connection failed',
-      diagnostics: ['Backend server is offline or unreachable from browser.']
-    };
-  }
-}
-
 export async function addCamera(cam) {
   try {
     const token = getStoredAuthToken();
@@ -555,6 +528,7 @@ export async function deleteCamera(cameraId) {
   }
   return { status: 'deleted', id: cameraId };
 }
+
 
 export async function getEntries(limit = 30) {
   try {
@@ -729,7 +703,7 @@ export function connectLiveFeed(onMessage, onStatusChange) {
     wsUrl = envWs.endsWith('/ws/live-feed') ? envWs : `${envWs.replace(/\/$/, '')}/ws/live-feed`;
   } else {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    wsUrl = `${protocol}//${window.location.hostname}:8000/ws/live-feed`;
+    wsUrl = `${protocol}//${window.location.host}/ws/live-feed`;
   }
   let socket = null;
   let retryTimer = null;
@@ -877,21 +851,42 @@ export async function loginWithOAuth(provider = 'google', personaEmail = null, t
   return fallbackData;
 }
 
+
+// User Monthly Statistics
 export async function fetchUserMonthlyStats() {
-  const token = localStorage.getItem('campusgate_jwt');
-  try {
-    const res = await fetch(`${API_BASE}/auth/me/stats`, {
-      headers: {
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      }
-    });
-    if (res.ok) {
-      return await res.json();
-    }
-  } catch (e) {
-    console.warn('Could not fetch user monthly stats:', e);
+  const token = getStoredAuthToken();
+  const headers = {};
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+
+  const res = await fetch(`${API_BASE}/auth/me/stats`, { headers });
+
+  if (!res.ok) {
+    throw new Error(`Failed to fetch monthly statistics: HTTP ${res.status}`);
   }
-  return null;
+
+  return await res.json();
 }
 
+// Camera Connection Test
+export async function testCameraConnection(streamUrl, timeout = 3.0) {
+  const token = getStoredAuthToken();
+  const headers = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
 
+  const res = await fetch(`${API_BASE}/cameras/test-connection`, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify({
+      stream_url: streamUrl,
+      timeout
+    })
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    throw new Error(data.detail || `Camera connection test failed: HTTP ${res.status}`);
+  }
+
+  return data;
+}

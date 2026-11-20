@@ -13,11 +13,24 @@ WORKDIR /app
 RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     libglib2.0-0 \
+    libgl1 \
+    libxcb1 \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Python requirements
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+# Install CPU-only PyTorch and Torchvision
+RUN pip install --no-cache-dir \
+    --timeout 120 \
+    --retries 10 \
+    --index-url https://download.pytorch.org/whl/cpu \
+    torch torchvision
+
+# Install production application dependencies
+COPY requirements.prod.txt .
+RUN pip install --no-cache-dir \
+    --timeout 120 \
+    --retries 10 \
+    -r requirements.prod.txt
 
 # Copy backend application source code and model weights
 COPY backend/ /app/backend/
@@ -34,7 +47,7 @@ EXPOSE 8000
 
 # Health check to ensure FastAPI is responding
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:8000/docs || exit 1
+    CMD curl -f http://localhost:8000/health || exit 1
 
 CMD ["uvicorn", "backend.main:app", "--host", "0.0.0.0", "--port", "8000"]
 

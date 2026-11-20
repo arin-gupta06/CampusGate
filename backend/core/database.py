@@ -9,8 +9,12 @@ Base = declarative_base()
 
 def get_engine():
     try:
-        # Try primary PostgreSQL connection
-        connect_args = {"connect_timeout": 1} if "postgresql" in settings.DATABASE_URL else {}
+        connect_args = (
+            {"connect_timeout": 1}
+            if "postgresql" in settings.DATABASE_URL
+            else {}
+        )
+
         engine = create_engine(
             settings.DATABASE_URL,
             connect_args=connect_args,
@@ -19,18 +23,31 @@ def get_engine():
             pool_size=10,
             max_overflow=20
         )
-        with engine.connect() as conn:
+
+        with engine.connect():
             pass
-        logger.info(f"Connected to PostgreSQL database at {settings.DATABASE_URL}")
+
+        # Never expose database credentials in application logs.
+        logger.info("Successfully connected to PostgreSQL.")
+
         return engine
-    except Exception as e:
-        logger.warning(f"Could not connect to PostgreSQL: {e}. Falling back to SQLite.")
-        fallback_engine = create_engine(
+
+    except Exception:
+        if settings.ENVIRONMENT.lower() == "production":
+            logger.exception(
+                "PostgreSQL connection failed. "
+                "SQLite fallback is disabled in production."
+            )
+            raise
+
+        logger.warning(
+            "PostgreSQL unavailable. Using SQLite for development."
+        )
+
+        return create_engine(
             settings.FALLBACK_SQLITE_URL,
             connect_args={"check_same_thread": False}
         )
-        return fallback_engine
-
 engine = get_engine()
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
