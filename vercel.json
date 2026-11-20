@@ -3,9 +3,12 @@
   "outputDirectory": "frontend/dist",
   "rewrites": [
     {
+      "source": "/api/:path*",
+      "destination": "http://20.207.198.168:8000/api/:path*"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
 }
-
