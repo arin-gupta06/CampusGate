@@ -23,6 +23,8 @@ export default function AuthModal({
   const [loadingRole, setLoadingRole] = useState(null);
   const [customEmail, setCustomEmail] = useState('');
   const [googleClientId, setGoogleClientId] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+  const [showDevBypass, setShowDevBypass] = useState(false);
   const googleBtnRef = useRef(null);
 
   // Fetch backend Google OAuth config on mount/open
@@ -73,28 +75,46 @@ export default function AuthModal({
     }
   ];
 
+  // Poll until Google Identity Services SDK is ready, then render button
   useEffect(() => {
-    // If Google Identity Services SDK is loaded, initialize official button
-    if (isOpen && googleClientId && window.google?.accounts?.id && googleBtnRef.current) {
-      try {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: (response) => {
-            if (response.credential) {
-              handleOfficialGoogleCallback(response.credential);
+    if (!isOpen || !googleClientId) return;
+
+    const renderGoogleBtn = () => {
+      if (window.google?.accounts?.id && googleBtnRef.current) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: (response) => {
+              if (response.credential) {
+                handleOfficialGoogleCallback(response.credential);
+              }
             }
-          }
-        });
-        window.google.accounts.id.renderButton(googleBtnRef.current, {
-          theme: 'outline',
-          size: 'large',
-          width: '100%',
-          text: 'signin_with',
-          shape: 'rectangular'
-        });
-      } catch (e) {
-        console.warn('Google Identity initialization fallback:', e);
+          });
+          googleBtnRef.current.innerHTML = '';
+          window.google.accounts.id.renderButton(googleBtnRef.current, {
+            theme: 'outline',
+            size: 'large',
+            width: 440,
+            text: 'signin_with',
+            shape: 'rectangular'
+          });
+          return true;
+        } catch (e) {
+          console.warn('Google Identity button render error:', e);
+        }
       }
+      return false;
+    };
+
+    if (!renderGoogleBtn()) {
+      const interval = setInterval(() => {
+        if (renderGoogleBtn()) clearInterval(interval);
+      }, 300);
+      const timeout = setTimeout(() => clearInterval(interval), 6000);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
     }
   }, [isOpen, googleClientId]);
 
@@ -102,6 +122,7 @@ export default function AuthModal({
 
   const handleOfficialGoogleCallback = async (googleJwt) => {
     setLoadingRole('google');
+    setErrorMessage('');
     try {
       const res = await fetch('/api/auth/oauth/google', {
         method: 'POST',
@@ -112,15 +133,79 @@ export default function AuthModal({
         const data = await res.json();
         onLoginSuccess(data.user);
         onClose();
+      } else {
+        const err = await res.json();
+        setErrorMessage(err.detail || 'Google authentication failed.');
       }
     } catch (err) {
-      console.error('Google verification error:', err);
+      setErrorMessage(`Google verification error: ${err.message}`);
     } finally {
       setLoadingRole(null);
     }
   };
 
-  const handleOAuthSignIn = async (role = 'user', email = null, name = null) => {
+  // Triggers official Google OAuth 2.0 Popup with prompt & optional login_hint
+  const handleTriggerGoogleOAuth = (loginHint = null) => {
+    setErrorMessage('');
+    setLoadingRole('google');
+
+    if (googleClientId && window.google?.accounts?.oauth2) {
+      try {
+        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+          client_id: googleClientId,
+          scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid',
+          hint: loginHint || undefined,
+          callback: async (tokenResponse) => {
+            if (tokenResponse.error) {
+              setLoadingRole(null);
+              setErrorMessage(`Google OAuth Error: ${tokenResponse.error_description || tokenResponse.error}. Verify current domain is added in Google Cloud Console under Authorized JavaScript Origins.`);
+              return;
+            }
+            try {
+              const profileRes = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
+                headers: { Authorization: `Bearer ${tokenResponse.access_token}` }
+              });
+              const profile = await profileRes.json();
+
+              const res = await fetch('/api/auth/oauth/google', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  email: profile.email,
+                  name: profile.name,
+                  avatar: profile.picture,
+                  google_id: profile.sub
+                })
+              });
+              if (res.ok) {
+                const data = await res.json();
+                onLoginSuccess(data.user);
+                onClose();
+              } else {
+                const err = await res.json();
+                setErrorMessage(err.detail || 'Authentication failed.');
+              }
+            } catch (err) {
+              setErrorMessage(`Sign-in failed: ${err.message}`);
+            } finally {
+              setLoadingRole(null);
+            }
+          }
+        });
+        tokenClient.requestAccessToken({ prompt: 'select_account' });
+        return;
+      } catch (err) {
+        console.warn('TokenClient error, redirecting to OAuth endpoint:', err);
+      }
+    }
+
+    // Direct fallback: Full page Google OAuth redirect (Never blocked by popup blockers)
+    const redirectUrl = `/api/auth/oauth/google${loginHint ? `?login_hint=${encodeURIComponent(loginHint)}` : ''}`;
+    window.location.href = redirectUrl;
+  };
+
+  // Fast offline testing bypass (strictly for demo personas)
+  const handleOfflineDevBypass = async (role = 'user', email = null, name = null) => {
     setLoadingRole(role);
     try {
       const auth = await loginWithOAuth('google', email, role);
@@ -130,7 +215,7 @@ export default function AuthModal({
         onClose();
       }
     } catch (err) {
-      console.error('Sign-in error:', err);
+      console.error('Bypass error:', err);
     } finally {
       setLoadingRole(null);
     }
@@ -140,8 +225,7 @@ export default function AuthModal({
     e.preventDefault();
     if (!customEmail.trim()) return;
     const clean = customEmail.trim().toLowerCase();
-    const isSuper = CONTRIBUTORS.some(c => c.email.toLowerCase() === clean);
-    handleOAuthSignIn(isSuper ? 'admin' : 'user', clean);
+    handleTriggerGoogleOAuth(clean);
   };
 
   return (
@@ -217,12 +301,30 @@ export default function AuthModal({
 
         {/* Content Body (Scrollable) */}
         <div style={{ padding: '22px 26px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
+          {errorMessage && (
+            <div style={{
+              padding: '12px 16px',
+              borderRadius: '12px',
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#ef4444',
+              fontSize: '12px',
+              lineHeight: 1.4,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '4px'
+            }}>
+              <strong style={{ fontSize: '13px' }}>Google Sign-In Alert:</strong>
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           {/* Official Google OAuth Sign-in Button */}
           <div>
             <div ref={googleBtnRef} style={{ marginBottom: '8px' }} />
 
             <button
-              onClick={() => handleOAuthSignIn('user')}
+              onClick={() => handleTriggerGoogleOAuth()}
               disabled={loadingRole !== null}
               style={{
                 width: '100%',
@@ -248,10 +350,10 @@ export default function AuthModal({
                 <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
                 <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
               </svg>
-              <span>{loadingRole === 'google' ? 'Authenticating with Google...' : 'Sign In with Google Account'}</span>
+              <span>{loadingRole === 'google' ? 'Opening Google Sign-In...' : 'Sign In with Google Account'}</span>
             </button>
             <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '6px' }}>
-              Standard campus accounts register automatically as Student / Resident.
+              Opens official Google Authentication popup or consent screen.
             </p>
           </div>
 
@@ -269,7 +371,7 @@ export default function AuthModal({
               gap: '5px'
             }}>
               <Crown size={14} />
-              Project Contributors (Explicit Superadmins)
+              Project Contributors (Google OAuth Superadmins)
             </span>
             <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
           </div>
@@ -279,7 +381,8 @@ export default function AuthModal({
             {CONTRIBUTORS.map((c) => (
               <div
                 key={c.email}
-                onClick={() => handleOAuthSignIn('admin', c.email, c.name)}
+                onClick={() => handleTriggerGoogleOAuth(c.email)}
+                title={`Sign in with official Google account: ${c.email}`}
                 style={{
                   padding: '12px 14px',
                   borderRadius: '14px',
@@ -319,71 +422,84 @@ export default function AuthModal({
                   letterSpacing: '0.4px',
                   textTransform: 'uppercase'
                 }}>
-                  👑 SUPERADMIN
+                  Sign In via Google
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Section Divider: Gate Officer & Staff Personas */}
+          {/* Section Divider: Offline Dev Bypass */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
-            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
-              Or Switch Persona for Demo
-            </span>
+            <button
+              onClick={() => setShowDevBypass(!showDevBypass)}
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '11px',
+                fontWeight: 700,
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                textDecoration: 'underline'
+              }}
+            >
+              {showDevBypass ? 'Hide Offline Demo Bypass' : '🛠️ Fast Demo Bypass (Offline Dev Only)'}
+            </button>
             <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
           </div>
 
-          {/* Demo Persona Shortcuts */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-            <button
-              onClick={() => handleOAuthSignIn('guard', 'guard@campusgate.edu', 'Officer Rajesh')}
-              style={{
-                padding: '10px 12px',
-                borderRadius: '10px',
-                backgroundColor: 'var(--bg-card-subtle)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 700,
-                color: 'var(--text-main)',
-                textAlign: 'left'
-              }}
-            >
-              <ShieldCheck size={16} color="var(--color-amber)" />
-              <div>
-                <div>Officer Rajesh</div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Gate Guard</div>
-              </div>
-            </button>
+          {/* Offline Dev Bypass Shortcuts */}
+          {showDevBypass && (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+              <button
+                onClick={() => handleOfflineDevBypass('guard', 'guard@campusgate.edu', 'Officer Rajesh')}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--bg-card-subtle)',
+                  border: '1px dashed var(--border-medium)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
+                  textAlign: 'left'
+                }}
+              >
+                <ShieldCheck size={16} color="var(--color-amber)" />
+                <div>
+                  <div>Officer Rajesh</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Gate Guard (Bypass)</div>
+                </div>
+              </button>
 
-            <button
-              onClick={() => handleOAuthSignIn('user', 'student@campusgate.edu', 'Arin Gupta')}
-              style={{
-                padding: '10px 12px',
-                borderRadius: '10px',
-                backgroundColor: 'var(--bg-card-subtle)',
-                border: '1px solid var(--border-subtle)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '8px',
-                cursor: 'pointer',
-                fontSize: '12px',
-                fontWeight: 700,
-                color: 'var(--text-main)',
-                textAlign: 'left'
-              }}
-            >
-              <UserCheck size={16} color="var(--color-emerald)" />
-              <div>
-                <div>Arin Gupta</div>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Resident / Student</div>
-              </div>
-            </button>
-          </div>
+              <button
+                onClick={() => handleOfflineDevBypass('user', 'student@campusgate.edu', 'Arin Gupta')}
+                style={{
+                  padding: '10px 12px',
+                  borderRadius: '10px',
+                  backgroundColor: 'var(--bg-card-subtle)',
+                  border: '1px dashed var(--border-medium)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  cursor: 'pointer',
+                  fontSize: '12px',
+                  fontWeight: 700,
+                  color: 'var(--text-main)',
+                  textAlign: 'left'
+                }}
+              >
+                <UserCheck size={16} color="var(--color-emerald)" />
+                <div>
+                  <div>Arin Gupta</div>
+                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Resident (Bypass)</div>
+                </div>
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Footer */}

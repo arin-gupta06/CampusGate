@@ -128,7 +128,8 @@ def oauth_google_get(
     credential: Optional[str] = Query(None),
     state: Optional[str] = Query(None),
     error: Optional[str] = Query(None),
-    role: Optional[str] = Query(None)
+    role: Optional[str] = Query(None),
+    login_hint: Optional[str] = Query(None)
 ):
     """
     Handles Google OAuth2 GET flows:
@@ -218,8 +219,10 @@ def oauth_google_get(
             "access_type": "offline",
             "prompt": "select_account"
         }
-        if state:
-            params["state"] = state
+        if isinstance(state, str) and state.strip():
+            params["state"] = state.strip()
+        if isinstance(login_hint, str) and login_hint.strip():
+            params["login_hint"] = login_hint.strip()
         auth_url = f"https://accounts.google.com/o/oauth2/v2/auth?{urllib.parse.urlencode(params)}"
         return RedirectResponse(auth_url)
 

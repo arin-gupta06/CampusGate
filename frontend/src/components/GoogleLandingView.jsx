@@ -65,29 +65,46 @@ export default function GoogleLandingView({ currentUser, onLoginSuccess, onOpenA
 
   // Initialize official Google Identity Services button if Client ID exists
   useEffect(() => {
-    if (googleClientId && window.google?.accounts?.id && googleBtnContainerRef.current) {
-      try {
-        window.google.accounts.id.initialize({
-          client_id: googleClientId,
-          callback: async (response) => {
-            if (response.credential) {
-              handleGoogleCredentialSuccess(response.credential);
-            }
-          }
-        });
+    if (!googleClientId) return;
 
-        googleBtnContainerRef.current.innerHTML = '';
-        window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
-          theme: 'outline',
-          size: 'large',
-          width: 320,
-          text: 'signin_with',
-          shape: 'pill'
-        });
-        setGsiLoaded(true);
-      } catch (err) {
-        console.warn('Google GSI button render:', err);
+    const renderGoogleBtn = () => {
+      if (window.google?.accounts?.id && googleBtnContainerRef.current) {
+        try {
+          window.google.accounts.id.initialize({
+            client_id: googleClientId,
+            callback: async (response) => {
+              if (response.credential) {
+                handleGoogleCredentialSuccess(response.credential);
+              }
+            }
+          });
+
+          googleBtnContainerRef.current.innerHTML = '';
+          window.google.accounts.id.renderButton(googleBtnContainerRef.current, {
+            theme: 'outline',
+            size: 'large',
+            width: 320,
+            text: 'signin_with',
+            shape: 'pill'
+          });
+          setGsiLoaded(true);
+          return true;
+        } catch (err) {
+          console.warn('Google GSI button render error:', err);
+        }
       }
+      return false;
+    };
+
+    if (!renderGoogleBtn()) {
+      const interval = setInterval(() => {
+        if (renderGoogleBtn()) clearInterval(interval);
+      }, 300);
+      const timeout = setTimeout(() => clearInterval(interval), 6000);
+      return () => {
+        clearInterval(interval);
+        clearTimeout(timeout);
+      };
     }
   }, [googleClientId]);
 
@@ -114,7 +131,7 @@ export default function GoogleLandingView({ currentUser, onLoginSuccess, onOpenA
     }
   };
 
-  // Trigger Google OAuth 2.0 Popup Flow (TokenClient)
+  // Trigger Google OAuth 2.0 Popup Flow (TokenClient) or full-screen redirect
   const handleTriggerGooglePopup = () => {
     setErrorMessage('');
     setIsLoading(true);
@@ -158,27 +175,12 @@ export default function GoogleLandingView({ currentUser, onLoginSuccess, onOpenA
         tokenClient.requestAccessToken({ prompt: 'select_account' });
         return;
       } catch (err) {
-        console.warn('OAuth2 tokenClient error, trying GSI prompt:', err);
+        console.warn('OAuth2 tokenClient error, redirecting to OAuth route:', err);
       }
     }
 
-    // Secondary fallback: Google GSI prompt
-    if (googleClientId && window.google?.accounts?.id) {
-      try {
-        window.google.accounts.id.prompt((notification) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            setIsLoading(false);
-            handleDirectLogin('24cd10ar15@mitsgwl.ac.in', 'Arin Gupta', 'admin');
-          }
-        });
-        return;
-      } catch (err) {
-        console.warn('GSI prompt error:', err);
-      }
-    }
-
-    // Direct fallback
-    handleDirectLogin('24cd10ar15@mitsgwl.ac.in', 'Arin Gupta', 'admin');
+    // Direct redirect to official Google OAuth consent screen (never blocked by popup blockers)
+    window.location.href = '/api/auth/oauth/google';
   };
 
   const handleDirectLogin = async (email, name, role) => {
