@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { API_BASE } from '../services/api';
 import {
   Server,
   Cpu,
@@ -35,7 +36,7 @@ export default function InfrastructureView({
     setSweeperRunning(true);
     setSweeperMessage('Running sweeper pass over vehicle ingress records...');
     try {
-      const res = await fetch('/api/sweeper/run', { method: 'POST' });
+      const res = await fetch(`${API_BASE}/sweeper/run`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
         setSweeperMessage(`Sweeper cycle completed: ${data.reconciled || 0} stale records resolved.`);

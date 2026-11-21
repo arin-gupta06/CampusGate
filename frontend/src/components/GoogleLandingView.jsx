@@ -30,7 +30,7 @@ import {
   Compass,
   Info
 } from 'lucide-react';
-import { loginWithOAuth, checkPlateAuthorization } from '../services/api';
+import { loginWithOAuth, checkPlateAuthorization, API_BASE } from '../services/api';
 
 export default function GoogleLandingView({ currentUser, onLoginSuccess, onOpenApplyPass, onNavigateTab }) {
   const [isLoading, setIsLoading] = useState(false);
@@ -52,7 +52,7 @@ export default function GoogleLandingView({ currentUser, onLoginSuccess, onOpenA
   useEffect(() => {
     async function loadConfig() {
       try {
-        const res = await fetch('/api/auth/config');
+        const res = await fetch(`${API_BASE}/auth/config`);
         const cType = res.headers.get('content-type') || '';
         if (res.ok && cType.includes('application/json')) {
           const data = await res.json();
@@ -116,7 +116,7 @@ export default function GoogleLandingView({ currentUser, onLoginSuccess, onOpenA
     setIsLoading(true);
     setErrorMessage('');
     try {
-      const res = await fetch('/api/auth/oauth/google', {
+      const res = await fetch(`${API_BASE}/auth/oauth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: googleJwt })
@@ -160,7 +160,7 @@ export default function GoogleLandingView({ currentUser, onLoginSuccess, onOpenA
               });
               const profile = await profileRes.json();
 
-              const res = await fetch('/api/auth/oauth/google', {
+              const res = await fetch(`${API_BASE}/auth/oauth/google`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({

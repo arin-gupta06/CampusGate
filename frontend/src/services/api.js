@@ -1,6 +1,6 @@
 // CampusGuard API & Data Service
 
-const API_BASE = import.meta.env.VITE_API_URL || '/api';
+export const API_BASE = (import.meta.env.VITE_API_URL || '/api').replace(/\/+$/, '');
 
 export const MOCK_HOURLY_TRAFFIC = [
   { hour: '06:00', ingress: 14, egress: 4, authorized: 12, alerts: 2 },

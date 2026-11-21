@@ -36,7 +36,8 @@ import {
   MOCK_CAMERAS,
   MOCK_RECENT_ENTRIES,
   MOCK_REGISTERED_VEHICLES,
-  MOCK_SECURITY_EVENTS
+  MOCK_SECURITY_EVENTS,
+  API_BASE
 } from './services/api';
 
 export default function App() {
@@ -127,7 +128,7 @@ export default function App() {
       window.history.replaceState({}, document.title, cleanUrl);
     } else if (token) {
       localStorage.setItem('campusgate_jwt', token);
-      fetch('/api/auth/me', {
+      fetch(`${API_BASE}/auth/me`, {
         headers: { Authorization: `Bearer ${token}` }
       })
         .then(res => res.ok ? res.json() : null)

@@ -12,7 +12,7 @@ import {
   Code2,
   Users
 } from 'lucide-react';
-import { loginWithOAuth } from '../services/api';
+import { loginWithOAuth, API_BASE } from '../services/api';
 
 export default function AuthModal({
   isOpen,
@@ -34,7 +34,7 @@ export default function AuthModal({
   useEffect(() => {
     async function fetchConfig() {
       try {
-        const res = await fetch('/api/auth/config');
+        const res = await fetch(`${API_BASE}/auth/config`);
         const cType = res.headers.get('content-type') || '';
         if (res.ok && cType.includes('application/json')) {
           const data = await res.json();
@@ -128,7 +128,7 @@ export default function AuthModal({
     setLoadingRole('google');
     setErrorMessage('');
     try {
-      const res = await fetch('/api/auth/oauth/google', {
+      const res = await fetch(`${API_BASE}/auth/oauth/google`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: googleJwt })
@@ -175,7 +175,7 @@ export default function AuthModal({
               });
               const profile = await profileRes.json();
 
-              const res = await fetch('/api/auth/oauth/google', {
+              const res = await fetch(`${API_BASE}/auth/oauth/google`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
