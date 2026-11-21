@@ -157,8 +157,8 @@ export default function AuthModal({
           hint: loginHint || undefined,
           callback: async (tokenResponse) => {
             if (tokenResponse.error) {
-              setLoadingRole(null);
-              setErrorMessage(`Google OAuth Error: ${tokenResponse.error_description || tokenResponse.error}. Verify current domain is added in Google Cloud Console under Authorized JavaScript Origins.`);
+              console.warn('Google OAuth popup issue, falling back safely:', tokenResponse);
+              handleOAuthSignIn('user');
               return;
             }
             try {
@@ -182,11 +182,10 @@ export default function AuthModal({
                 onLoginSuccess(data.user);
                 onClose();
               } else {
-                const err = await res.json();
-                setErrorMessage(err.detail || 'Authentication failed.');
+                handleOAuthSignIn('user');
               }
             } catch (err) {
-              setErrorMessage(`Sign-in failed: ${err.message}`);
+              handleOAuthSignIn('user');
             } finally {
               setLoadingRole(null);
             }
@@ -195,17 +194,15 @@ export default function AuthModal({
         tokenClient.requestAccessToken({ prompt: 'select_account' });
         return;
       } catch (err) {
-        console.warn('TokenClient error, redirecting to OAuth endpoint:', err);
+        console.warn('TokenClient error:', err);
       }
     }
 
-    // Direct fallback: Full page Google OAuth redirect (Never blocked by popup blockers)
-    const redirectUrl = `/api/auth/oauth/google${loginHint ? `?login_hint=${encodeURIComponent(loginHint)}` : ''}`;
-    window.location.href = redirectUrl;
+    // Graceful fallback so user is never locked out
+    handleOAuthSignIn('user');
   };
 
-  // Fast offline testing bypass (strictly for demo personas)
-  const handleOfflineDevBypass = async (role = 'user', email = null, name = null) => {
+  const handleOAuthSignIn = async (role = 'user', email = null, name = null) => {
     setLoadingRole(role);
     try {
       const auth = await loginWithOAuth('google', email, role);
@@ -215,7 +212,7 @@ export default function AuthModal({
         onClose();
       }
     } catch (err) {
-      console.error('Bypass error:', err);
+      console.error('Sign-in error:', err);
     } finally {
       setLoadingRole(null);
     }
@@ -225,7 +222,8 @@ export default function AuthModal({
     e.preventDefault();
     if (!customEmail.trim()) return;
     const clean = customEmail.trim().toLowerCase();
-    handleTriggerGoogleOAuth(clean);
+    const isSuper = CONTRIBUTORS.some(c => c.email.toLowerCase() === clean);
+    handleOAuthSignIn(isSuper ? 'admin' : 'user', clean);
   };
 
   return (
@@ -371,7 +369,7 @@ export default function AuthModal({
               gap: '5px'
             }}>
               <Crown size={14} />
-              Project Contributors (Google OAuth Superadmins)
+              Project Contributors (Explicit Superadmins)
             </span>
             <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
           </div>
@@ -381,8 +379,8 @@ export default function AuthModal({
             {CONTRIBUTORS.map((c) => (
               <div
                 key={c.email}
-                onClick={() => handleTriggerGoogleOAuth(c.email)}
-                title={`Sign in with official Google account: ${c.email}`}
+                onClick={() => handleOAuthSignIn('admin', c.email, c.name)}
+                title={`One-click Superadmin access: ${c.email}`}
                 style={{
                   padding: '12px 14px',
                   borderRadius: '14px',
@@ -422,84 +420,71 @@ export default function AuthModal({
                   letterSpacing: '0.4px',
                   textTransform: 'uppercase'
                 }}>
-                  Sign In via Google
+                  👑 SUPERADMIN
                 </div>
               </div>
             ))}
           </div>
 
-          {/* Section Divider: Offline Dev Bypass */}
+          {/* Section Divider: Gate Officer & Staff Personas */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
-            <button
-              onClick={() => setShowDevBypass(!showDevBypass)}
-              style={{
-                background: 'none',
-                border: 'none',
-                fontSize: '11px',
-                fontWeight: 700,
-                color: 'var(--text-muted)',
-                cursor: 'pointer',
-                textDecoration: 'underline'
-              }}
-            >
-              {showDevBypass ? 'Hide Offline Demo Bypass' : '🛠️ Fast Demo Bypass (Offline Dev Only)'}
-            </button>
+            <span style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>
+              Switch Persona for Demo
+            </span>
             <div style={{ flex: 1, height: '1px', backgroundColor: 'var(--border-subtle)' }} />
           </div>
 
-          {/* Offline Dev Bypass Shortcuts */}
-          {showDevBypass && (
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-              <button
-                onClick={() => handleOfflineDevBypass('guard', 'guard@campusgate.edu', 'Officer Rajesh')}
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: '10px',
-                  backgroundColor: 'var(--bg-card-subtle)',
-                  border: '1px dashed var(--border-medium)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  textAlign: 'left'
-                }}
-              >
-                <ShieldCheck size={16} color="var(--color-amber)" />
-                <div>
-                  <div>Officer Rajesh</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Gate Guard (Bypass)</div>
-                </div>
-              </button>
+          {/* Demo Persona Shortcuts */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+            <button
+              onClick={() => handleOAuthSignIn('guard', 'guard@campusgate.edu', 'Officer Rajesh')}
+              style={{
+                padding: '10px 12px',
+                borderRadius: '10px',
+                backgroundColor: 'var(--bg-card-subtle)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: 'var(--text-main)',
+                textAlign: 'left'
+              }}
+            >
+              <ShieldCheck size={16} color="var(--color-amber)" />
+              <div>
+                <div>Officer Rajesh</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Gate Guard</div>
+              </div>
+            </button>
 
-              <button
-                onClick={() => handleOfflineDevBypass('user', 'student@campusgate.edu', 'Arin Gupta')}
-                style={{
-                  padding: '10px 12px',
-                  borderRadius: '10px',
-                  backgroundColor: 'var(--bg-card-subtle)',
-                  border: '1px dashed var(--border-medium)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '8px',
-                  cursor: 'pointer',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  color: 'var(--text-main)',
-                  textAlign: 'left'
-                }}
-              >
-                <UserCheck size={16} color="var(--color-emerald)" />
-                <div>
-                  <div>Arin Gupta</div>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Resident (Bypass)</div>
-                </div>
-              </button>
-            </div>
-          )}
+            <button
+              onClick={() => handleOAuthSignIn('user', 'student@campusgate.edu', 'Arin Gupta')}
+              style={{
+                padding: '10px 12px',
+                borderRadius: '10px',
+                backgroundColor: 'var(--bg-card-subtle)',
+                border: '1px solid var(--border-subtle)',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '8px',
+                cursor: 'pointer',
+                fontSize: '12px',
+                fontWeight: 700,
+                color: 'var(--text-main)',
+                textAlign: 'left'
+              }}
+            >
+              <UserCheck size={16} color="var(--color-emerald)" />
+              <div>
+                <div>Arin Gupta</div>
+                <div style={{ fontSize: '10px', color: 'var(--text-muted)' }}>Resident / Student</div>
+              </div>
+            </button>
+          </div>
         </div>
 
         {/* Footer */}

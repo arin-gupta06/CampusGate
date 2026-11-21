@@ -139,14 +139,18 @@ def oauth_google_get(
     3. If credential is provided -> Verifies ID token and redirects with ?token=...
     4. If called without code/credential -> Initiates official Google OAuth2 consent flow.
     """
-    frontend_url = os.getenv("FRONTEND_URL", "http://localhost:3000").rstrip("/")
+    # Detect forwarded host & proto (e.g. when behind Vercel or reverse proxy)
+    forwarded_proto = request.headers.get("x-forwarded-proto", request.url.scheme)
+    forwarded_host = request.headers.get("x-forwarded-host", request.url.netloc)
+    detected_base = f"{forwarded_proto}://{forwarded_host}".rstrip("/")
+    frontend_url = os.getenv("FRONTEND_URL", detected_base).rstrip("/")
 
     if error and isinstance(error, str):
         return RedirectResponse(f"{frontend_url}/?auth_error={urllib.parse.quote(error)}")
 
     # Case A: Authorization Code Grant Callback (Standard Web Redirect)
     if isinstance(code, str) and code.strip():
-        redirect_uri = f"{request.url.scheme}://{request.url.netloc}{request.url.path}"
+        redirect_uri = f"{forwarded_proto}://{forwarded_host}{request.url.path}"
         try:
             tokens = exchange_google_code_for_tokens(code.strip(), redirect_uri)
             id_token = tokens.get("id_token")
@@ -210,7 +214,7 @@ def oauth_google_get(
 
     # Case C: Direct browser navigation -> Redirect to Google OAuth Consent Screen
     if settings.GOOGLE_CLIENT_ID and not settings.GOOGLE_CLIENT_ID.startswith("YOUR_GOOGLE"):
-        redirect_uri = f"{request.url.scheme}://{request.url.netloc}{request.url.path}"
+        redirect_uri = f"{forwarded_proto}://{forwarded_host}{request.url.path}"
         params = {
             "client_id": settings.GOOGLE_CLIENT_ID,
             "redirect_uri": redirect_uri,
