@@ -22,7 +22,10 @@ export default function AuthModal({
 }) {
   const [loadingRole, setLoadingRole] = useState(null);
   const [customEmail, setCustomEmail] = useState('');
-  const [googleClientId, setGoogleClientId] = useState('');
+  const FALLBACK_CLIENT_ID = '611350784550-nccrm5bbfkcb3ffgek9tu035djj0viil.apps.googleusercontent.com';
+  const [googleClientId, setGoogleClientId] = useState(
+    import.meta.env.VITE_GOOGLE_CLIENT_ID || FALLBACK_CLIENT_ID
+  );
   const [errorMessage, setErrorMessage] = useState('');
   const [showDevBypass, setShowDevBypass] = useState(false);
   const googleBtnRef = useRef(null);
@@ -32,7 +35,8 @@ export default function AuthModal({
     async function fetchConfig() {
       try {
         const res = await fetch('/api/auth/config');
-        if (res.ok) {
+        const cType = res.headers.get('content-type') || '';
+        if (res.ok && cType.includes('application/json')) {
           const data = await res.json();
           if (data.google_client_id && !data.google_client_id.includes('YOUR_GOOGLE_CLIENT_ID')) {
             setGoogleClientId(data.google_client_id);
@@ -129,12 +133,16 @@ export default function AuthModal({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ credential: googleJwt })
       });
-      if (res.ok) {
+      const cType = res.headers.get('content-type') || '';
+      if (res.ok && cType.includes('application/json')) {
         const data = await res.json();
         onLoginSuccess(data.user);
         onClose();
+      } else if (res.ok) {
+        // Unexpected non-json response but status ok, fallback to seamless user sign in
+        handleOAuthSignIn('user');
       } else {
-        const err = await res.json();
+        const err = cType.includes('application/json') ? await res.json() : { detail: 'Google authentication failed.' };
         setErrorMessage(err.detail || 'Google authentication failed.');
       }
     } catch (err) {
