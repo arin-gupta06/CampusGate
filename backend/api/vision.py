@@ -1,8 +1,8 @@
 import uuid
 import random
 from datetime import datetime
-from typing import Optional
-from fastapi import APIRouter, Depends, HTTPException, Response
+from typing import Optional, Dict, Any
+from fastapi import APIRouter, Depends, HTTPException, Response, Header, status
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
@@ -10,6 +10,7 @@ from backend.core.config import settings
 from backend.core.database import get_db
 from backend.core.cache import cache
 from backend.core.ws_manager import ws_manager
+from backend.core.auth import get_current_user
 from backend.models.camera import Camera
 from backend.models.observation import VehicleObservation, PlateReading
 from backend.models.entry import VehicleEntryEvent
@@ -19,6 +20,30 @@ from backend.vision.ocr_reader import IndianPlateNormalizer
 from backend.ingestion.crop_manager import crop_manager
 
 router = APIRouter(prefix="/api/vision", tags=["Vision Ingestion Pipeline"])
+
+
+def _verify_vision_ingestion_auth(
+    x_vision_secret: Optional[str] = Header(None),
+    authorization: Optional[str] = Header(None)
+) -> None:
+    """Ensures edge vision nodes or administrators are authorized to push detections."""
+    if settings.ENVIRONMENT.lower() == "development":
+        return
+
+    # Check shared edge secret or valid operator Bearer token
+    if x_vision_secret and x_vision_secret == settings.JWT_SECRET_KEY:
+        return
+
+    if authorization and authorization.startswith("Bearer "):
+        user = get_current_user(authorization=authorization)
+        role = (user.get("role") or "").lower()
+        if role in ["admin", "guard"] or user.get("is_superadmin"):
+            return
+
+    raise HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Unauthorized: Camera node secret or operator Bearer token required for observation ingestion."
+    )
 
 class ObservationIngestPayload(BaseModel):
     camera_id: str
@@ -38,7 +63,11 @@ class SimulationPayload(BaseModel):
     reason: Optional[str] = None
 
 @router.post("/ingest_observation")
-async def ingest_observation(payload: ObservationIngestPayload, db: Session = Depends(get_db)):
+async def ingest_observation(
+    payload: ObservationIngestPayload,
+    db: Session = Depends(get_db),
+    _auth: None = Depends(_verify_vision_ingestion_auth)
+):
     """
     Ingests vehicle and plate observations from camera vision runners.
     Automatically handles entry line events, authorization lookup, and cross-camera handoffs.
@@ -157,12 +186,28 @@ async def ingest_observation(payload: ObservationIngestPayload, db: Session = De
     return {"status": "observation_recorded", "observation_id": obs.id}
 
 
+def _require_simulation_operator(current_user: Dict[str, Any]) -> str:
+    role = (current_user.get("role") or "").lower()
+    if role not in ["admin", "guard"] and not current_user.get("is_superadmin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied: Role '{role}' cannot trigger simulated ingress events."
+        )
+    return role
+
+
 @router.post("/simulate")
-async def simulate_ingress(payload: Optional[SimulationPayload] = None, db: Session = Depends(get_db)):
+async def simulate_ingress(
+    payload: Optional[SimulationPayload] = None,
+    db: Session = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
     """
     Triggers a live vehicle arrival event simulation.
+    Requires operator privileges ('admin' or 'guard').
     Persists the entry event in the database and broadcasts to all WebSocket clients.
     """
+    _require_simulation_operator(current_user)
     DEMO_POOL = [
         {"plate": "MP07AB1234", "role": "STUDENT", "owner": "Rajesh Gupta", "person": "Arin Gupta (Student)", "desc": "Annual Pass Verified"},
         {"plate": "MP07CD5678", "role": "FACULTY", "owner": "Priya Sharma", "person": "Priya Sharma (Faculty)", "desc": "Faculty Clearance Granted"},

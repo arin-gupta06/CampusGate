@@ -51,16 +51,15 @@ export default function Sidebar({
   const role = currentUser?.role || 'user'; // 'admin', 'guard', 'user'
 
   // =========================================================================
-  // 1. PRIMARY UNIVERSAL NAVIGATION (Home & Developer Directory for all roles)
+  // 1. PRIMARY NAVIGATION (Developer Directory strictly for Admins/Superadmins)
   // =========================================================================
-  const universalHome = { id: 'home', label: 'CampusGate Home', icon: Home };
   const universalDeveloper = { id: 'developer', label: 'Developer Directory', icon: Code2 };
 
   // =========================================================================
   // 2. MEMBER / PERSONAL PASS ITEMS
   // =========================================================================
   const personalPassItems = [
-    { id: 'profile', label: 'My Pass & Monthly Stats', icon: BarChart3 },
+    { id: 'profile', label: 'Digital Gate Pass (QR)', icon: QrCode },
     { id: 'apply_pass', label: 'Apply for Vehicle Pass', icon: FilePlus }
   ];
 
@@ -241,28 +240,57 @@ export default function Sidebar({
         minHeight: '74px'
       }}>
         {isCollapsed ? (
-          <button
-            onClick={handleToggle}
-            title="Expand Sidebar"
-            style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '10px',
-              background: 'var(--accent-primary)',
-              color: 'var(--accent-primary-text)',
-              border: 'none',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              cursor: 'pointer',
-              boxShadow: 'var(--shadow-card)'
-            }}
-          >
-            <ShieldCheck size={22} strokeWidth={2.4} />
-          </button>
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px' }}>
+            <button
+              onClick={() => setActiveTab('home')}
+              title="CampusGate Home (Click to navigate)"
+              style={{
+                width: '42px',
+                height: '42px',
+                borderRadius: '10px',
+                background: 'var(--accent-primary)',
+                color: 'var(--accent-primary-text)',
+                border: 'none',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                cursor: 'pointer',
+                boxShadow: 'var(--shadow-card)'
+              }}
+            >
+              <ShieldCheck size={22} strokeWidth={2.4} />
+            </button>
+            <button
+              onClick={handleToggle}
+              title="Expand Sidebar"
+              style={{
+                background: 'none',
+                border: 'none',
+                color: 'var(--text-muted)',
+                cursor: 'pointer',
+                padding: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center'
+              }}
+            >
+              <PanelLeftOpen size={16} />
+            </button>
+          </div>
         ) : (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, flex: 1 }}>
+            <div
+              onClick={() => setActiveTab('home')}
+              title="CampusGate Home (Click to navigate)"
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '10px',
+                minWidth: 0,
+                flex: 1,
+                cursor: 'pointer'
+              }}
+            >
               <div style={{
                 width: '36px',
                 height: '36px',
@@ -342,12 +370,13 @@ export default function Sidebar({
         gap: isCollapsed ? '12px' : '16px'
       }}>
         {/* =========================================================
-            1. UNIVERSAL PORTAL NAVIGATION
+            1. DEVELOPER DIRECTORY (Strictly for Admins / Developers)
            ========================================================= */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-          {renderNavButton(universalHome)}
-          {renderNavButton(universalDeveloper)}
-        </div>
+        {(isSuper || role === 'admin') && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+            {renderNavButton(universalDeveloper)}
+          </div>
+        )}
 
         {/* =========================================================
             2. ROLE SPECIFIC OPERATIONS

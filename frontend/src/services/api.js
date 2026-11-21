@@ -474,9 +474,20 @@ export async function getEntriesSummary() {
   };
 }
 
+export function getAuthHeaders(extraHeaders = {}) {
+  const token = getStoredAuthToken();
+  const headers = { ...extraHeaders };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+  return headers;
+}
+
 export async function getCameras() {
   try {
-    const res = await fetch(`${API_BASE}/cameras`);
+    const res = await fetch(`${API_BASE}/cameras`, {
+      headers: getAuthHeaders()
+    });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) return data;
@@ -489,13 +500,9 @@ export async function getCameras() {
 
 export async function addCamera(cam) {
   try {
-    const token = getStoredAuthToken();
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
     const res = await fetch(`${API_BASE}/cameras`, {
       method: 'POST',
-      headers,
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({
         id: cam.id,
         name: cam.name,
@@ -514,13 +521,9 @@ export async function addCamera(cam) {
 
 export async function deleteCamera(cameraId) {
   try {
-    const token = getStoredAuthToken();
-    const headers = {};
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
     const res = await fetch(`${API_BASE}/cameras/${encodeURIComponent(cameraId)}`, {
       method: 'DELETE',
-      headers
+      headers: getAuthHeaders()
     });
     if (res.ok) return await res.json();
   } catch (err) {
@@ -532,7 +535,9 @@ export async function deleteCamera(cameraId) {
 
 export async function getEntries(limit = 30) {
   try {
-    const res = await fetch(`${API_BASE}/entries?limit=${limit}`);
+    const res = await fetch(`${API_BASE}/entries?limit=${limit}`, {
+      headers: getAuthHeaders()
+    });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -564,7 +569,9 @@ export async function getEntries(limit = 30) {
 
 export async function getAuthorizedVehicles() {
   try {
-    const res = await fetch(`${API_BASE}/authorized`);
+    const res = await fetch(`${API_BASE}/authorized`, {
+      headers: getAuthHeaders()
+    });
     if (res.ok) {
       const data = await res.json();
       if (Array.isArray(data) && data.length > 0) {
@@ -600,7 +607,7 @@ export async function addAuthorizedVehicle(vehicle) {
     };
     const res = await fetch(`${API_BASE}/authorized`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload)
     });
     if (res.ok) return await res.json();
@@ -614,7 +621,7 @@ export async function updateAuthorizedVehicle(plate, data) {
   try {
     const res = await fetch(`${API_BASE}/authorized/${encodeURIComponent(plate)}`, {
       method: 'PATCH',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(data)
     });
     if (res.ok) return await res.json();
@@ -627,7 +634,8 @@ export async function updateAuthorizedVehicle(plate, data) {
 export async function deleteAuthorizedVehicle(plate) {
   try {
     const res = await fetch(`${API_BASE}/authorized/${encodeURIComponent(plate)}`, {
-      method: 'DELETE'
+      method: 'DELETE',
+      headers: getAuthHeaders()
     });
     if (res.ok) return await res.json();
   } catch (err) {
@@ -650,7 +658,7 @@ export async function triggerSimulation(payload = {}) {
   try {
     const res = await fetch(`${API_BASE}/vision/simulate`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify(payload)
     });
     if (res.ok) {
@@ -665,13 +673,9 @@ export async function triggerSimulation(payload = {}) {
 
 export async function controlBarrier(action = 'OPEN', gateId = 'Gate 1 - Main Ingress', plate = null) {
   try {
-    const token = getStoredAuthToken();
-    const headers = { 'Content-Type': 'application/json' };
-    if (token) headers['Authorization'] = `Bearer ${token}`;
-
     const res = await fetch(`${API_BASE}/gate/barrier`, {
       method: 'POST',
-      headers,
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ action, gate_id: gateId, plate })
     });
     if (res.ok) return await res.json();
@@ -685,7 +689,7 @@ export async function resolveEntryReview(entryId, decision = 'APPROVED', notes =
   try {
     const res = await fetch(`${API_BASE}/entries/reviews/${encodeURIComponent(entryId)}/resolve`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
       body: JSON.stringify({ review_decision: decision, notes })
     });
     if (res.ok) return await res.json();

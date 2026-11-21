@@ -23,7 +23,8 @@ export default function Header({
   onOpenAuthModal,
   onSignOut,
   theme,
-  toggleTheme
+  toggleTheme,
+  onNavigateHome
 }) {
   const [currentTime, setCurrentTime] = useState('');
   const [searchValue, setSearchValue] = useState('');
@@ -82,7 +83,11 @@ export default function Header({
       zIndex: 30
     }}>
       {/* Brand & Live Operational Clock */}
-      <div style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '220px' }}>
+      <div
+        onClick={onNavigateHome}
+        style={{ display: 'flex', alignItems: 'center', gap: '14px', minWidth: '220px', cursor: onNavigateHome ? 'pointer' : 'default' }}
+        title="CampusGate Home"
+      >
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
             <span style={{ fontSize: '15px', fontWeight: 800, color: 'var(--text-main)', letterSpacing: '-0.3px' }}>
@@ -145,28 +150,30 @@ export default function Header({
 
       {/* Right Actions: Authenticated Profile & Role Extras Indicator */}
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        {/* Real-time Ingress Simulation Trigger */}
-        <button
-          onClick={onTriggerSimulation}
-          title="Simulate Vehicle Arrival (Auto OCR Latch)"
-          style={{
-            padding: '8px 12px',
-            borderRadius: '10px',
-            backgroundColor: 'var(--bg-card-hover)',
-            border: '1px solid var(--border-medium)',
-            color: 'var(--text-main)',
-            fontSize: '12px',
-            fontWeight: 700,
-            display: 'flex',
-            alignItems: 'center',
-            gap: '6px',
-            cursor: 'pointer',
-            whiteSpace: 'nowrap'
-          }}
-        >
-          <Sparkles size={14} color="#d97706" />
-          <span>Simulate Arrival</span>
-        </button>
+        {/* Real-time Ingress Simulation Trigger - Admin / Dev only */}
+        {(isSuper || role === 'admin') && (
+          <button
+            onClick={onTriggerSimulation}
+            title="Simulate Vehicle Arrival (Auto OCR Latch)"
+            style={{
+              padding: '8px 12px',
+              borderRadius: '10px',
+              backgroundColor: 'var(--bg-card-hover)',
+              border: '1px solid var(--border-medium)',
+              color: 'var(--text-main)',
+              fontSize: '12px',
+              fontWeight: 700,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '6px',
+              cursor: 'pointer',
+              whiteSpace: 'nowrap'
+            }}
+          >
+            <Sparkles size={14} color="#d97706" />
+            <span>Simulate Arrival</span>
+          </button>
+        )}
 
         {/* WebSocket Stream Heartbeat Status */}
         <div style={{

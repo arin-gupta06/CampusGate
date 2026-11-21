@@ -56,3 +56,30 @@ def test_cors_configuration_hardened():
     """Verify CORS origins do not combine credentials with wildcard."""
     assert "*" not in settings.CORS_ORIGINS
     assert len(settings.CORS_ORIGINS) > 0
+
+
+def test_authorized_vehicles_operator_protection():
+    """Verify non-operators are blocked from modifying authorized vehicles."""
+    from backend.api.authorized import _require_operator
+    with pytest.raises(HTTPException) as exc_info:
+        _require_operator({"role": "user", "email": "user@mits.ac.in"})
+    assert exc_info.value.status_code == 403
+    assert "cannot modify authorized vehicle registry" in exc_info.value.detail
+
+
+def test_entries_review_resolve_operator_protection():
+    """Verify non-operators are blocked from resolving entry reviews."""
+    from backend.api.entries import _require_operator_role
+    with pytest.raises(HTTPException) as exc_info:
+        _require_operator_role({"role": "student", "email": "student@mits.ac.in"})
+    assert exc_info.value.status_code == 403
+    assert "not authorized to perform operator audit actions" in exc_info.value.detail
+
+
+def test_vision_simulation_operator_protection():
+    """Verify non-operators are blocked from triggering fake simulated entries."""
+    from backend.api.vision import _require_simulation_operator
+    with pytest.raises(HTTPException) as exc_info:
+        _require_simulation_operator({"role": "user", "email": "hacker@evil.com"})
+    assert exc_info.value.status_code == 403
+    assert "cannot trigger simulated ingress" in exc_info.value.detail

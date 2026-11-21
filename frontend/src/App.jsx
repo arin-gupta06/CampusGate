@@ -15,6 +15,7 @@ import VehicleDetailsModal from './components/VehicleDetailsModal';
 import AddCameraModal from './components/AddCameraModal';
 import AuthModal from './components/AuthModal';
 import GoogleLandingView from './components/GoogleLandingView';
+import UserHomeView from './components/UserHomeView';
 import DeveloperView from './components/DeveloperView';
 import {
   getCameras,
@@ -53,12 +54,7 @@ export default function App() {
   };
 
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState(() => {
-    const user = getStoredUser();
-    if (!user || user.role === 'user') return 'profile';
-    if (user.role === 'guard') return 'guard_console';
-    return 'overview';
-  });
+  const [activeTab, setActiveTab] = useState('home');
   const [selectedVehicle, setSelectedVehicle] = useState(null);
   const [isAddCameraModalOpen, setIsAddCameraModalOpen] = useState(false);
   const [wsStatus, setWsStatus] = useState('DISCONNECTED');
@@ -89,13 +85,7 @@ export default function App() {
   const handleLoginSuccess = (user) => {
     setCurrentUser(user);
     showToast(`Welcome back, ${user.name}! Signed in as ${user.role.toUpperCase()}`, 'success');
-    if (user.role === 'guard') {
-      setActiveTab('guard_console');
-    } else if (user.role === 'admin') {
-      setActiveTab('overview');
-    } else {
-      setActiveTab('profile'); // Normal user lands straight on Digital Gate Pass!
-    }
+    setActiveTab('home'); // First page after login is always the customized Home page!
   };
 
   // Core Datasets
@@ -137,9 +127,7 @@ export default function App() {
             setStoredAuth(token, data.user);
             setCurrentUser(data.user);
             showToast(`Welcome back, ${data.user.name}! Signed in via Google OAuth.`, 'success');
-            if (data.user.role === 'guard') setActiveTab('guard_console');
-            else if (data.user.role === 'admin') setActiveTab('overview');
-            else setActiveTab('profile');
+            setActiveTab('home');
           }
         })
         .catch(err => console.warn('Could not verify OAuth token profile:', err));
@@ -387,12 +375,13 @@ export default function App() {
           onSignOut={handleSignOut}
           theme={theme}
           toggleTheme={toggleTheme}
+          onNavigateHome={() => setActiveTab('home')}
         />
 
         {/* Global Router Canvas */}
         <main style={{
           flex: 1,
-          padding: (activeTab === 'home' || activeTab === 'landing') ? 0 : '24px 28px',
+          padding: activeTab === 'landing' ? 0 : '24px 28px',
           overflowY: 'auto',
           overflowX: 'hidden',
           minWidth: 0,
@@ -401,10 +390,18 @@ export default function App() {
           {/* =========================================================
               1. MEMBER BASE APPS (Strictly for all authenticated users)
              ========================================================= */}
+          {activeTab === 'home' && (
+            <UserHomeView
+              currentUser={currentUser}
+              onOpenApplyPass={() => setActiveTab('apply_pass')}
+              onNavigateTab={(tab) => setActiveTab(tab)}
+            />
+          )}
+
           {(activeTab === 'digital_pass' || activeTab === 'profile') && (
             <UserProfileView
               currentUser={currentUser}
-              onBackToHome={() => setActiveTab(isGuardOrAdmin ? 'overview' : 'profile')}
+              onBackToHome={() => setActiveTab('home')}
               onNavigateToSettings={() => setActiveTab('apply_pass')}
             />
           )}
@@ -421,7 +418,7 @@ export default function App() {
             </div>
           )}
 
-          {(activeTab === 'home' || activeTab === 'landing') && (
+          {activeTab === 'landing' && (
             <GoogleLandingView
               currentUser={currentUser}
               onLoginSuccess={handleLoginSuccess}
@@ -430,7 +427,7 @@ export default function App() {
             />
           )}
 
-          {activeTab === 'developer' && (
+          {activeTab === 'developer' && (currentUser?.is_superadmin || currentUser?.role === 'admin') && (
             <DeveloperView />
           )}
 

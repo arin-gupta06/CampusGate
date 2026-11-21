@@ -6,13 +6,15 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request
+from typing import Dict, Any
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, Request, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from backend.core.config import settings
 from backend.core.database import init_db, engine
 from backend.core.ws_manager import ws_manager
+from backend.core.auth import get_current_user
 from backend.api import cameras, authorized, entries, vision, auth, gate
 from backend.reconciliation.sweeper import handoff_sweeper
 
@@ -61,6 +63,18 @@ app.include_router(authorized.router)
 app.include_router(entries.router)
 app.include_router(vision.router)
 app.include_router(gate.router)
+
+@app.post("/api/sweeper/run", tags=["System Maintenance"])
+def run_sweeper_pass(current_user: Dict[str, Any] = Depends(get_current_user)):
+    """Triggers an explicit handoff sweeper pass. Requires operator credentials."""
+    role = (current_user.get("role") or "").lower()
+    if role not in ["admin", "guard"] and not current_user.get("is_superadmin"):
+        raise HTTPException(
+            status_code=403,
+            detail=f"Access denied: Role '{role}' is not authorized to trigger system sweeper."
+        )
+    reconciled = handoff_sweeper.sweep_once()
+    return {"status": "completed", "reconciled": reconciled}
 
 @app.websocket("/ws/live-feed")
 async def websocket_live_feed(websocket: WebSocket):

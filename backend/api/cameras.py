@@ -109,10 +109,25 @@ def stream_camera_mjpeg(camera_id: str, db: Session = Depends(get_db)):
     )
 
 
+def _mask_stream_url(url: Optional[str]) -> Optional[str]:
+    """Masks embedded credentials in RTSP or HTTP stream URLs."""
+    if not url or "@" not in url:
+        return url
+    parts = url.split("@", 1)
+    prefix = parts[0]
+    if "://" in prefix:
+        proto, _ = prefix.split("://", 1)
+        return f"{proto}://***:***@{parts[1]}"
+    return f"***:***@{parts[1]}"
+
+
 # --- Topology Routes ---
 
 @router.get("/topology", response_model=List[TopologyResponse])
-def list_topology(db: Session = Depends(get_db)):
+def list_topology(
+    db: Session = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
     return db.query(CameraTopology).all()
 
 
@@ -183,8 +198,22 @@ def delete_topology(
 # --- Camera CRUD Routes ---
 
 @router.get("", response_model=List[CameraResponse])
-def list_cameras(db: Session = Depends(get_db)):
-    return db.query(Camera).all()
+def list_cameras(
+    db: Session = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    cameras = db.query(Camera).all()
+    role = (current_user.get("role") or "").lower()
+    is_operator = role in ["admin", "guard"] or current_user.get("is_superadmin")
+    if not is_operator:
+        # Prevent credential leakage: mask passwords in RTSP URLs for non-operators
+        sanitized = []
+        for c in cameras:
+            cam_dict = CameraResponse.model_validate(c).model_dump()
+            cam_dict["stream_url"] = _mask_stream_url(cam_dict.get("stream_url"))
+            sanitized.append(cam_dict)
+        return sanitized
+    return cameras
 
 
 @router.post("", response_model=CameraResponse)

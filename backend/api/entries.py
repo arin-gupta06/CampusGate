@@ -1,10 +1,11 @@
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from backend.core.database import get_db
+from backend.core.auth import get_current_user
 from backend.models.entry import VehicleEntryEvent, HandoffEvent
 from backend.models.authorized import AuthorizedVehicle
 from backend.schemas.entry import EntryEventResponse, ReviewResolvePayload, AuditSummaryResponse
@@ -14,6 +15,17 @@ from backend.core.cache import cache
 
 router = APIRouter(prefix="/api/entries", tags=["Vehicle Entries & Audit"])
 
+
+def _require_operator_role(current_user: Dict[str, Any]) -> str:
+    role = (current_user.get("role") or "").lower()
+    if role not in ["admin", "guard"] and not current_user.get("is_superadmin"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail=f"Access denied: Role '{role}' is not authorized to perform operator audit actions."
+        )
+    return role
+
+
 @router.get("", response_model=List[EntryEventResponse])
 def list_entries(
     status: Optional[str] = None,
@@ -21,9 +33,25 @@ def list_entries(
     camera_id: Optional[str] = None,
     skip: int = 0,
     limit: int = 50,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
     query = db.query(VehicleEntryEvent)
+    role = (current_user.get("role") or "").lower()
+    is_operator = role in ["admin", "guard"] or current_user.get("is_superadmin")
+
+    if not is_operator:
+        # Non-operator users only see audit trails of vehicles registered to their own identity
+        user_name = current_user.get("name") or ""
+        user_plates = [
+            v.registration_number for v in db.query(AuthorizedVehicle).filter(
+                AuthorizedVehicle.owner_name == user_name
+            ).all()
+        ]
+        if not user_plates:
+            return []
+        query = query.filter(VehicleEntryEvent.registration_number.in_(user_plates))
+
     if status:
         query = query.filter(VehicleEntryEvent.identity_status == status)
     if auth_state:
@@ -31,6 +59,7 @@ def list_entries(
     if camera_id:
         query = query.filter(VehicleEntryEvent.primary_camera_id == camera_id)
     return query.order_by(VehicleEntryEvent.first_observed_at.desc()).offset(skip).limit(limit).all()
+
 
 @router.get("/summary", response_model=AuditSummaryResponse)
 def get_audit_summary(db: Session = Depends(get_db)):
@@ -62,19 +91,27 @@ def get_audit_summary(db: Session = Depends(get_db)):
     cache.set_json("cache:audit_summary", summary_data, ttl_seconds=15)
     return AuditSummaryResponse(**summary_data)
 
+
 @router.get("/reviews", response_model=List[EntryEventResponse])
-def get_pending_reviews(db: Session = Depends(get_db)):
+def get_pending_reviews(
+    db: Session = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
     """Returns all entry events marked REVIEW_REQUIRED for operator verification."""
+    _require_operator_role(current_user)
     return db.query(VehicleEntryEvent).filter(
         VehicleEntryEvent.identity_status == "REVIEW_REQUIRED"
     ).order_by(VehicleEntryEvent.first_observed_at.desc()).all()
+
 
 @router.post("/reviews/{entry_id}/resolve", response_model=EntryEventResponse)
 def resolve_review_case(
     entry_id: str,
     payload: ReviewResolvePayload,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
 ):
+    _require_operator_role(current_user)
     entry = db.query(VehicleEntryEvent).filter(VehicleEntryEvent.id == entry_id).first()
     if not entry:
         raise HTTPException(status_code=404, detail="Entry event not found")
@@ -82,7 +119,7 @@ def resolve_review_case(
     if payload.registration_number:
         clean_plate = IndianPlateNormalizer.clean_text(payload.registration_number)
         entry.registration_number = clean_plate
-        
+
         # Check authorization
         auth = db.query(AuthorizedVehicle).filter(
             AuthorizedVehicle.registration_number == clean_plate,
@@ -90,8 +127,9 @@ def resolve_review_case(
         ).first()
         entry.authorization_state = "AUTHORIZED" if auth else "NOT_MATCHED"
 
+    operator_info = f"Resolved by {current_user.get('name', 'Operator')} <{current_user.get('email')}>"
     entry.review_status = payload.review_decision
-    entry.review_notes = payload.notes
+    entry.review_notes = f"{payload.notes} [{operator_info}]" if payload.notes else operator_info
     entry.resolution_method = "MANUAL_REVIEW"
     if payload.review_decision == "APPROVED":
         entry.identity_status = "IDENTIFIED"
@@ -104,8 +142,13 @@ def resolve_review_case(
     cache.delete("cache:audit_summary")
     return entry
 
+
 @router.post("/handoffs/expire")
-def trigger_handoff_expiry(db: Session = Depends(get_db)):
+def trigger_handoff_expiry(
+    db: Session = Depends(get_db),
+    current_user: Dict[str, Any] = Depends(get_current_user)
+):
+    _require_operator_role(current_user)
     engine = ReconciliationEngine(db)
     expired_count = engine.expire_stale_handoffs()
     if expired_count > 0:
