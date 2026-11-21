@@ -12,7 +12,9 @@ import {
   UserCheck,
   User,
   LogOut,
-  ChevronDown
+  ChevronDown,
+  QrCode,
+  Car
 } from 'lucide-react';
 
 export default function Header({
@@ -20,14 +22,15 @@ export default function Header({
   onTriggerSimulation,
   wsStatus,
   currentUser,
-  onOpenAuthModal,
   onSignOut,
   theme,
   toggleTheme,
-  onNavigateHome
+  onNavigateHome,
+  onNavigateProfile
 }) {
   const [currentTime, setCurrentTime] = useState('');
   const [searchValue, setSearchValue] = useState('');
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
 
   useEffect(() => {
     const updateTime = () => {
@@ -214,42 +217,161 @@ export default function Header({
           {theme === 'light' ? <Moon size={16} /> : <Sun size={16} />}
         </button>
 
-        {/* User Account / OAuth Switcher Pill */}
-        <button
-          onClick={onOpenAuthModal}
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '10px',
-            padding: '5px 12px 5px 6px',
-            borderRadius: '12px',
-            backgroundColor: 'var(--bg-card-subtle)',
-            border: '1px solid var(--border-subtle)',
-            cursor: 'pointer',
-            boxShadow: 'var(--shadow-card)'
-          }}
-        >
-          <Avatar user={currentUser} size={28} borderRadius={7} />
-          <div style={{ textAlign: 'left' }}>
-            <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.2 }}>
-              {currentUser?.name || 'Arin Gupta'}
-            </div>
-            <div style={{
-              fontSize: '10px',
-              fontWeight: 800,
-              color: roleBadgeMeta.color,
+        {/* User Account / Navigation Menu Pill */}
+        <div style={{ position: 'relative' }}>
+          <button
+            onClick={() => setIsUserMenuOpen(prev => !prev)}
+            title="User Account & Navigation"
+            style={{
               display: 'flex',
               alignItems: 'center',
-              gap: '3px'
-            }}>
-              <RoleIcon size={10} />
-              {roleBadgeMeta.label}
+              gap: '10px',
+              padding: '5px 12px 5px 6px',
+              borderRadius: '12px',
+              backgroundColor: isUserMenuOpen ? 'var(--bg-card-hover)' : 'var(--bg-card-subtle)',
+              border: '1px solid var(--border-subtle)',
+              cursor: 'pointer',
+              boxShadow: 'var(--shadow-card)'
+            }}
+          >
+            <Avatar user={currentUser} size={28} borderRadius={7} />
+            <div style={{ textAlign: 'left' }}>
+              <div style={{ fontSize: '12px', fontWeight: 800, color: 'var(--text-main)', lineHeight: 1.2 }}>
+                {currentUser?.name || 'Campus Member'}
+              </div>
+              <div style={{
+                fontSize: '10px',
+                fontWeight: 800,
+                color: roleBadgeMeta.color,
+                display: 'flex',
+                alignItems: 'center',
+                gap: '3px'
+              }}>
+                <RoleIcon size={10} />
+                {roleBadgeMeta.label}
+              </div>
             </div>
-          </div>
-          <ChevronDown size={14} style={{ color: 'var(--text-muted)', marginLeft: '2px' }} />
-        </button>
+            <ChevronDown
+              size={14}
+              style={{
+                color: 'var(--text-muted)',
+                marginLeft: '2px',
+                transform: isUserMenuOpen ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.15s ease'
+              }}
+            />
+          </button>
 
-        {/* Sign Out Button */}
+          {/* User Account Dropdown */}
+          {isUserMenuOpen && (
+            <>
+              <div
+                onClick={() => setIsUserMenuOpen(false)}
+                style={{ position: 'fixed', inset: 0, zIndex: 45 }}
+              />
+              <div style={{
+                position: 'absolute',
+                top: 'calc(100% + 8px)',
+                right: 0,
+                width: '260px',
+                backgroundColor: 'var(--bg-surface)',
+                borderRadius: '14px',
+                border: '1px solid var(--border-subtle)',
+                boxShadow: 'var(--shadow-elevated)',
+                padding: '8px',
+                zIndex: 50,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: '4px'
+              }}>
+                <div style={{ padding: '8px 10px 10px', borderBottom: '1px solid var(--border-subtle)' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 800, color: 'var(--text-main)' }}>
+                    {currentUser?.name}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', wordBreak: 'break-all' }}>
+                    {currentUser?.email}
+                  </div>
+                </div>
+
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    if (onNavigateProfile) onNavigateProfile();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--text-main)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <QrCode size={15} color="var(--accent-primary)" />
+                  <span>Digital Gate Pass & QR</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    if (onNavigateHome) onNavigateHome();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--text-main)',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <Car size={15} color="var(--color-emerald)" />
+                  <span>My Vehicles & Home</span>
+                </button>
+
+                <div style={{ height: '1px', backgroundColor: 'var(--border-subtle)', margin: '4px 0' }} />
+
+                <button
+                  onClick={() => {
+                    setIsUserMenuOpen(false);
+                    if (onSignOut) onSignOut();
+                  }}
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px',
+                    padding: '8px 10px',
+                    borderRadius: '8px',
+                    border: 'none',
+                    background: 'transparent',
+                    color: 'var(--color-crimson)',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    cursor: 'pointer',
+                    textAlign: 'left'
+                  }}
+                >
+                  <LogOut size={15} />
+                  <span>Sign Out</span>
+                </button>
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Quick Sign Out Button */}
         {onSignOut && (
           <button
             onClick={onSignOut}

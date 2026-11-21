@@ -2,22 +2,19 @@ import React, { useState, useEffect, useRef } from 'react';
 import Avatar from './Avatar';
 import {
   ShieldCheck,
-  Shield,
-  UserCheck,
-  Crown,
-  Sparkles,
   CheckCircle2,
   X,
-  ExternalLink,
-  Code2,
-  Users
+  LogOut,
+  RefreshCw,
+  UserCheck
 } from 'lucide-react';
-import { loginWithOAuth, API_BASE } from '../services/api';
+import { API_BASE } from '../services/api';
 
 export default function AuthModal({
   isOpen,
   onClose,
   onLoginSuccess,
+  onSignOut,
   currentUser
 }) {
   const [loadingRole, setLoadingRole] = useState(null);
@@ -26,6 +23,7 @@ export default function AuthModal({
     import.meta.env.VITE_GOOGLE_CLIENT_ID || FALLBACK_CLIENT_ID
   );
   const [errorMessage, setErrorMessage] = useState('');
+  const [isSdkRendered, setIsSdkRendered] = useState(false);
   const googleBtnRef = useRef(null);
 
   // Fetch backend Google OAuth config on mount/open
@@ -49,7 +47,7 @@ export default function AuthModal({
     }
   }, [isOpen]);
 
-  // Poll until Google Identity Services SDK is ready, then render button
+  // Render Google Identity Services button if available
   useEffect(() => {
     if (!isOpen || !googleClientId) return;
 
@@ -68,10 +66,11 @@ export default function AuthModal({
           window.google.accounts.id.renderButton(googleBtnRef.current, {
             theme: 'outline',
             size: 'large',
-            width: 440,
+            width: 380,
             text: 'signin_with',
             shape: 'rectangular'
           });
+          setIsSdkRendered(true);
           return true;
         } catch (e) {
           console.warn('Google Identity button render error:', e);
@@ -84,7 +83,7 @@ export default function AuthModal({
       const interval = setInterval(() => {
         if (renderGoogleBtn()) clearInterval(interval);
       }, 300);
-      const timeout = setTimeout(() => clearInterval(interval), 6000);
+      const timeout = setTimeout(() => clearInterval(interval), 5000);
       return () => {
         clearInterval(interval);
         clearTimeout(timeout);
@@ -108,9 +107,6 @@ export default function AuthModal({
         const data = await res.json();
         onLoginSuccess(data.user);
         onClose();
-      } else if (res.ok) {
-        // Unexpected non-json response but status ok, fallback to seamless user sign in
-        handleOAuthSignIn('user');
       } else {
         const err = cType.includes('application/json') ? await res.json() : { detail: 'Google authentication failed.' };
         setErrorMessage(err.detail || 'Google authentication failed.');
@@ -122,8 +118,8 @@ export default function AuthModal({
     }
   };
 
-  // Triggers official Google OAuth 2.0 Popup with prompt & optional login_hint
-  const handleTriggerGoogleOAuth = (loginHint = null) => {
+  // Triggers official Google OAuth 2.0 Popup
+  const handleTriggerGoogleOAuth = () => {
     setErrorMessage('');
     setLoadingRole('google');
 
@@ -132,11 +128,10 @@ export default function AuthModal({
         const tokenClient = window.google.accounts.oauth2.initTokenClient({
           client_id: googleClientId,
           scope: 'https://www.googleapis.com/auth/userinfo.profile https://www.googleapis.com/auth/userinfo.email openid',
-          hint: loginHint || undefined,
           callback: async (tokenResponse) => {
             if (tokenResponse.error) {
-              console.warn('Google OAuth popup issue, falling back safely:', tokenResponse);
-              handleOAuthSignIn('user');
+              setErrorMessage('Google authorization was cancelled or failed.');
+              setLoadingRole(null);
               return;
             }
             try {
@@ -160,10 +155,10 @@ export default function AuthModal({
                 onLoginSuccess(data.user);
                 onClose();
               } else {
-                handleOAuthSignIn('user');
+                setErrorMessage('Unable to register session with backend.');
               }
             } catch (err) {
-              handleOAuthSignIn('user');
+              setErrorMessage(`Google verification error: ${err.message}`);
             } finally {
               setLoadingRole(null);
             }
@@ -177,16 +172,15 @@ export default function AuthModal({
     }
 
     // Direct fallback: Full page Google OAuth redirect
-    const redirectUrl = `${API_BASE}/auth/oauth/google${loginHint ? `?login_hint=${encodeURIComponent(loginHint)}` : ''}`;
-    window.location.href = redirectUrl;
+    window.location.href = `${API_BASE}/auth/oauth/google`;
   };
 
   return (
     <div style={{
       position: 'fixed',
       inset: 0,
-      backgroundColor: 'rgba(0, 0, 0, 0.78)',
-      backdropFilter: 'blur(8px)',
+      backgroundColor: 'rgba(0, 0, 0, 0.72)',
+      backdropFilter: 'blur(6px)',
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
@@ -195,30 +189,29 @@ export default function AuthModal({
     }}>
       <div style={{
         width: '100%',
-        maxWidth: '480px',
+        maxWidth: '440px',
         backgroundColor: 'var(--bg-surface)',
-        borderRadius: '24px',
+        borderRadius: '20px',
         border: '1px solid var(--border-subtle)',
         boxShadow: 'var(--shadow-elevated)',
         overflow: 'hidden',
         display: 'flex',
-        flexDirection: 'column',
-        maxHeight: '90vh'
+        flexDirection: 'column'
       }}>
         {/* Header */}
         <div style={{
-          padding: '22px 26px 18px',
+          padding: '18px 22px',
           borderBottom: '1px solid var(--border-subtle)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
           backgroundColor: 'var(--bg-card-subtle)'
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
             <div style={{
-              width: '42px',
-              height: '42px',
-              borderRadius: '12px',
+              width: '38px',
+              height: '38px',
+              borderRadius: '10px',
               backgroundColor: 'var(--accent-primary)',
               color: 'var(--accent-primary-text)',
               display: 'flex',
@@ -226,123 +219,203 @@ export default function AuthModal({
               justifyContent: 'center',
               boxShadow: 'var(--shadow-card)'
             }}>
-              <ShieldCheck size={24} />
+              <ShieldCheck size={22} />
             </div>
             <div>
-              <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
-                Google Sign-In
+              <h2 style={{ fontSize: '16px', fontWeight: 800, margin: 0, color: 'var(--text-main)' }}>
+                {currentUser ? 'Active Account Session' : 'Institutional Sign-In'}
               </h2>
               <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontWeight: 600 }}>
-                CampusGate Secure Identity Verification
+                {currentUser ? 'You are currently authenticated' : 'CampusGate Identity Verification'}
               </span>
             </div>
           </div>
 
           <button
             onClick={onClose}
+            title="Close"
             style={{
               background: 'none',
               border: 'none',
               color: 'var(--text-muted)',
               cursor: 'pointer',
-              padding: '6px'
+              padding: '6px',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
             }}
           >
-            <X size={20} />
+            <X size={18} />
           </button>
         </div>
 
         {/* Content Body */}
-        <div style={{ padding: '24px 26px', display: 'flex', flexDirection: 'column', gap: '20px', overflowY: 'auto' }}>
+        <div style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '16px' }}>
           {errorMessage && (
             <div style={{
-              padding: '12px 16px',
-              borderRadius: '12px',
+              padding: '10px 14px',
+              borderRadius: '10px',
               backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              border: '1px solid rgba(239, 68, 68, 0.3)',
+              border: '1px solid rgba(239, 68, 68, 0.25)',
               color: '#ef4444',
               fontSize: '12px',
-              lineHeight: 1.4,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '4px'
+              lineHeight: 1.4
             }}>
-              <strong style={{ fontSize: '13px' }}>Sign-In Alert:</strong>
-              <span>{errorMessage}</span>
+              <strong>Sign-In Alert:</strong> {errorMessage}
             </div>
           )}
 
-          {/* Official Google OAuth Sign-in Button */}
-          <div>
-            <div ref={googleBtnRef} style={{ marginBottom: '8px' }} />
-
-            <button
-              onClick={() => handleTriggerGoogleOAuth()}
-              disabled={loadingRole !== null}
-              style={{
-                width: '100%',
-                padding: '13px 18px',
-                borderRadius: '14px',
-                backgroundColor: 'var(--bg-card)',
-                border: '1.5px solid var(--border-medium)',
-                color: 'var(--text-main)',
-                fontSize: '14px',
-                fontWeight: 700,
+          {/* CASE 1: User is ALREADY Logged In */}
+          {currentUser ? (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              <div style={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'center',
                 gap: '12px',
-                cursor: 'pointer',
-                boxShadow: 'var(--shadow-card)',
-                transition: 'all 0.15s ease'
-              }}
-            >
-              <svg width="20" height="20" viewBox="0 0 24 24">
-                <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
-                <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
-              </svg>
-              <span>{loadingRole === 'google' ? 'Connecting to Google...' : 'Sign In with Google Account'}</span>
-            </button>
-            <p style={{ fontSize: '11px', color: 'var(--text-muted)', textAlign: 'center', marginTop: '6px' }}>
-              Opens official Google Authentication popup or consent screen.
-            </p>
-          </div>
+                padding: '14px 16px',
+                borderRadius: '14px',
+                backgroundColor: 'var(--bg-card-subtle)',
+                border: '1px solid var(--border-subtle)'
+              }}>
+                <Avatar user={currentUser} size={42} borderRadius={10} />
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-main)', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {currentUser.name}
+                  </div>
+                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '2px', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    {currentUser.email}
+                  </div>
+                  <div style={{ display: 'inline-flex', alignItems: 'center', gap: '4px', marginTop: '6px', fontSize: '10px', fontWeight: 800, color: 'var(--color-emerald)', backgroundColor: 'rgba(16, 185, 129, 0.1)', padding: '2px 8px', borderRadius: '4px' }}>
+                    <CheckCircle2 size={11} />
+                    <span>Active Clearance ({currentUser.role.toUpperCase()})</span>
+                  </div>
+                </div>
+              </div>
 
-          {/* Security & Access Restriction Notice */}
-          <div style={{
-            padding: '16px',
-            borderRadius: '14px',
-            backgroundColor: 'var(--bg-card-subtle)',
-            border: '1px solid var(--border-subtle)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '8px'
-          }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-main)', fontSize: '13px', fontWeight: 700 }}>
-              <ShieldCheck size={16} color="var(--color-emerald)" />
-              <span>Token-Restricted Identity</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <button
+                  onClick={onClose}
+                  style={{
+                    width: '100%',
+                    padding: '11px',
+                    borderRadius: '10px',
+                    backgroundColor: 'var(--accent-primary)',
+                    color: 'var(--accent-primary-text)',
+                    border: 'none',
+                    fontSize: '13px',
+                    fontWeight: 700,
+                    cursor: 'pointer'
+                  }}
+                >
+                  Continue as {currentUser.name}
+                </button>
+
+                <button
+                  onClick={handleTriggerGoogleOAuth}
+                  disabled={loadingRole !== null}
+                  style={{
+                    width: '100%',
+                    padding: '10px',
+                    borderRadius: '10px',
+                    backgroundColor: 'transparent',
+                    border: '1px solid var(--border-medium)',
+                    color: 'var(--text-main)',
+                    fontSize: '12px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <RefreshCw size={14} className={loadingRole === 'google' ? 'spin' : ''} />
+                  <span>Switch to Another Google Account</span>
+                </button>
+
+                {onSignOut && (
+                  <button
+                    onClick={() => {
+                      onSignOut();
+                      onClose();
+                    }}
+                    style={{
+                      width: '100%',
+                      padding: '9px',
+                      borderRadius: '10px',
+                      backgroundColor: 'transparent',
+                      border: 'none',
+                      color: 'var(--color-crimson)',
+                      fontSize: '12px',
+                      fontWeight: 700,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px',
+                      cursor: 'pointer',
+                      marginTop: '4px'
+                    }}
+                  >
+                    <LogOut size={13} />
+                    <span>Sign Out</span>
+                  </button>
+                )}
+              </div>
             </div>
-            <p style={{ fontSize: '12px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
-              Account switching without valid OAuth credentials is strictly disabled. Roles, registered vehicle passes, and administrative capabilities are granted solely via verified Google session tokens.
-            </p>
-          </div>
-        </div>
+          ) : (
+            /* CASE 2: User is NOT Logged In - Clean Single Google Button */
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', alignItems: 'center' }}>
+              <div
+                ref={googleBtnRef}
+                style={{
+                  display: isSdkRendered ? 'flex' : 'none',
+                  justifyContent: 'center',
+                  width: '100%'
+                }}
+              />
 
-        {/* Footer */}
-        <div style={{
-          padding: '14px 26px',
-          borderTop: '1px solid var(--border-subtle)',
-          backgroundColor: 'var(--bg-card-subtle)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          fontSize: '11px',
-          color: 'var(--text-muted)'
-        }}>
-          <span>Official Google Identity Services</span>
-          <span>Verified Token Enforcement Active</span>
+              {!isSdkRendered && (
+                <button
+                  onClick={handleTriggerGoogleOAuth}
+                  disabled={loadingRole !== null}
+                  style={{
+                    width: '100%',
+                    padding: '12px 18px',
+                    borderRadius: '12px',
+                    backgroundColor: 'var(--bg-card)',
+                    border: '1.5px solid var(--border-medium)',
+                    color: 'var(--text-main)',
+                    fontSize: '14px',
+                    fontWeight: 700,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '12px',
+                    cursor: 'pointer',
+                    boxShadow: 'var(--shadow-card)'
+                  }}
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/>
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/>
+                  </svg>
+                  <span>{loadingRole === 'google' ? 'Connecting to Google...' : 'Sign In with Google Account'}</span>
+                </button>
+              )}
+
+              <p style={{
+                fontSize: '11px',
+                color: 'var(--text-muted)',
+                margin: 0,
+                textAlign: 'center',
+                lineHeight: 1.4
+              }}>
+                🔒 Single Sign-On powered by MITS Official Google Workspace.
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </div>

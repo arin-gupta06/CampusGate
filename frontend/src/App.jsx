@@ -359,7 +359,6 @@ export default function App() {
         setActiveTab={setActiveTab}
         currentUser={currentUser}
         stats={stats}
-        onOpenAuthModal={() => setIsAuthModalOpen(true)}
         onSignOut={handleSignOut}
       />
 
@@ -371,11 +370,11 @@ export default function App() {
           onTriggerSimulation={handleTriggerSimulation}
           wsStatus={wsStatus}
           currentUser={currentUser}
-          onOpenAuthModal={() => setIsAuthModalOpen(true)}
           onSignOut={handleSignOut}
           theme={theme}
           toggleTheme={toggleTheme}
           onNavigateHome={() => setActiveTab('home')}
+          onNavigateProfile={() => setActiveTab('profile')}
         />
 
         {/* Global Router Canvas */}
@@ -543,11 +542,12 @@ export default function App() {
         </main>
       </div>
 
-      {/* OAuth Login & Persona Switcher Modal */}
+      {/* OAuth Login & Session Verification Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onLoginSuccess={handleLoginSuccess}
+        onSignOut={handleSignOut}
         currentUser={currentUser}
       />
 

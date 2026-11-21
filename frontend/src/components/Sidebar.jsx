@@ -26,7 +26,7 @@ export default function Sidebar({
   setActiveTab,
   currentUser,
   stats,
-  onOpenAuthModal,
+  onSignOut,
   isCollapsed: propIsCollapsed,
   onToggleCollapse: propOnToggleCollapse
 }) {
@@ -500,8 +500,8 @@ export default function Sidebar({
       }}>
         {isCollapsed ? (
           <button
-            onClick={onOpenAuthModal}
-            title={`${currentUser?.name || 'Campus Member'} (${roleBadgeMeta.label}) - Click to Switch Persona`}
+            onClick={() => setActiveTab('profile')}
+            title={`${currentUser?.name || 'Campus Member'} (${roleBadgeMeta.label}) - Click to View Digital Pass`}
             style={{
               background: 'none',
               border: 'none',
@@ -516,7 +516,11 @@ export default function Sidebar({
           </button>
         ) : (
           <>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0 }}>
+            <div
+              onClick={() => setActiveTab('profile')}
+              title="Click to View Digital Pass & Ingress Logs"
+              style={{ display: 'flex', alignItems: 'center', gap: '10px', minWidth: 0, cursor: 'pointer' }}
+            >
               <Avatar user={currentUser} size={34} borderRadius={10} />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={{
@@ -542,7 +546,7 @@ export default function Sidebar({
             </div>
 
             <button
-              onClick={onOpenAuthModal}
+              onClick={() => setActiveTab('profile')}
               style={{
                 width: '100%',
                 padding: '7px 10px',
@@ -559,8 +563,8 @@ export default function Sidebar({
                 cursor: 'pointer'
               }}
             >
-              <Shield size={12} color="#d97706" />
-              <span>Switch Account / Persona</span>
+              <QrCode size={13} color="var(--accent-primary)" />
+              <span>Digital Gate Pass & Logs</span>
             </button>
           </>
         )}
